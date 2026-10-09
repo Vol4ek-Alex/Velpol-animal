@@ -1,0 +1,17 @@
+{
+  "name": "velpol-agro-system",
+  "version": "2.0.0",
+  "description": "Многомодульная система управления: Животноводство, Агрономия, Механизация",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx http-server -p 3000",
+    "build": "echo 'Static site - no build needed'",
+    "deploy": "vercel --prod"
+  },
+  "keywords": ["agriculture", "livestock", "agronomy", "pwa"],
+  "author": "Velpol",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}

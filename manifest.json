@@ -1,0 +1,23 @@
+{
+  "name": "Velpol Agro System",
+  "short_name": "Velpol",
+  "description": "Многомодульная система управления: Животноводство, Агрономия, Механизация",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#091728",
+  "theme_color": "#0b1728",
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/188/188333.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+

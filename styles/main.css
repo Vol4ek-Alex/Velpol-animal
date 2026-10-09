@@ -1,0 +1,242 @@
+:root {
+    color-scheme: dark;
+    --page-bg: #091728;
+    --page-bg-deep: #060e1b;
+    --glass: rgba(20, 39, 64, 0.68);
+    --glass-strong: rgba(14, 30, 51, 0.96);
+    --input-bg: rgba(3, 10, 20, 0.58);
+    --line: rgba(255, 255, 255, 0.15);
+    --line-bright: rgba(255, 255, 255, 0.28);
+    --line-green: rgba(52, 211, 153, 0.48);
+    --text: #f5f7fb;
+    --muted: #a8b6c9;
+    --subtle: #78879b;
+    --green: #34d399;
+    --green-dark: #10b981;
+    --blue: #7dd3fc;
+    --amber: #fbbf24;
+    --red: #fb7185;
+    --purple: #a78bfa;
+    --card-radius: 20px;
+    --shadow: 0 16px 44px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html {
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+    background: var(--page-bg-deep);
+}
+
+body {
+    position: relative;
+    isolation: isolate;
+    width: 100%;
+    min-width: 0;
+    min-height: 100vh;
+    margin: 0;
+    overflow-x: hidden;
+    color: var(--text);
+    background: var(--page-bg);
+    font-family: "Exo 2", sans-serif;
+    font-size: 15px;
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.bg-atmospheric {
+    position: fixed;
+    inset: -24px;
+    z-index: -3;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(7, 17, 31, 0.18), rgba(4, 11, 22, 0.42)),
+        url("../assets/bg-farm.jpg") center center / cover no-repeat;
+    filter: blur(3px) brightness(0.42);
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    position: relative;
+    z-index: 1;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 48px;
+}
+
+.header h1 {
+    margin: 0 0 12px;
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+.header p {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--muted);
+}
+
+.modules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.module-card {
+    background: var(--glass);
+    backdrop-filter: blur(24px);
+    border: 1px solid var(--line);
+    border-radius: var(--card-radius);
+    padding: 32px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+}
+
+.module-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--line-bright);
+    box-shadow: 0 20px 52px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.module-card.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.module-card.disabled:hover {
+    transform: none;
+}
+
+.module-icon {
+    font-size: 4rem;
+    margin-bottom: 16px;
+    display: block;
+}
+
+.module-title {
+    margin: 0 0 8px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.module-description {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+.module-badge {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: var(--amber);
+    color: var(--page-bg-deep);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.module-card[data-module="livestock"] .module-icon { color: var(--green); }
+.module-card[data-module="agronomy"] .module-icon { color: var(--blue); }
+.module-card[data-module="mechanization"] .module-icon { color: var(--purple); }
+
+.login-section {
+    background: var(--glass-strong);
+    backdrop-filter: blur(24px);
+    border: 1px solid var(--line);
+    border-radius: var(--card-radius);
+    padding: 32px;
+    box-shadow: var(--shadow);
+    text-align: center;
+}
+
+.login-section h2 {
+    margin: 0 0 24px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.form-input {
+    background: var(--input-bg);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 18px;
+    color: var(--text);
+    font-size: 1rem;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.1);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--green-dark), var(--green));
+    border: none;
+    border-radius: 12px;
+    padding: 14px 24px;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(52, 211, 153, 0.3);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.error-message {
+    background: rgba(251, 113, 133, 0.1);
+    border: 1px solid var(--red);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: var(--red);
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+}
+
+@media (max-width: 768px) {
+    .header h1 { font-size: 2rem; }
+    .modules-grid { grid-template-columns: 1fr; }
+    .module-card { padding: 24px; }
+    .module-icon { font-size: 3rem; }
+}

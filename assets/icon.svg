@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0e1e33"/>
+      <stop offset="1" stop-color="#060e1b"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#34d399"/>
+      <stop offset="1" stop-color="#10b981"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect x="18" y="18" width="476" height="476" rx="96" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="4"/>
+
+  <!-- Снопки пшеницы -->
+  <g stroke="url(#accent)" stroke-width="18" stroke-linecap="round" fill="none">
+    <path d="M256 430 V210"/>
+    <path d="M256 250 C 210 240, 190 205, 195 165 C 235 170, 258 205, 256 250"/>
+    <path d="M256 250 C 302 240, 322 205, 317 165 C 277 170, 254 205, 256 250"/>
+    <path d="M256 315 C 210 305, 190 270, 195 230 C 235 235, 258 270, 256 315"/>
+    <path d="M256 315 C 302 305, 322 270, 317 230 C 277 235, 254 270, 256 315"/>
+  </g>
+
+  <!-- Индикатор роста -->
+  <path d="M150 430 L215 365 L275 400 L362 300" fill="none" stroke="#7dd3fc" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="362" cy="300" r="22" fill="#7dd3fc"/>
+</svg>

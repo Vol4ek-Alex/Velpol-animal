@@ -99,42 +99,40 @@ async function handleRegister(email, password) {
         throw new Error('Пароль должен быть не менее 6 символов');
     }
 
-    const { data, error } = await db.auth.signUp({
-        email: email,
-        password: password,
-        options: {
-            data: {
-                full_name: fullName
+    try {
+        const { data, error } = await db.auth.signUp({
+            email: email,
+            password: password,
+            options: {
+                data: {
+                    full_name: fullName,
+                    requested_module: selectedModule
+                }
             }
-        }
-    });
-
-    if (error) throw error;
-
-    // Создать заявку на доступ
-    const { error: requestError } = await db
-        .from('pending_access_requests')
-        .insert({
-            user_id: data.user.id,
-            user_email: email,
-            user_name: fullName,
-            module_name: selectedModule,
-            status: 'pending'
         });
 
-    if (requestError && requestError.code !== '23505') { // Ignore duplicate key error
-        console.error('Request creation error:', requestError);
-    }
+        if (error) {
+            console.error('Supabase Auth Error:', error);
+            throw new Error(`Ошибка регистрации: ${error.message}`);
+        }
 
-    showSuccess('✅ Регистрация успешна! Проверьте email для подтверждения. После подтверждения администратор рассмотрит вашу заявку.');
-    
-    // Очистить форму
-    document.getElementById('auth-form').reset();
-    
-    // Перенаправить на страницу подтверждения через 2 секунды
-    setTimeout(() => {
-        window.location.href = 'confirm-email.html';
-    }, 2000);
+        console.log('Registration success:', data);
+
+        showSuccess('✅ Регистрация успешна! Проверьте email для подтверждения.');
+        
+        // Очистить форму
+        document.getElementById('auth-form').reset();
+        
+        // Показать сообщение
+        setTimeout(() => {
+            document.getElementById('success-container').innerHTML = 
+                '<div class="success-message">📧 Письмо отправлено! Проверьте почту и подтвердите email. После подтверждения обратитесь к администратору для получения доступа.</div>';
+        }, 2000);
+
+    } catch (error) {
+        console.error('Full registration error:', error);
+        throw error;
+    }
 }
 
 async function handleLogin(email, password) {

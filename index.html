@@ -46,12 +46,19 @@
             </div>
         </div>
         <div class="login-section" id="login-section" style="display: none;">
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="tab-login" onclick="switchAuthMode('login')">Вход</button>
+                <button class="auth-tab" id="tab-register" onclick="switchAuthMode('register')">Регистрация</button>
+            </div>
             <h2 id="login-title">Вход в систему</h2>
-            <form class="login-form" id="login-form" onsubmit="handleLogin(event)">
+            <form class="login-form" id="auth-form" onsubmit="handleAuth(event)">
                 <div id="error-container"></div>
+                <div id="success-container"></div>
+                <input type="text" class="form-input" id="full-name" placeholder="Полное имя" style="display: none;">
                 <input type="email" class="form-input" id="email" placeholder="Email" required autocomplete="username">
                 <input type="password" class="form-input" id="password" placeholder="Пароль" required autocomplete="current-password">
-                <button type="submit" class="btn-primary">Войти</button>
+                <input type="password" class="form-input" id="password-confirm" placeholder="Подтвердите пароль" style="display: none;">
+                <button type="submit" class="btn-primary" id="auth-button">Войти</button>
             </form>
         </div>
     </div>

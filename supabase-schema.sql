@@ -32,18 +32,23 @@ CREATE TABLE IF NOT EXISTS pending_access_requests (
 ALTER TABLE module_access ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pending_access_requests ENABLE ROW LEVEL SECURITY;
 
--- Политики для module_access
+-- Политики для module_access (БЕЗ рекурсии!)
 DROP POLICY IF EXISTS "Users can view their own access" ON module_access;
 CREATE POLICY "Users can view their own access" ON module_access
     FOR SELECT USING (auth.uid() = user_id);
 
 DROP POLICY IF EXISTS "Admins can manage all access" ON module_access;
 CREATE POLICY "Admins can manage all access" ON module_access
-    FOR ALL USING (
+    FOR ALL 
+    USING (true)  -- Разрешить чтение всем (нужно для проверки при входе)
+    WITH CHECK (
+        -- При записи проверять админские права через прямой запрос с алиасом
         EXISTS (
-            SELECT 1 FROM module_access
-            WHERE user_id = auth.uid() AND module_name = 'admin' AND has_access = true
-        )
+            SELECT 1 FROM module_access ma
+            WHERE ma.user_id = auth.uid() 
+            AND ma.module_name = 'admin' 
+            AND ma.has_access = true
+        ) OR auth.uid() = user_id  -- Или пользователь редактирует свои записи
     );
 
 -- Политики для pending_access_requests
@@ -58,18 +63,24 @@ CREATE POLICY "Users can insert their own requests" ON pending_access_requests
 DROP POLICY IF EXISTS "Admins can view all requests" ON pending_access_requests;
 CREATE POLICY "Admins can view all requests" ON pending_access_requests
     FOR SELECT USING (
+        auth.uid() = user_id  -- Пользователь видит свои заявки
+        OR 
         EXISTS (
-            SELECT 1 FROM module_access
-            WHERE user_id = auth.uid() AND module_name = 'admin' AND has_access = true
-        )
+            SELECT 1 FROM module_access ma
+            WHERE ma.user_id = auth.uid() 
+            AND ma.module_name = 'admin' 
+            AND ma.has_access = true
+        )  -- Админы видят все заявки
     );
 
 DROP POLICY IF EXISTS "Admins can update all requests" ON pending_access_requests;
 CREATE POLICY "Admins can update all requests" ON pending_access_requests
     FOR UPDATE USING (
         EXISTS (
-            SELECT 1 FROM module_access
-            WHERE user_id = auth.uid() AND module_name = 'admin' AND has_access = true
+            SELECT 1 FROM module_access ma
+            WHERE ma.user_id = auth.uid() 
+            AND ma.module_name = 'admin' 
+            AND ma.has_access = true
         )
     );
 

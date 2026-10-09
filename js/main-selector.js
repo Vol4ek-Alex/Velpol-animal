@@ -111,10 +111,30 @@ async function handleRegister(email, password) {
 
     if (error) throw error;
 
-    showSuccess('✅ Регистрация успешна! Проверьте email для подтверждения. После подтверждения обратитесь к администратору для получения доступа к модулям.');
+    // Создать заявку на доступ
+    const { error: requestError } = await db
+        .from('pending_access_requests')
+        .insert({
+            user_id: data.user.id,
+            user_email: email,
+            user_name: fullName,
+            module_name: selectedModule,
+            status: 'pending'
+        });
+
+    if (requestError && requestError.code !== '23505') { // Ignore duplicate key error
+        console.error('Request creation error:', requestError);
+    }
+
+    showSuccess('✅ Регистрация успешна! Проверьте email для подтверждения. После подтверждения администратор рассмотрит вашу заявку.');
     
     // Очистить форму
     document.getElementById('auth-form').reset();
+    
+    // Перенаправить на страницу подтверждения через 2 секунды
+    setTimeout(() => {
+        window.location.href = 'confirm-email.html';
+    }, 2000);
 }
 
 async function handleLogin(email, password) {

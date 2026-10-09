@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель - Velpol Agro System</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <style>
+        body { background: linear-gradient(135deg, #1e293b, #0f172a); min-height: 100vh; padding: 20px; }
+        .admin-container { max-width: 1200px; margin: 0 auto; }
+        .admin-header { text-align: center; margin-bottom: 40px; color: #fff; }
+        .admin-header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .requests-grid { display: grid; gap: 20px; }
+        .request-card {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(71, 85, 105, 0.3);
+            border-radius: 16px;
+            padding: 24px;
+            color: #fff;
+        }
+        .request-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px; }
+        .request-info h3 { font-size: 1.2rem; margin-bottom: 8px; }
+        .request-info p { color: #cbd5e1; font-size: 0.9rem; margin: 4px 0; }
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .status-pending { background: rgba(251, 191, 36, 0.1); border: 1px solid #fbbf24; color: #fbbf24; }
+        .status-approved { background: rgba(52, 211, 153, 0.1); border: 1px solid #34d399; color: #34d399; }
+        .status-rejected { background: rgba(251, 113, 133, 0.1); border: 1px solid #fb7185; color: #fb7185; }
+        .request-actions { display: flex; gap: 12px; margin-top: 16px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-approve { background: linear-gradient(135deg, #10b981, #34d399); color: #fff; }
+        .btn-reject { background: linear-gradient(135deg, #ef4444, #fb7185); color: #fff; }
+        .btn:hover { transform: translateY(-2px); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .logout-btn { position: absolute; top: 20px; right: 20px; }
+        .no-requests { text-align: center; padding: 60px 20px; color: #cbd5e1; }
+    </style>
+</head>
+<body>
+    <button class="btn btn-reject logout-btn" onclick="handleLogout()">Выйти</button>
+    
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>🔐 Админ-панель</h1>
+            <p>Управление заявками на доступ к модулям</p>
+        </div>
+
+        <div id="loading">
+            <p style="text-align: center; color: #cbd5e1;">Загрузка заявок...</p>
+        </div>
+
+        <div id="no-requests" class="no-requests" style="display: none;">
+            <h2>📭 Нет заявок</h2>
+            <p>Все заявки обработаны или новых заявок пока нет</p>
+        </div>
+
+        <div id="requests-container" class="requests-grid"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/config.js"></script>
+    <script src="admin-script.js"></script>
+</body>
+</html>
+

@@ -67,7 +67,7 @@ body[data-module-active="livestock"] .bg-atmospheric {
     filter: blur(3px) brightness(0.42);
 }
 
-/* РџР»Р°РІР°СЋС‰РёР№ Р·Р°РјРѕРє РЅР° С„РѕРЅРµ РІС…РѕРґР° */
+/* Плавающий замок на фоне входа */
 .bg-lock {
     position: fixed;
     top: 8%;

@@ -3,6 +3,8 @@
 -- Выполнить в Supabase SQL Editor (один раз).
 -- Таблицы создаются, только если их ещё нет (if not exists),
 -- существующие данные не затрагиваются.
+-- Админ-проверка: is_current_admin() — уже существует в БД
+-- (module_access, module_name = 'admin').
 -- =====================================================
 
 -- Техника
@@ -56,9 +58,8 @@ create table if not exists public.fleet_tags (
 );
 
 -- =====================================================
--- RLS: чтение — всем авторизованным, запись — админам
--- (admin определяется функцией is_admin(); если её нет,
--- см. ниже запасной вариант с проверкой module_access)
+-- RLS: чтение — всем авторизованным,
+-- запись/изменение/удаление — только админам
 -- =====================================================
 
 alter table public.vehicles enable row level security;
@@ -67,7 +68,6 @@ alter table public.fleet_drivers enable row level security;
 alter table public.fleet_categories enable row level security;
 alter table public.fleet_tags enable row level security;
 
--- Чтение для авторизованных
 do $$
 declare t text;
 begin
@@ -86,17 +86,7 @@ begin
                 t || '_select_auth', t
             );
         end if;
-    end loop;
-end $$;
 
--- Полные права для админа (роль из get_my_profile / profiles)
-do $$
-declare t text;
-begin
-    foreach t in array array[
-        'vehicles', 'vehicle_tasks',
-        'fleet_drivers', 'fleet_categories', 'fleet_tags'
-    ] loop
         if not exists (
             select 1 from pg_policies
             where schemaname = 'public'
@@ -104,7 +94,7 @@ begin
               and policyname = t || '_admin_all'
         ) then
             execute format(
-                'create policy %I on public.%I for all to authenticated using (is_admin()) with check (is_admin());',
+                'create policy %I on public.%I for all to authenticated using (is_current_admin()) with check (is_current_admin());',
                 t || '_admin_all', t
             );
         end if;

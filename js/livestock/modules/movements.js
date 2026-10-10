@@ -634,15 +634,6 @@
                     () => close(null)
                 );
 
-            overlay.addEventListener(
-                'click',
-                event => {
-                    if (event.target === overlay) {
-                        close(null);
-                    }
-                }
-            );
-
             let resolvePromise;
 
             const resultPromise = new Promise(

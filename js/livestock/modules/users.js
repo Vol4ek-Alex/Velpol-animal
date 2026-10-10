@@ -1,4 +1,4 @@
-п»ї(function () {
+(function () {
     'use strict';
 
     window.UsersModule = {
@@ -67,13 +67,13 @@
 
         formatDate(value) {
             if (!value) {
-                return 'РќРµС‚ РґР°РЅРЅС‹С…';
+                return 'Нет данных';
             }
 
             const date = new Date(value);
 
             if (Number.isNaN(date.getTime())) {
-                return 'РќРµС‚ РґР°РЅРЅС‹С…';
+                return 'Нет данных';
             }
 
             return date.toLocaleString('ru-RU', {
@@ -110,8 +110,8 @@
 
         getStatusText(user) {
             return this.isOnline(user)
-                ? 'Р’ СЃРµС‚Рё'
-                : 'РќРµ РІ СЃРµС‚Рё';
+                ? 'В сети'
+                : 'Не в сети';
         },
 
         getStatusClass(user) {
@@ -172,7 +172,7 @@
         async loadUsers() {
             if (!this.canView()) {
                 throw new Error(
-                    'РќРµРґРѕСЃС‚Р°С‚РѕС‡РЅРѕ РїСЂР°РІ РґР»СЏ РїСЂРѕСЃРјРѕС‚СЂР° РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№.'
+                    'Недостаточно прав для просмотра пользователей.'
                 );
             }
 
@@ -318,7 +318,7 @@
                                     ${this.escape(
                                         profile.full_name ||
                                         profile.login ||
-                                        'Р‘РµР· РёРјРµРЅРё'
+                                        'Без имени'
                                     )}
                                 </strong>
 
@@ -342,7 +342,7 @@
                             <div class="user-card-position">
                                 ${this.escape(
                                     profile.position ||
-                                    'Р”РѕР»Р¶РЅРѕСЃС‚СЊ РЅРµ СѓРєР°Р·Р°РЅР°'
+                                    'Должность не указана'
                                 )}
                             </div>
                         </div>
@@ -352,18 +352,18 @@
                         <span>
                             ${
                                 profile.role === 'admin'
-                                    ? 'РђРґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ'
-                                    : 'РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ'
+                                    ? 'Администратор'
+                                    : 'Пользователь'
                             }
                         </span>
 
                         <span>
-                            Р Р°Р·СЂРµС€РµРЅРёР№:
+                            Разрешений:
                             ${this.getPermissionsCount(user)}
                         </span>
 
                         <span>
-                            РџРѕСЃР»РµРґРЅРёР№ РІС…РѕРґ:
+                            Последний вход:
                             ${this.formatDate(
                                 profile.last_seen_at ||
                                 presence.last_seen_at
@@ -375,7 +375,7 @@
                         blocked
                             ? `
                                 <div class="user-blocked-label">
-                                    РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅ
+                                    Пользователь заблокирован
                                 </div>
                             `
                             : ''
@@ -386,17 +386,17 @@
                         <button type="button" class="glass-btn user-permissions-button" data-user-id="${this.escape(
                             profile.id
                         )}">
-                            Р Р°Р·СЂРµС€РµРЅРёСЏ
+                            Разрешения
                         </button>
                         <button type="button" class="glass-btn user-block-button" data-user-id="${this.escape(
                             profile.id
                         )}">
-                            ${blocked ? 'Р Р°Р·Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ' : 'Р—Р°Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ'}
+                            ${blocked ? 'Разблокировать' : 'Заблокировать'}
                         </button>
                         ` : ''}
                         ${window.MessagesModule?.canSendMessages() ? `
                             <button type="button" class="glass-btn user-message-button" data-user-id="${this.escape(profile.id)}">
-                                вњ‰ РЎРѕРѕР±С‰РµРЅРёРµ
+                                ? Сообщение
                             </button>
                         ` : ''}
                     </div>
@@ -675,18 +675,18 @@
                     <header class="users-header">
                         <div>
                             <h1 class="users-title">
-                                РџРѕР»СЊР·РѕРІР°С‚РµР»Рё
+                                Пользователи
                             </h1>
 
                             <p class="users-description">
-                                РђРєС‚РёРІРЅРѕСЃС‚СЊ, СЂРѕР»Рё Рё СЂР°Р·СЂРµС€РµРЅРёСЏ
+                                Активность, роли и разрешения
                             </p>
                         </div>
 
                         <input
                             type="search"
                             class="users-search"
-                            placeholder="РџРѕРёСЃРє РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ..."
+                            placeholder="Поиск пользователя..."
                             value="${this.escape(
                                 this.searchText
                             )}"
@@ -705,7 +705,7 @@
                                     users-summary-label
                                 "
                             >
-                                Р’СЃРµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
+                                Всего пользователей
                             </span>
 
                             <strong
@@ -728,7 +728,7 @@
                                     users-summary-label
                                 "
                             >
-                                РЎРµР№С‡Р°СЃ РІ СЃРµС‚Рё
+                                Сейчас в сети
                             </span>
 
                             <strong
@@ -752,7 +752,7 @@
                                     users-summary-label
                                 "
                             >
-                                Р—Р°Р±Р»РѕРєРёСЂРѕРІР°РЅРѕ
+                                Заблокировано
                             </span>
 
                             <strong
@@ -776,7 +776,7 @@
                                 }).join('')
                                 : `
                                     <div class="users-empty">
-                                        РџРѕР»СЊР·РѕРІР°С‚РµР»Рё РЅРµ РЅР°Р№РґРµРЅС‹
+                                        Пользователи не найдены
                                     </div>
                                 `
                         }
@@ -788,8 +788,8 @@
         async changeBlocked(user) {
             if (!this.canManage()) {
                 await this.showMessage(
-                    'РќРµС‚ РґРѕСЃС‚СѓРїР°',
-                    'РР·РјРµРЅСЏС‚СЊ СЃС‚Р°С‚СѓСЃ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РјРѕР¶РµС‚ С‚РѕР»СЊРєРѕ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ.'
+                    'Нет доступа',
+                    'Изменять статус пользователя может только администратор.'
                 );
 
                 return;
@@ -805,8 +805,8 @@
                 ) === String(profile.id)
             ) {
                 await this.showMessage(
-                    'РћРїРµСЂР°С†РёСЏ Р·Р°РїСЂРµС‰РµРЅР°',
-                    'РќРµР»СЊР·СЏ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ СЃР°РјРѕРіРѕ СЃРµР±СЏ.'
+                    'Операция запрещена',
+                    'Нельзя заблокировать самого себя.'
                 );
 
                 return;
@@ -818,11 +818,11 @@
             const confirmed =
                 await this.confirmModal(
                     blocked
-                        ? 'Р—Р°Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ?'
-                        : 'Р Р°Р·Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ?',
+                        ? 'Заблокировать пользователя?'
+                        : 'Разблокировать пользователя?',
                     blocked
-                        ? 'РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ РїРѕС‚РµСЂСЏРµС‚ РґРѕСЃС‚СѓРї Рє СЂРµСЃСѓСЂСЃСѓ.'
-                        : 'РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃРЅРѕРІР° СЃРјРѕР¶РµС‚ РІРѕР№С‚Рё.'
+                        ? 'Пользователь потеряет доступ к ресурсу.'
+                        : 'Пользователь снова сможет войти.'
                 );
 
             if (!confirmed) {
@@ -840,7 +840,7 @@
 
             if (response.error) {
                 await this.showMessage(
-                    'РћС€РёР±РєР°',
+                    'Ошибка',
                     response.error.message
                 );
 
@@ -854,8 +854,8 @@
         async editPermissions(user) {
             if (!this.canManage()) {
                 await this.showMessage(
-                    'РќРµС‚ РґРѕСЃС‚СѓРїР°',
-                    'РР·РјРµРЅСЏС‚СЊ СЂР°Р·СЂРµС€РµРЅРёСЏ РјРѕР¶РµС‚ С‚РѕР»СЊРєРѕ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ.'
+                    'Нет доступа',
+                    'Изменять разрешения может только администратор.'
                 );
 
                 return;
@@ -867,8 +867,8 @@
                     'function'
             ) {
                 await this.showMessage(
-                    'РћС€РёР±РєР°',
-                    'РњРѕРґСѓР»СЊ СЂР°Р·СЂРµС€РµРЅРёР№ РЅРµ РїРѕРґРєР»СЋС‡С‘РЅ.'
+                    'Ошибка',
+                    'Модуль разрешений не подключён.'
                 );
 
                 return;
@@ -921,7 +921,7 @@
                                 users-confirm-no
                             "
                         >
-                            РћС‚РјРµРЅР°
+                            Отмена
                         </button>
 
                         <button
@@ -935,7 +935,7 @@
                                 color:var(--red);
                             "
                         >
-                            РџРѕРґС‚РІРµСЂРґРёС‚СЊ
+                            Подтвердить
                         </button>
                     </div>
                 </div>
@@ -973,15 +973,6 @@
                         'click',
                         () => close(true)
                     );
-
-                overlay.addEventListener(
-                    'click',
-                    event => {
-                        if (event.target === overlay) {
-                            close(false);
-                        }
-                    }
-                );
             });
         },
 
@@ -1020,7 +1011,7 @@
                             margin-top:18px;
                         "
                     >
-                        Р—Р°РєСЂС‹С‚СЊ
+                        Закрыть
                     </button>
                 </div>
             `;
@@ -1063,8 +1054,8 @@
                         } catch (error) {
                             console.error('User action error:', error);
                             await this.showMessage(
-                                'РћС€РёР±РєР°',
-                                error.message || 'РќРµ СѓРґР°Р»РѕСЃСЊ РІС‹РїРѕР»РЅРёС‚СЊ РґРµР№СЃС‚РІРёРµ.'
+                                'Ошибка',
+                                error.message || 'Не удалось выполнить действие.'
                             );
                         } finally {
                             button.disabled = false;
@@ -1110,7 +1101,7 @@
                       .join('')
                 : `
                     <div class="users-empty">
-                        РџРѕР»СЊР·РѕРІР°С‚РµР»Рё РЅРµ РЅР°Р№РґРµРЅС‹
+                        Пользователи не найдены
                     </div>
                 `;
 
@@ -1166,7 +1157,7 @@
 
             if (!this.canView()) {
                 window.showAppError(
-                    'РЈ РІР°СЃ РЅРµС‚ СЂР°Р·СЂРµС€РµРЅРёСЏ РЅР° РїСЂРѕСЃРјРѕС‚СЂ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№.'
+                    'У вас нет разрешения на просмотр пользователей.'
                 );
 
                 return;
@@ -1186,7 +1177,7 @@
                 }
 
                 window.showAppError(
-                    'РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№.',
+                    'Не удалось загрузить пользователей.',
                     error
                 );
             }

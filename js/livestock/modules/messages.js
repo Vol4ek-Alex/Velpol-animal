@@ -638,15 +638,6 @@
                         () => close(null)
                     );
 
-                overlay.addEventListener(
-                    'click',
-                    event => {
-                        if (event.target === overlay) {
-                            close(null);
-                        }
-                    }
-                );
-
                 submitButton.addEventListener(
                     'click',
                     async () => {

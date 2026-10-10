@@ -829,15 +829,6 @@
                         }
                     }
                 );
-
-                overlay.addEventListener(
-                    'click',
-                    event => {
-                        if (event.target === overlay) {
-                            close(null);
-                        }
-                    }
-                );
             });
         },
 
@@ -928,15 +919,6 @@
                         'click',
                         () => close(true)
                     );
-
-                overlay.addEventListener(
-                    'click',
-                    event => {
-                        if (event.target === overlay) {
-                            close(false);
-                        }
-                    }
-                );
             });
         },
 
@@ -990,15 +972,6 @@
                     'click',
                     close
                 );
-
-            overlay.addEventListener(
-                'click',
-                event => {
-                    if (event.target === overlay) {
-                        close();
-                    }
-                }
-            );
         },
 
         async undoLastMovement() {

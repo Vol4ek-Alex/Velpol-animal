@@ -660,15 +660,6 @@
                             }
                         }
                     );
-
-                overlay.addEventListener(
-                    'click',
-                    event => {
-                        if (event.target === overlay) {
-                            close(null);
-                        }
-                    }
-                );
             });
         }
     };

@@ -18,7 +18,8 @@ alter table public.farms_and_groups
 
 alter table public.diets
     add column if not exists feeding_time text not null default 'I',
-    add column if not exists norm_per_head numeric not null default 0;
+    add column if not exists norm_per_head numeric not null default 0,
+    add column if not exists feed_id uuid references public.feeds(id) on delete cascade;
 
 alter table public.feeds
     add column if not exists unit text not null default 'кг';
@@ -503,9 +504,9 @@ security definer
 set search_path = public
 as $$
 declare
-    v_source record;
-    v_destination record;
-    v_category record;
+    v_source public.farms_and_groups%ROWTYPE;
+    v_destination public.farms_and_groups%ROWTYPE;
+    v_category public.herd_categories%ROWTYPE;
     v_id uuid;
     v_type text;
 begin
@@ -516,16 +517,15 @@ begin
 
     v_type := p_movement_type;
 
-    select fg.*, fg.farm_name as src_farm, fg.group_name as src_group
-    into v_source
-    from public.farms_and_groups fg
-    where fg.id = p_source_group_id;
+    select * into v_source
+    from public.farms_and_groups
+    where id = p_source_group_id;
 
     if v_source.id is null then
         raise exception 'Исходная группа не найдена.';
     end if;
 
-    if v_type in ('realization', 'mortality') then
+    if v_type in ('realization', 'mortality', 'departure', 'slaughter', 'death') then
         if v_source.head_count < p_quantity then
             raise exception 'Недостаточно поголовья в группе (% < %).',
                 v_source.head_count, p_quantity;
@@ -533,20 +533,27 @@ begin
     end if;
 
     if p_destination_group_id is not null then
-        select fg.*, fg.farm_name as dst_farm, fg.group_name as dst_group
-        into v_destination
-        from public.farms_and_groups fg
-        where fg.id = p_destination_group_id;
+        select * into v_destination
+        from public.farms_and_groups
+        where id = p_destination_group_id;
 
         if v_destination.id is null then
             raise exception 'Группа назначения не найдена.';
         end if;
+    else
+        v_destination := null;
     end if;
 
     if p_destination_category_id is not null then
-        select hc.* into v_category
-        from public.herd_categories hc
-        where hc.id = p_destination_category_id;
+        select * into v_category
+        from public.herd_categories
+        where id = p_destination_category_id;
+
+        if v_category.id is null then
+            raise exception 'Категория назначения не найдена.';
+        end if;
+    else
+        v_category := null;
     end if;
 
     insert into public.herd_movements (
@@ -565,19 +572,18 @@ begin
         p_comment,
         p_reason,
         p_comment,
-        v_source.src_farm, v_source.src_group,
-        v_destination.dst_farm, v_destination.dst_group,
+        v_source.farm_name, v_source.group_name,
+        v_destination.farm_name, v_destination.group_name,
         v_category.name
     )
     returning id into v_id;
 
-    -- Списание из источника пропорционально распределению
-    if v_type in ('realization', 'mortality', 'transfer') then
+    if v_type in ('realization', 'mortality', 'transfer', 'departure', 'slaughter', 'death') then
         update public.farms_and_groups
         set head_count = head_count - p_quantity,
             prev_head_count = head_count,
             last_change_amount = -p_quantity,
-            last_change_reason = p_reason,
+            last_change_reason = coalesce(p_reason, v_type),
             last_change_at = now(),
             updated_at = now()
         where id = p_source_group_id;
@@ -594,8 +600,7 @@ begin
         end if;
     end if;
 
-    -- Начисление в группу назначения при переводе
-    if v_type = 'transfer' and p_destination_group_id is not null then
+    if v_type = 'transfer' and v_destination.id is not null then
         update public.farms_and_groups
         set head_count = head_count + p_quantity,
             prev_head_count = head_count,
@@ -603,12 +608,14 @@ begin
             last_change_reason = 'Перевод животных',
             last_change_at = now(),
             updated_at = now()
-        where id = p_destination_group_id;
+        where id = v_destination.id;
 
-        if p_destination_category_id is not null then
+        if v_category.id is not null then
             insert into public.group_category_heads (group_id, category_id, heads)
-            values (p_destination_group_id, p_destination_category_id, p_quantity)
-            on conflict (group_id, category_id) do nothing;
+            values (v_destination.id, v_category.id, p_quantity)
+            on conflict (group_id, category_id)
+            do update set heads = public.group_category_heads.heads + excluded.heads,
+                          updated_at = now();
         end if;
     end if;
 

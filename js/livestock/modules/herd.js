@@ -1084,15 +1084,6 @@
                         () => close(null)
                     );
 
-                overlay.addEventListener(
-                    'click',
-                    event => {
-                        if (event.target === overlay) {
-                            close(null);
-                        }
-                    }
-                );
-
                 overlay
                     .querySelector('.form-submit')
                     .addEventListener(

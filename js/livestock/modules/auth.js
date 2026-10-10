@@ -121,6 +121,18 @@
             this.user = response.data.session.user;
 
             try {
+                // Создаёт профиль текущего пользователя,
+                // если его ещё нет (нужно для UsersModule).
+                const profileResponse = await db.rpc(
+                    'get_my_profile'
+                );
+
+                if (!profileResponse.error) {
+                    this.profile =
+                        profileResponse.data?.profile ||
+                        this.profile;
+                }
+
                 await this.loadAccess();
 
                 if (!this.canAccessModule('livestock')) {

@@ -1,0 +1,11 @@
+{
+  "models": [
+    {
+      "title": "AnyModel - DeepSeek",
+      "provider": "openai",
+      "model": "deepseek-chat",
+      "apiBase": "https://api.anymodel.ru/v1",
+      "apiKey": "sk-dc9d4b7df36ba555-d87xgp-47884ac9"
+    }
+  ]
+}

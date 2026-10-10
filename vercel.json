@@ -1,41 +1,18 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "*.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "**/*.{js,css,jpg,png,svg,json}",
-      "use": "@vercel/static"
-    }
-  ],
   "routes": [
     {
       "src": "/sw.js",
       "headers": {
-        "Service-Worker-Allowed": "/"
+        "Service-Worker-Allowed": "/",
+        "Cache-Control": "public, max-age=0, must-revalidate"
       }
     },
     {
-      "src": "/(.*)",
-      "dest": "/$1"
+      "handle": "filesystem"
     }
   ],
   "headers": [
-    {
-      "source": "/sw.js",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
-        },
-        {
-          "key": "Service-Worker-Allowed",
-          "value": "/"
-        }
-      ]
-    },
     {
       "source": "/(.*)",
       "headers": [

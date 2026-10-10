@@ -322,29 +322,64 @@
         },
 
         getFarms() {
-            const names = new Set();
+            const seen = {};
+            const farms = [];
 
-            this.movements.forEach(item => {
-                if (item.source_farm_name) {
-                    names.add(
-                        this.cleanFarmName(
-                            item.source_farm_name
-                        )
+            this.groups.forEach(group => {
+                const name =
+                    this.cleanFarmName(
+                        group.farm_name
                     );
+
+                if (!name || seen[name]) {
+                    return;
                 }
 
-                if (item.destination_farm_name) {
-                    names.add(
-                        this.cleanFarmName(
-                            item.destination_farm_name
-                        )
-                    );
-                }
+                seen[name] = true;
+                farms.push(name);
             });
 
-            return Array.from(names).sort((a, b) => {
+            return farms.sort((a, b) => {
                 return a.localeCompare(b, 'ru');
             });
+        },
+
+        minMonthValue() {
+            let min = null;
+
+            this.movements.forEach(item => {
+                const date = new Date(
+                    item.event_date
+                );
+
+                if (
+                    Number.isNaN(date.getTime())
+                ) {
+                    return;
+                }
+
+                const value = [
+                    date.getFullYear(),
+                    String(
+                        date.getMonth() + 1
+                    ).padStart(2, '0')
+                ].join('-');
+
+                if (!min || value < min) {
+                    min = value;
+                }
+            });
+
+            return min || this.currentMonthValue();
+        },
+
+        formatMonthOrDefault(monthValue) {
+            const value =
+                monthValue ||
+                this.selectedMonth ||
+                this.currentMonthValue();
+
+            return this.getMonthBounds(value);
         },
 
         getFilteredMovements() {
@@ -400,53 +435,61 @@
             const stats =
                 this.calculateHeadStats();
 
+            const heads = value => {
+                return value > 0
+                    ? `${value} гол.`
+                    : 'Н/Д';
+            };
+
             const tiles = [
                 {
                     icon: '🌾',
                     label: 'Использовано кормов',
-                    value: `${Math.round(
-                        usage.totalKg
-                    ).toLocaleString('ru-RU')} кг`,
+                    value: usage.totalKg > 0
+                        ? `${Math.round(
+                            usage.totalKg
+                        ).toLocaleString('ru-RU')} кг`
+                        : 'Н/Д',
                     sub: usage.totalCost > 0
                         ? `~${usage.totalCost.toLocaleString(
                             'ru-RU',
                             { maximumFractionDigits: 2 }
-                        )} BYN`
-                        : 'цены не заданы',
+                        )} Br`
+                        : 'нет данных',
                     accent: 'green'
                 },
                 {
                     icon: '⚠️',
                     label: 'Падёж',
-                    value: `${stats.mortality} гол.`,
+                    value: heads(stats.mortality),
                     sub: 'за месяц',
                     accent: 'red'
                 },
                 {
                     icon: '🔪',
                     label: 'Забой',
-                    value: `${stats.slaughter} гол.`,
+                    value: heads(stats.slaughter),
                     sub: 'за месяц',
                     accent: 'amber'
                 },
                 {
                     icon: '💰',
                     label: 'Реализация',
-                    value: `${stats.realization} гол.`,
+                    value: heads(stats.realization),
                     sub: 'за месяц',
                     accent: 'blue'
                 },
                 {
                     icon: '➕',
                     label: 'Приход',
-                    value: `${stats.arrival} гол.`,
+                    value: heads(stats.arrival),
                     sub: 'за месяц',
                     accent: 'green'
                 },
                 {
                     icon: '↔️',
                     label: 'Переводы',
-                    value: `${stats.transfer} гол.`,
+                    value: heads(stats.transfer),
                     sub: 'за месяц',
                     accent: 'purple'
                 }
@@ -522,9 +565,9 @@
                                                     maximumFractionDigits: 2
                                                 }
                                             )
-                                            : '—'
+                                            : 'Н/Д'
                                     }
-                                    BYN
+                                    Br
                                 </td>
                             </tr>
                         `).join('')}
@@ -746,12 +789,18 @@
                         display: flex;
                         align-items: center;
                         gap: 11px;
+                        min-width: 0;
                         padding: 13px 15px;
                         border: 1px solid var(--line);
                         border-radius: 15px;
                         background: rgba(0,0,0,.16);
                         animation: tile-in 340ms ease both;
                         transition: transform 180ms ease, border-color 180ms ease;
+                    }
+
+                    body.app-booted .history-tile,
+                    body.app-booted .history-item {
+                        animation: none;
                     }
 
                     .history-tile:hover {
@@ -777,6 +826,7 @@
                     }
 
                     .history-tile-label {
+                        overflow-wrap: anywhere;
                         color: var(--muted);
                         font-size: .72rem;
                         font-weight: 700;
@@ -786,6 +836,7 @@
 
                     .history-tile-value {
                         margin-top: 3px;
+                        overflow-wrap: anywhere;
                         color: #fff;
                         font-family: "JetBrains Mono", monospace;
                         font-size: 1.05rem;
@@ -942,6 +993,7 @@
                     }
 
                     .history-title {
+                        overflow-wrap: anywhere;
                         color: #fff;
                         font-size: .88rem;
                     }
@@ -950,6 +1002,7 @@
                         flex: 0 0 auto;
                         color: var(--subtle);
                         font-size: .71rem;
+                        white-space: nowrap;
                     }
 
                     .history-source,
@@ -1111,6 +1164,8 @@
                             type="month"
                             class="history-month-input"
                             value="${this.escape(monthValue)}"
+                            min="${this.escape(this.minMonthValue())}"
+                            max="${this.escape(this.currentMonthValue())}"
                             aria-label="Выбор месяца"
                         >
 
@@ -1178,7 +1233,7 @@
                                 }).join('')
                                 : `
                                     <div class="history-empty">
-                                        Нет операций за выбранный месяц
+                                        Нет операций за выбранный месяц — Н/Д
                                     </div>
                                 `
                         }

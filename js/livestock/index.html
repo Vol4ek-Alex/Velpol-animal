@@ -402,13 +402,13 @@
             }
         }
 
-        .glass-panel,
-        .stat-card {
+        body:not(.app-booted) .glass-panel,
+        body:not(.app-booted) .stat-card {
             animation: panel-in 320ms ease both;
         }
 
-        #main-content > div:first-child > .stat-card,
-        #main-content > div:first-child > .glass-panel {
+        body:not(.app-booted) #main-content > div:first-child > .stat-card,
+        body:not(.app-booted) #main-content > div:first-child > .glass-panel {
             animation-delay: 40ms;
         }
 

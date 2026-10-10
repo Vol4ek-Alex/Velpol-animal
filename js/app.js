@@ -469,6 +469,10 @@
 
             await module.render();
 
+            document.body.classList.add(
+                'app-booted'
+            );
+
             if (
                 window.AuthModule &&
                 typeof window.AuthModule.updatePresence ===
@@ -504,15 +508,19 @@
             return;
         }
 
-        const farms = Array.from(
-            new Set(
-                (groups || [])
-                    .map(function (group) {
-                        return group.farm_name;
-                    })
-                    .filter(Boolean)
-            )
-        );
+        const seen = {};
+        const farms = [];
+
+        (groups || []).forEach(function (group) {
+            const key = window.cleanFarmName(group.farm_name);
+
+            if (!group.farm_name || seen[key]) {
+                return;
+            }
+
+            seen[key] = true;
+            farms.push(group.farm_name);
+        });
 
         const wrapper =
             document.createElement('div');

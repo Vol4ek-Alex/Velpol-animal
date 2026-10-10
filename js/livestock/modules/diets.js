@@ -608,14 +608,16 @@
 
                     .diet-group-actions {
                         margin-top:12px;
+                        margin-bottom:4px;
                     }
 
                     .diet-group-total {
                         display:flex;
-                        justify-content:flex-end;
-                        gap:6px;
-                        margin-top:11px;
-                        padding-top:9px;
+                        align-items:baseline;
+                        flex-wrap:wrap;
+                        gap:6px 10px;
+                        margin-top:12px;
+                        padding-top:10px;
                         border-top:1px solid var(--line);
                         color:var(--muted);
                         font-size:.8rem;
@@ -646,8 +648,9 @@
                         z-index:999;
                         display:flex;
                         align-items:center;
-                        justify-content:space-between;
+                        justify-content:space-around;
                         gap:15px;
+                        flex-wrap:wrap;
                         max-width:1080px;
                         margin:0 auto;
                         padding:14px 20px;
@@ -660,6 +663,13 @@
                             rgba(0,0,0,.55);
                     }
 
+                    .diets-summary-cost {
+                        color:var(--amber);
+                        font-family:
+                            "JetBrains Mono",
+                            monospace;
+                    }
+
                     .diets-summary-label {
                         color:var(--muted);
                         font-size:.76rem;
@@ -668,9 +678,34 @@
 
                     .diets-summary-value {
                         margin-top:3px;
+                        overflow-wrap:anywhere;
                         color:#fff;
                         font-size:1.18rem;
                         font-weight:800;
+                    }
+
+                    .diets-summary-value span {
+                        color:var(--muted);
+                        font-size:.76rem;
+                        font-weight:600;
+                    }
+
+                    .br-symbol {
+                        position:relative;
+                        display:inline-block;
+                        font-family:"Exo 2",sans-serif;
+                    }
+
+                    .br-symbol::after {
+                        content:"";
+                        position:absolute;
+                        left:-6%;
+                        right:-6%;
+                        top:46%;
+                        height:2px;
+                        border-radius:2px;
+                        background:currentColor;
+                        transform:rotate(-10deg);
                     }
 
                     .diets-summary-kg {
@@ -680,6 +715,7 @@
                             monospace;
                         font-size:1.05rem;
                         font-weight:800;
+                        white-space:nowrap;
                     }
 
                     .diets-empty {
@@ -721,7 +757,7 @@
                             padding:14px;
                         }
 
-                        .diets-summary:not(.diets-cost-summary) {
+                        .diets-summary {
                             right:10px;
                             bottom:calc(
                                 62px +
@@ -729,10 +765,7 @@
                             );
                             left:10px;
                             padding:10px 13px;
-                        }
-
-                        .diets-cost-summary {
-                            margin-top:10px;
+                            gap:8px;
                         }
 
                         .diets-summary-value {
@@ -824,7 +857,7 @@
                                     diets-summary-label
                                 "
                             >
-                                Общий вес замеса
+                                Итого замес
                                 (${this.getTimeLabel()})
                             </div>
 
@@ -833,56 +866,45 @@
                                     diets-summary-value
                                 "
                             >
-                                ${(totals.totalKg / 1000)
-                                    .toFixed(2)}
-                                тонн
+                                ${totals.totalKg.toLocaleString(
+                                    'ru-RU'
+                                )}
+                                <span>кг</span>
                             </div>
                         </div>
 
-                        <div
-                            class="
-                                diets-summary-kg
-                            "
-                        >
-                            ${totals.totalKg.toLocaleString(
-                                'ru-RU'
-                            )}
-                            кг
+                        <div>
+                            <div
+                                class="
+                                    diets-summary-label
+                                "
+                            >
+                                Стоимость
+                            </div>
+
+                            <div
+                                class="
+                                    diets-summary-value
+                                    diets-summary-cost
+                                "
+                            >
+                                ${
+                                    totals.totalCost > 0
+                                        ? totals.totalCost.toLocaleString(
+                                            'ru-RU',
+                                            {
+                                                maximumFractionDigits: 2
+                                            }
+                                        )
+                                        : 'Н/Д'
+                                }
+                                <span
+                                    class="br-symbol"
+                                >Б</span>
+                                <span>/сутки</span>
+                            </div>
                         </div>
                     </div>
-
-                    ${
-                        totals.totalCost > 0
-                            ? `
-                                <div class="diets-summary diets-cost-summary">
-                                    <div>
-                                        <div
-                                            class="
-                                                diets-summary-label
-                                            "
-                                        >
-                                            Стоимость замеса
-                                            (${this.getTimeLabel()})
-                                        </div>
-
-                                        <div
-                                            class="
-                                                diets-summary-value
-                                            "
-                                        >
-                                            ${totals.totalCost.toLocaleString(
-                                                'ru-RU',
-                                                {
-                                                    maximumFractionDigits: 2
-                                                }
-                                            )}
-                                            <span>BYN/сутки</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            `
-                            : ''
-                    }
                 </div>
             `;
         },

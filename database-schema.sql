@@ -123,23 +123,34 @@ CREATE TABLE IF NOT EXISTS agro_crops (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Поля
-CREATE TABLE IF NOT EXISTS agro_fields (
+-- Хозяйства/участки
+CREATE TABLE IF NOT EXISTS agro_farms (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL UNIQUE,
-    area_ha NUMERIC(10,2) DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Посевы (связь поле → культура → год)
+-- Поля (привязаны к хозяйству)
+CREATE TABLE IF NOT EXISTS agro_fields (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    farm_id UUID NOT NULL REFERENCES agro_farms(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    area_ha NUMERIC(10,2) DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(farm_id, name)
+);
+
+-- Посевы (связь поле → культура + предшественник/сев как свободный текст)
 CREATE TABLE IF NOT EXISTS agro_planting (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     field_id UUID NOT NULL REFERENCES agro_fields(id) ON DELETE CASCADE,
-    crop_id UUID NOT NULL REFERENCES agro_crops(id) ON DELETE CASCADE,
-    predecessor_id UUID REFERENCES agro_crops(id),
+    crop_id UUID REFERENCES agro_crops(id) ON DELETE SET NULL,
     year INTEGER NOT NULL,
     area_ha NUMERIC(10,2) DEFAULT 0,
+    predecessor_text TEXT,
+    sowing_text TEXT,
     notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -161,6 +172,7 @@ ALTER TABLE diets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE feeds ENABLE ROW LEVEL SECURITY;
 ALTER TABLE diet_feeds ENABLE ROW LEVEL SECURITY;
 ALTER TABLE agro_crops ENABLE ROW LEVEL SECURITY;
+ALTER TABLE agro_farms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE agro_fields ENABLE ROW LEVEL SECURITY;
 ALTER TABLE agro_planting ENABLE ROW LEVEL SECURITY;
 
@@ -182,6 +194,7 @@ CREATE POLICY "Auth users access diet_feeds" ON diet_feeds FOR ALL USING (auth.u
 
 -- Политики для агрономии (все авторизованные могут читать и редактировать)
 CREATE POLICY "Auth users access crops" ON agro_crops FOR ALL USING (auth.uid() IS NOT NULL);
+CREATE POLICY "Auth users access farms" ON agro_farms FOR ALL USING (auth.uid() IS NOT NULL);
 CREATE POLICY "Auth users access fields" ON agro_fields FOR ALL USING (auth.uid() IS NOT NULL);
 CREATE POLICY "Auth users access planting" ON agro_planting FOR ALL USING (auth.uid() IS NOT NULL);
 
@@ -196,6 +209,8 @@ CREATE INDEX IF NOT EXISTS idx_herd_movements_group ON herd_movements(group_id);
 CREATE INDEX IF NOT EXISTS idx_herd_movements_date ON herd_movements(event_date DESC);
 CREATE INDEX IF NOT EXISTS idx_diets_group ON diets(group_id);
 CREATE INDEX IF NOT EXISTS idx_diet_feeds_diet ON diet_feeds(diet_id);
+CREATE INDEX IF NOT EXISTS idx_agro_farms_name ON agro_farms(name);
+CREATE INDEX IF NOT EXISTS idx_agro_fields_farm ON agro_fields(farm_id);
 CREATE INDEX IF NOT EXISTS idx_agro_planting_field ON agro_planting(field_id);
 CREATE INDEX IF NOT EXISTS idx_agro_planting_year ON agro_planting(year DESC);
 

@@ -233,8 +233,16 @@
         },
 
         calculateFeedUsage(monthValue) {
+            /*
+             * Для текущего месяца getReportDays
+             * возвращает количество дней по
+             * сегодняшний — сумма за все
+             * прошедшие дни, а не за полный месяц.
+             */
             const days = this.getReportDays(
-                monthValue
+                monthValue ||
+                this.reportMonth ||
+                this.selectedMonth
             );
 
             const usage = {};
@@ -1731,9 +1739,18 @@
             }
 
             try {
+                /*
+                 * RPC пишет источник в group_id,
+                 * source_group_id может быть пустым —
+                 * берём с fallback.
+                 */
+                const sourceGroupId =
+                    item.group_id ||
+                    item.source_group_id;
+
                 if (
                     item.movement_type !== 'transfer' &&
-                    item.source_group_id
+                    sourceGroupId
                 ) {
                     const groupResponse =
                         await db
@@ -1741,7 +1758,7 @@
                             .select('id, head_count')
                             .eq(
                                 'id',
-                                item.source_group_id
+                                sourceGroupId
                             )
                             .maybeSingle();
 
@@ -1804,7 +1821,21 @@
                     item.movement_type === 'transfer'
                 ) {
                     // Перевод: возвращаем головы
-                    // источнику и убираем из приёмника.
+                    // источнику и убираем из приёмника
+                    // (id приёмника не хранится — ищем
+                    // по названию фермы и группы).
+                    const destinationGroup =
+                        this.groups.find(entry => {
+                            return this.cleanFarmName(
+                                entry.farm_name
+                            ) ===
+                            this.cleanFarmName(
+                                item.destination_farm_name
+                            ) &&
+                            entry.group_name ===
+                            item.destination_group_name;
+                        });
+
                     const restoreSide =
                         async (groupId, delta) => {
                             if (!groupId) {
@@ -1856,14 +1887,16 @@
                         };
 
                     await restoreSide(
-                        item.source_group_id,
+                        sourceGroupId,
                         this.number(
                             item.quantity ?? item.heads
                         )
                     );
 
                     await restoreSide(
-                        item.destination_group_id,
+                        destinationGroup
+                            ? destinationGroup.id
+                            : null,
                         -this.number(
                             item.quantity ?? item.heads
                         )

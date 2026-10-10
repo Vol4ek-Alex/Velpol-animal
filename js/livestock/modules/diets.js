@@ -592,6 +592,15 @@
                         text-align:right;
                     }
 
+                    /*
+                     * П.4: заголовок «Замес, кг»
+                     * над значениями колонки
+                     * (оба по правому краю).
+                     */
+                    .diets-table th:nth-child(3) {
+                        text-align:right;
+                    }
+
                     .diet-delete-button {
                         min-width:34px;
                         min-height:34px;

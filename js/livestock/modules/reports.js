@@ -448,17 +448,14 @@
                     }
 
                     /*
-                     * П.7: узкая таблица — «Стоимость»
-                     * и «Замес» не уезжают вправо.
+                     * П.7/П.3: на ПК таблица на всю
+                     * ширину панели; сужение — только
+                     * на мобильных, чтобы «Стоимость»
+                     * не уезжала вправо.
                      */
                     .reports-table {
-                        min-width: 480px !important;
-                        width: 480px !important;
-                    }
-
-                    .reports-table th:nth-child(n+3),
-                    .reports-table td:nth-child(n+3) {
-                        width: 88px;
+                        min-width: 620px;
+                        width: 100%;
                     }
 
                     @media (max-width: 700px) {

@@ -773,3 +773,57 @@ $$;
 
 grant execute on function public.admin_get_users_with_access() to authenticated;
 grant execute on function public.admin_set_module_access(uuid, text, boolean) to authenticated;
+
+-- ============================================================
+-- ПРЕДЛОЖЕНИЯ ПОЛЬЗОВАТЕЛЕЙ (suggestions)
+-- ============================================================
+create table if not exists public.suggestions (
+    id uuid primary key default gen_random_uuid(),
+    user_id uuid references auth.users(id) on delete set null,
+    user_name text not null default 'Неизвестный',
+    page text,
+    text text not null check (char_length(text) between 3 and 1000),
+    is_done boolean not null default false,
+    created_at timestamptz not null default now()
+);
+
+alter table public.suggestions enable row level security;
+
+drop policy if exists "suggestions_insert" on public.suggestions;
+create policy "suggestions_insert"
+    on public.suggestions for insert
+    to authenticated
+    with check (auth.uid() = user_id);
+
+drop policy if exists "suggestions_admin_select" on public.suggestions;
+create policy "suggestions_admin_select"
+    on public.suggestions for select
+    to authenticated
+    using (exists (
+        select 1 from public.module_access a
+        where a.user_id = auth.uid()
+          and a.module_name = 'admin'
+          and a.has_access
+    ));
+
+drop policy if exists "suggestions_admin_update" on public.suggestions;
+create policy "suggestions_admin_update"
+    on public.suggestions for update
+    to authenticated
+    using (exists (
+        select 1 from public.module_access a
+        where a.user_id = auth.uid()
+          and a.module_name = 'admin'
+          and a.has_access
+    ));
+
+drop policy if exists "suggestions_admin_delete" on public.suggestions;
+create policy "suggestions_admin_delete"
+    on public.suggestions for delete
+    to authenticated
+    using (exists (
+        select 1 from public.module_access a
+        where a.user_id = auth.uid()
+          and a.module_name = 'admin'
+          and a.has_access
+    ));

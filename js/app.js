@@ -473,6 +473,8 @@
                 'app-booted'
             );
 
+            window.updateFloatingEditor();
+
             if (
                 window.AuthModule &&
                 typeof window.AuthModule.updatePresence ===
@@ -657,6 +659,176 @@
         }
 
         window.renderCurrentModule();
+    };
+
+    window.updateFloatingEditor = function () {
+        const button =
+            document.getElementById(
+                'floating-editor-btn'
+            );
+
+        if (!button) {
+            return;
+        }
+
+        const visible = [
+            'diets',
+            'herd'
+        ].includes(
+            window.state.activeModule
+        );
+
+        if (visible) {
+            if (canEditCurrentModule()) {
+                button.classList.remove(
+                    'editor-hidden'
+                );
+            }
+        } else {
+            button.classList.add(
+                'editor-hidden'
+            );
+
+            if (window.state.isEditMode) {
+                window.state.isEditMode = false;
+
+                document.body.classList.remove(
+                    'edit-mode-active'
+                );
+            }
+        }
+    };
+
+    function canEditCurrentModule() {
+        return Boolean(
+            window.AuthModule &&
+            (
+                window.AuthModule.isAdmin() ||
+                window.AuthModule.hasPermission(
+                    'can_edit_herd'
+                ) ||
+                window.AuthModule.hasPermission(
+                    'can_edit_diets'
+                )
+            )
+        );
+    }
+
+    window.openSuggestionModal = function () {
+        const modal =
+            document.getElementById(
+                'suggestion-modal'
+            );
+
+        const textarea =
+            document.getElementById(
+                'suggestion-text'
+            );
+
+        if (!modal) {
+            return;
+        }
+
+        modal.classList.add('open');
+
+        modal.onclick = function (event) {
+            if (event.target === modal) {
+                window.closeSuggestionModal();
+            }
+        };
+
+        if (textarea) {
+            textarea.value = '';
+            setTimeout(function () {
+                textarea.focus();
+            }, 60);
+        }
+    };
+
+    window.closeSuggestionModal = function () {
+        const modal =
+            document.getElementById(
+                'suggestion-modal'
+            );
+
+        if (modal) {
+            modal.classList.remove('open');
+        }
+    };
+
+    window.sendSuggestion = async function () {
+        const textarea =
+            document.getElementById(
+                'suggestion-text'
+            );
+
+        const sendButton =
+            document.getElementById(
+                'suggestion-send-button'
+            );
+
+        const text = String(
+            textarea ? textarea.value : ''
+        ).trim();
+
+        if (text.length < 3) {
+            window.showSimpleMessage(
+                'Пустое предложение',
+                'Опишите вашу идею подробнее — минимум 3 символа.'
+            );
+
+            return;
+        }
+
+        if (sendButton) {
+            sendButton.disabled = true;
+        }
+
+        try {
+            const response = await db
+                .from('suggestions')
+                .insert({
+                    text: text,
+                    user_id:
+                        window.AuthModule &&
+                        window.AuthModule.session
+                            ? window.AuthModule.session.user.id
+                            : null,
+                    user_name:
+                        window.AuthModule &&
+                        window.AuthModule.profile
+                            ? window.AuthModule.profile.full_name ||
+                              'Неизвестный'
+                            : 'Неизвестный',
+                    page: window.state.activeModule
+                });
+
+            if (response.error) {
+                throw response.error;
+            }
+
+            window.closeSuggestionModal();
+
+            window.showSimpleMessage(
+                'Спасибо!',
+                'Ваше предложение отправлено администратору.'
+            );
+        } catch (error) {
+            console.error(
+                'Suggestion error:',
+                error
+            );
+
+            window.showSimpleMessage(
+                'Не удалось отправить',
+                error.message ||
+                'Проверьте подключение и повторите позже.'
+            );
+        } finally {
+            if (sendButton) {
+                sendButton.disabled = false;
+            }
+        }
     };
 
     function setupMobileMenu() {
@@ -865,17 +1037,7 @@
             );
 
         if (editorButton) {
-            const canEdit =
-                window.AuthModule &&
-                (
-                    window.AuthModule.isAdmin() ||
-                    window.AuthModule.hasPermission(
-                        'can_edit_herd'
-                    ) ||
-                    window.AuthModule.hasPermission(
-                        'can_edit_diets'
-                    )
-                );
+            const canEdit = canEditCurrentModule();
 
             editorButton.style.display =
                 canEdit ? 'flex' : 'none';

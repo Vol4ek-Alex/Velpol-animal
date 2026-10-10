@@ -212,6 +212,125 @@ async function handleModuleAccess(userId, moduleName, hasAccess, input) {
     }
 }
 
+async function loadSuggestions() {
+    const { data: items, error } = await db
+        .from('suggestions')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    const section = document.getElementById('suggestions-section');
+    const container = document.getElementById('suggestions-container');
+    const counter = document.getElementById('suggestions-counter');
+
+    if (error) {
+        console.error('Error loading suggestions:', error);
+        if (container) {
+            container.innerHTML = `
+                <div class="request-card">
+                    <p style="color:#fb7185;">Не удалось загрузить предложения: ${escapeHtml(error.message)}</p>
+                    <p style="color:#cbd5e1; font-size:.85rem;">Выполните блок «suggestions» из docs/restore-functions.sql в Supabase SQL Editor.</p>
+                </div>
+            `;
+        }
+        if (section) section.style.display = 'block';
+        return;
+    }
+
+    const open = (items || []).filter(item => !item.is_done);
+
+    if (counter) {
+        counter.hidden = open.length === 0;
+        counter.textContent = open.length;
+    }
+
+    if (section) section.style.display = 'block';
+
+    if (!container) return;
+
+    if (!items || items.length === 0) {
+        container.innerHTML = `
+            <div class="request-card no-requests">
+                <h2>💡 Предложений пока нет</h2>
+                <p>Здесь появятся идеи от пользователей приложения</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = items.map(item => `
+        <div class="request-card suggestion-card ${item.is_done ? 'is-blocked' : ''}">
+            <div class="suggestion-body">
+                <div class="suggestion-text">${escapeHtml(item.text)}</div>
+                <p class="suggestion-meta">👤 ${escapeHtml(item.user_name || 'Неизвестный')}${item.page ? ' · 📄 ' + escapeHtml(item.page) : ''}</p>
+                <p class="suggestion-meta">📅 ${new Date(item.created_at).toLocaleString('ru-RU')}</p>
+            </div>
+            <div class="suggestion-actions">
+                ${item.is_done
+                    ? `<span class="status-badge status-approved">✅ Обработано</span>`
+                    : `<button class="btn btn-done" onclick="markSuggestionDone('${item.id}')">✔ Обработано</button>`
+                }
+                <button class="btn btn-delete" onclick="deleteSuggestion('${item.id}')">🗑</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function markSuggestionDone(id) {
+    try {
+        const { error } = await db
+            .from('suggestions')
+            .update({ is_done: true })
+            .eq('id', id);
+
+        if (error) throw error;
+        loadSuggestions();
+    } catch (err) {
+        alert('Ошибка: ' + err.message);
+    }
+}
+
+async function deleteSuggestion(id) {
+    if (!confirm('Удалить предложение?')) return;
+
+    try {
+        const { error } = await db
+            .from('suggestions')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+        loadSuggestions();
+    } catch (err) {
+        alert('Ошибка: ' + err.message);
+    }
+}
+
+function switchTab(tabName) {
+    const sections = {
+        requests: ['requests-container', 'no-requests', 'loading'],
+        users: ['users-section'],
+        suggestions: ['suggestions-section']
+    };
+
+    document.querySelectorAll('.admin-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.id === `tab-${tabName}`);
+    });
+
+    const allSections = ['users-section', 'suggestions-section'];
+    allSections.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.style.display = 'none';
+    });
+
+    if (tabName === 'users') {
+        document.getElementById('users-section').style.display = 'block';
+    }
+
+    if (tabName === 'suggestions') {
+        document.getElementById('suggestions-section').style.display = 'block';
+    }
+}
+
 async function handleLogout() {
     await db.auth.signOut();
     window.location.href = '../index.html';
@@ -240,5 +359,6 @@ checkAdminAccess().then(hasAccess => {
     if (hasAccess) {
         loadRequests();
         loadUsers();
+        loadSuggestions();
     }
 });

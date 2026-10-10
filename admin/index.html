@@ -15,9 +15,16 @@
             background: rgba(30, 41, 59, 0.8);
             backdrop-filter: blur(24px);
             border: 1px solid rgba(71, 85, 105, 0.3);
+            border-top-color: rgba(255, 255, 255, 0.25);
             border-radius: 16px;
             padding: 24px;
             color: #fff;
+            transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+        }
+        .request-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(52, 211, 153, 0.45);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
         }
         .request-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px; }
         .request-info h3 { font-size: 1.2rem; margin-bottom: 8px; }
@@ -47,9 +54,121 @@
         .user-info h3 { font-size: 1.1rem; margin-bottom: 6px; }
         .user-info p { color: #cbd5e1; font-size: 0.9rem; margin: 2px 0; }
         .user-access { display: flex; flex-wrap: wrap; gap: 14px; }
-        .access-toggle { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: #e2e8f0; cursor: pointer; user-select: none; }
-        .access-toggle input { width: 17px; height: 17px; accent-color: #34d399; cursor: pointer; }
+        .access-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 13px;
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.55);
+            font-size: 0.84rem;
+            color: #e2e8f0;
+            cursor: pointer;
+            user-select: none;
+            transition: border-color 180ms ease, background-color 180ms ease, color 180ms ease, transform 180ms ease;
+        }
+        .access-toggle:hover {
+            border-color: rgba(52, 211, 153, 0.5);
+            transform: translateY(-1px);
+        }
+        .access-toggle:has(input:checked) {
+            border-color: rgba(52, 211, 153, 0.7);
+            background: rgba(16, 185, 129, 0.16);
+            color: #6ee7b7;
+        }
+        .access-toggle input {
+            width: 16px;
+            height: 16px;
+            accent-color: #34d399;
+            cursor: pointer;
+            transition: transform 150ms ease;
+        }
+        .access-toggle input:checked {
+            transform: scale(1.12);
+        }
         .user-card.is-blocked { opacity: 0.55; }
+
+        .admin-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 28px;
+            padding: 5px;
+            width: fit-content;
+            max-width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+            border: 1px solid rgba(71, 85, 105, 0.45);
+            border-radius: 14px;
+            background: rgba(15, 23, 42, 0.6);
+            overflow-x: auto;
+        }
+        .admin-tab {
+            min-height: 40px;
+            padding: 8px 18px;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            background: transparent;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 0.86rem;
+            font-weight: 700;
+            white-space: nowrap;
+            transition: color 170ms ease, background-color 170ms ease, border-color 170ms ease;
+        }
+        .admin-tab:hover { color: #e2e8f0; }
+        .admin-tab.active {
+            border-color: rgba(52, 211, 153, 0.55);
+            background: rgba(16, 185, 129, 0.16);
+            color: #6ee7b7;
+        }
+        .admin-tab .tab-counter {
+            display: inline-block;
+            min-width: 20px;
+            margin-left: 6px;
+            padding: 1px 7px;
+            border-radius: 999px;
+            background: rgba(251, 191, 36, 0.18);
+            border: 1px solid rgba(251, 191, 36, 0.5);
+            color: #fbbf24;
+            font-size: 0.72rem;
+        }
+
+        .suggestion-card {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 14px;
+        }
+        .suggestion-body { flex: 1 1 320px; min-width: 0; }
+        .suggestion-text {
+            margin: 10px 0 0;
+            color: #e2e8f0;
+            font-size: 0.95rem;
+            line-height: 1.55;
+            overflow-wrap: anywhere;
+            white-space: pre-wrap;
+        }
+        .suggestion-meta { color: #94a3b8; font-size: 0.8rem; margin: 3px 0; }
+        .suggestion-actions { display: flex; gap: 10px; }
+        .btn-done { background: linear-gradient(135deg, #64748b, #475569); color: #fff; }
+        .btn-delete { background: linear-gradient(135deg, #ef4444, #fb7185); color: #fff; }
+
+        .admin-footer {
+            margin-top: 48px;
+            color: #64748b;
+            font-size: 0.75rem;
+            text-align: center;
+            user-select: none;
+        }
+
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .admin-tabs, #requests-container, #users-container, #suggestions-container { animation: fade-in 320ms ease both; }
 
         @keyframes card-in {
             from { opacity: 0; transform: translateY(12px); }
@@ -128,7 +247,13 @@
     <div class="admin-container">
         <div class="admin-header">
             <h1>🔐 Админ-панель</h1>
-            <p>Управление заявками на доступ к модулям</p>
+            <p>Управление доступом, заявками и предложениями</p>
+        </div>
+
+        <div class="admin-tabs" role="tablist">
+            <button type="button" class="admin-tab active" id="tab-requests" onclick="switchTab('requests')">📨 Заявки</button>
+            <button type="button" class="admin-tab" id="tab-users" onclick="switchTab('users')">👤 Доступы</button>
+            <button type="button" class="admin-tab" id="tab-suggestions" onclick="switchTab('suggestions')">💡 Предложения<span class="tab-counter" id="suggestions-counter" hidden>0</span></button>
         </div>
 
         <div id="loading">
@@ -147,7 +272,17 @@
             <p class="section-subtitle">Отметьте отрасли, к которым пользователь имеет доступ</p>
             <div id="users-container" class="requests-grid"></div>
         </div>
+
+        <div id="suggestions-section" class="users-section" style="display: none;">
+            <h2>💡 Предложения пользователей</h2>
+            <p class="section-subtitle">Идеи и замечания, отправленные из приложения</p>
+            <div id="suggestions-container" class="requests-grid"></div>
+        </div>
     </div>
+
+    <footer class="admin-footer">
+        СХК «Великополье» · 2026 г.
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../js/config.js"></script>

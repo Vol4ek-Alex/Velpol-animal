@@ -898,10 +898,9 @@
                                         )
                                         : 'Н/Д'
                                 }
-                                <span
-                                    class="br-symbol"
-                                >Б</span>
-                                <span>/сутки</span>
+                                <span>
+                                    BYN/сутки
+                                </span>
                             </div>
                         </div>
                     </div>

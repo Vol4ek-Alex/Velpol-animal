@@ -9,6 +9,8 @@
         selectedType: 'all',
         selectedFarm: 'Все',
         selectedMonth: '',
+        editMode: false,
+        reportMonth: '',
 
         escape(value) {
             if (typeof window.escapeHtml === 'function') {
@@ -88,6 +90,23 @@
             };
 
             return icons[type] || '📋';
+        },
+
+        getReportDays(monthValue) {
+            const value =
+                monthValue || this.selectedMonth;
+
+            const bounds =
+                this.getMonthBounds(value);
+
+            if (value === this.currentMonthValue()) {
+                return Math.max(
+                    1,
+                    new Date().getDate()
+                );
+            }
+
+            return bounds.days;
         },
 
         currentMonthValue() {
@@ -214,8 +233,8 @@
         },
 
         calculateFeedUsage(monthValue) {
-            const { days } = this.getMonthBounds(
-                monthValue || this.selectedMonth
+            const days = this.getReportDays(
+                monthValue
             );
 
             const usage = {};
@@ -443,55 +462,43 @@
 
             const tiles = [
                 {
-                    icon: '🌾',
-                    label: 'Использовано кормов',
-                    value: usage.totalKg > 0
-                        ? `${Math.round(
-                            usage.totalKg
-                        ).toLocaleString('ru-RU')} кг`
-                        : 'Н/Д',
-                    sub: usage.totalCost > 0
-                        ? `~${usage.totalCost.toLocaleString(
+                    icon: '💸',
+                    label: 'Траты на корма',
+                    value: usage.totalCost > 0
+                        ? `${usage.totalCost.toLocaleString(
                             'ru-RU',
                             { maximumFractionDigits: 2 }
-                        )} Br`
+                        )} BYN`
+                        : 'Н/Д',
+                    sub: usage.totalKg > 0
+                        ? `${Math.round(
+                            usage.totalKg
+                        ).toLocaleString('ru-RU')} кг кормов`
                         : 'нет данных',
-                    accent: 'green'
-                },
-                {
-                    icon: '⚠️',
-                    label: 'Падёж',
-                    value: heads(stats.mortality),
-                    sub: 'за месяц',
-                    accent: 'red'
-                },
-                {
-                    icon: '🔪',
-                    label: 'Забой',
-                    value: heads(stats.slaughter),
-                    sub: 'за месяц',
                     accent: 'amber'
                 },
                 {
-                    icon: '💰',
-                    label: 'Реализация',
-                    value: heads(stats.realization),
-                    sub: 'за месяц',
+                    icon: '🐄',
+                    label: 'Поголовье',
+                    value: heads(
+                        stats.mortality +
+                        stats.realization +
+                        stats.slaughter
+                    ) === 'Н/Д'
+                        ? 'Н/Д'
+                        : `−${stats.mortality +
+                            stats.realization +
+                            stats.slaughter} гол.`,
+                    sub: [
+                        stats.mortality
+                            ? `падёж ${stats.mortality}`
+                            : '',
+                        stats.realization
+                            ? `реализация ${stats.realization}`
+                            : ''
+                    ].filter(Boolean).join(' · ') ||
+                        'движения за период',
                     accent: 'blue'
-                },
-                {
-                    icon: '➕',
-                    label: 'Приход',
-                    value: heads(stats.arrival),
-                    sub: 'за месяц',
-                    accent: 'green'
-                },
-                {
-                    icon: '↔️',
-                    label: 'Переводы',
-                    value: heads(stats.transfer),
-                    sub: 'за месяц',
-                    accent: 'purple'
                 }
             ];
 
@@ -567,7 +574,7 @@
                                             )
                                             : 'Н/Д'
                                     }
-                                    Br
+                                    BYN
                                 </td>
                             </tr>
                         `).join('')}
@@ -647,6 +654,23 @@
 
             return `
                 <article class="history-item">
+                    ${
+                        this.editMode && this.canUndo()
+                            ? `
+                                <button
+                                    type="button"
+                                    class="
+                                        history-item-delete
+                                    "
+                                    data-movement-id="${item.id}"
+                                    aria-label="Удалить операцию"
+                                >
+                                    ✕
+                                </button>
+                            `
+                            : ''
+                    }
+
                     <div class="history-icon">
                         ${this.getTypeIcon(
                             item.movement_type
@@ -1050,6 +1074,56 @@
                         text-align: center;
                     }
 
+                    .history-report-hint {
+                        padding: 18px 20px;
+                        color: var(--muted);
+                        font-size: .82rem;
+                        line-height: 1.55;
+                        text-align: center;
+                    }
+
+                    .history-edit-button.active {
+                        border-color: var(--amber);
+                        background:
+                            rgba(251, 191, 36, .18);
+                        color: var(--amber);
+                    }
+
+                    .history-edit-hint {
+                        margin: 10px 2px 0;
+                        color: var(--amber);
+                        font-size: .76rem;
+                        text-align: center;
+                    }
+
+                    .history-item-delete {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        flex: 0 0 28px;
+                        width: 28px;
+                        height: 28px;
+                        padding: 0;
+                        border: 1px solid
+                            rgba(251, 113, 133, .5);
+                        border-radius: 9px;
+                        background:
+                            rgba(244, 63, 94, .14);
+                        color: var(--red);
+                        cursor: pointer;
+                        font-size: .8rem;
+                        line-height: 1;
+                        transition:
+                            background-color 150ms ease,
+                            transform 150ms ease;
+                    }
+
+                    .history-item-delete:hover {
+                        background:
+                            rgba(244, 63, 94, .3);
+                        transform: scale(1.08);
+                    }
+
                     .history-modal-text {
                         margin: 10px 0 0;
                         color: var(--muted);
@@ -1143,15 +1217,19 @@
                                             type="button"
                                             class="
                                                 glass-btn
-                                                history-undo-button
+                                                history-edit-button
+                                                ${
+                                                    this.editMode
+                                                        ? 'active'
+                                                        : ''
+                                                }
                                             "
-                                            ${
-                                                this.movements.length
-                                                    ? ''
-                                                    : 'disabled'
-                                            }
                                         >
-                                            ↶ Отменить последнюю
+                                            ${
+                                                this.editMode
+                                                    ? '✏️ Редактирование ВКЛ'
+                                                    : '✏️ Редактирование'
+                                            }
                                         </button>
                                     </div>
                                 `
@@ -1174,19 +1252,61 @@
                                 this.formatMonthLabel(monthValue)
                             )}
                         </span>
+
+                        <button
+                            type="button"
+                            class="
+                                glass-btn
+                                history-report-button
+                            "
+                        >
+                            📊 Сформировать отчёт
+                        </button>
                     </div>
 
-                    <div class="history-tiles">
-                        ${this.renderSummaryTiles()}
-                    </div>
+                    ${
+                        this.reportMonth === monthValue
+                            ? `
+                                <div class="history-tiles">
+                                    ${this.renderSummaryTiles()}
+                                </div>
 
-                    <section class="glass-panel history-usage-panel">
-                        <h2 class="history-usage-title">
-                            🌾 Расход кормов за месяц
-                        </h2>
+                                <section
+                                    class="
+                                        glass-panel
+                                        history-usage-panel
+                                    "
+                                >
+                                    <h2
+                                        class="
+                                            history-usage-title
+                                        "
+                                    >
+                                        🌾 Траты на корма —
+                                        ${this.escape(
+                                            this.formatMonthLabel(
+                                                monthValue
+                                            )
+                                        )}
+                                    </h2>
 
-                        ${this.renderFeedUsageRows()}
-                    </section>
+                                    ${this.renderFeedUsageRows()}
+                                </section>
+                            `
+                            : `
+                                <div
+                                    class="
+                                        glass-panel
+                                        history-report-hint
+                                    "
+                                >
+                                    Выберите месяц и нажмите
+                                    «Сформировать отчёт»,
+                                    чтобы увидеть траты на корма
+                                    и движение поголовья.
+                                </div>
+                            `
+                    }
 
                     <div class="history-filters">
                         <div class="history-type-filters">
@@ -1238,6 +1358,23 @@
                                 `
                         }
                     </section>
+
+                    ${
+                        this.editMode && this.canUndo()
+                            ? `
+                                <p
+                                    class="
+                                        history-edit-hint
+                                    "
+                                >
+                                    Режим редактирования:
+                                    нажмите ✕ на операции,
+                                    чтобы удалить её и
+                                    восстановить поголовье.
+                                </p>
+                            `
+                            : ''
+                    }
                 </div>
             `;
         },
@@ -1252,12 +1389,14 @@
             overlay.innerHTML = `
                 <div class="modal-box">
                     <h3 style="margin:0;color:#fff;">
-                        Отмена последней операции
+                        Вход в редактирование
                     </h3>
 
                     <p class="history-modal-text">
-                        Поголовье будет восстановлено,
-                        а запись удалена из истории.
+                        Введите PIN-код, чтобы открыть
+                        режим правки истории: удаление
+                        операций и восстановление
+                        поголовья.
                     </p>
 
                     <input
@@ -1293,7 +1432,7 @@
                                 color:var(--amber);
                             "
                         >
-                            Продолжить
+                            Войти
                         </button>
                     </div>
                 </div>
@@ -1362,7 +1501,7 @@
             });
         },
 
-        async confirmUndoModal() {
+        async confirmDeleteModal(item) {
             const overlay =
                 document.createElement('div');
 
@@ -1372,11 +1511,22 @@
             overlay.innerHTML = `
                 <div class="modal-box">
                     <h3 style="margin:0;color:#fff;">
-                        Подтвердить отмену?
+                        Удалить операцию?
                     </h3>
 
                     <p class="history-modal-text">
-                        Последняя операция будет отменена.
+                        ${this.escape(
+                            this.getTypeLabel(
+                                item.movement_type
+                            )
+                        )} от
+                        ${this.escape(
+                            this.formatDate(
+                                item.event_date
+                            )
+                        )}
+                        — ${Number(item.quantity) || 0} гол.
+
                         Поголовье восстановится,
                         запись исчезнет из истории.
                     </p>
@@ -1402,7 +1552,7 @@
                                 color:var(--red);
                             "
                         >
-                            Отменить операцию
+                            Удалить
                         </button>
                     </div>
                 </div>
@@ -1472,22 +1622,19 @@
                 });
         },
 
-        async undoLastMovement() {
+        async toggleEditMode() {
             if (!this.canUndo()) {
                 await this.showMessageModal(
                     'Нет доступа',
-                    'Отменять операции может только администратор или пользователь с соответствующим разрешением.'
+                    'Редактировать историю может только администратор или пользователь с соответствующим разрешением.'
                 );
 
                 return;
             }
 
-            if (!this.movements.length) {
-                await this.showMessageModal(
-                    'История пуста',
-                    'Нет операции для отмены.'
-                );
-
+            if (this.editMode) {
+                this.editMode = false;
+                await this.render();
                 return;
             }
 
@@ -1498,38 +1645,103 @@
                 return;
             }
 
-            const confirmed =
-                await this.confirmUndoModal();
-
-            if (!confirmed) {
-                return;
-            }
-
-            const response = await db.rpc(
-                'undo_last_herd_movement',
-                {
-                    p_pin: pin
-                }
-            );
-
-            if (response.error) {
+            if (pin !== '2174') {
                 await this.showMessageModal(
-                    'Не удалось отменить операцию',
-                    response.error.message ||
-                    'Проверьте PIN и состояние групп.'
+                    'Неверный PIN-код',
+                    'Доступ в режим редактирования запрещён.'
                 );
 
                 return;
             }
 
-            await this.loadData();
+            this.editMode = true;
 
             await this.showMessageModal(
-                'Операция отменена',
-                'Поголовье восстановлено, запись удалена из истории.'
+                'Режим редактирования включён',
+                'Нажимайте ✕ на операциях, чтобы удалять их и восстанавливать поголовье.'
             );
 
             await this.render();
+        },
+
+        async deleteMovement(id) {
+            const item = this.movements.find(
+                entry => String(entry.id) === String(id)
+            );
+
+            if (!item) {
+                return;
+            }
+
+            const confirmed =
+                await this.confirmDeleteModal(item);
+
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+                if (
+                    item.movement_type !== 'transfer' &&
+                    item.source_group_id
+                ) {
+                    const group =
+                        this.groups.find(entry => {
+                            return String(entry.id) ===
+                                String(item.source_group_id);
+                        });
+
+                    if (group) {
+                        const response =
+                            await db
+                                .from('farms_and_groups')
+                                .update({
+                                    head_count:
+                                        this.number(
+                                            group.head_count
+                                        ) +
+                                        this.number(
+                                            item.quantity ??
+                                            item.heads
+                                        )
+                                })
+                                .eq('id', group.id);
+
+                        if (response.error) {
+                            throw response.error;
+                        }
+                    }
+                }
+
+                const response = await db
+                    .from('herd_movements')
+                    .delete()
+                    .eq('id', item.id);
+
+                if (response.error) {
+                    throw response.error;
+                }
+
+                await this.loadData();
+
+                await this.showMessageModal(
+                    'Операция удалена',
+                    'Запись удалена, поголовье восстановлено.'
+                );
+
+                await this.render();
+            } catch (error) {
+                console.error(
+                    'Delete movement error:',
+                    error
+                );
+
+                await this.showMessageModal(
+                    'Не удалось удалить операцию',
+                    error.message ||
+                    'Проверьте права доступа.'
+                );
+            }
         },
 
         bindEvents() {
@@ -1596,17 +1808,48 @@
                 );
             }
 
-            const undoButton =
+            const editButton =
                 container.querySelector(
-                    '.history-undo-button'
+                    '.history-edit-button'
                 );
 
-            if (undoButton) {
-                undoButton.addEventListener(
+            if (editButton) {
+                editButton.addEventListener(
                     'click',
-                    () => this.undoLastMovement()
+                    () => this.toggleEditMode()
                 );
             }
+
+            const reportButton =
+                container.querySelector(
+                    '.history-report-button'
+                );
+
+            if (reportButton) {
+                reportButton.addEventListener(
+                    'click',
+                    () => {
+                        this.reportMonth =
+                            this.selectedMonth ||
+                            this.currentMonthValue();
+
+                        this.render();
+                    }
+                );
+            }
+
+            container
+                .querySelectorAll(
+                    '.history-item-delete'
+                )
+                .forEach(button => {
+                    button.addEventListener(
+                        'click',
+                        () => this.deleteMovement(
+                            button.dataset.movementId
+                        )
+                    );
+                });
         },
 
         async render() {

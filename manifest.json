@@ -1,6 +1,6 @@
 {
-  "name": "Velpol Agro System",
-  "short_name": "Velpol",
+  "name": "Великополье Control Panel",
+  "short_name": "Великополье",
   "description": "Многомодульная система управления: Животноводство, Агрономия, Механизация",
   "start_url": "./",
   "display": "standalone",
@@ -14,10 +14,10 @@
       "purpose": "any"
     },
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/188/188333.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "src": "assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ]
 }
-

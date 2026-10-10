@@ -834,18 +834,12 @@
         button.type = 'button';
         button.className =
             'glass-btn auth-logout-button';
-        button.textContent = '↪ Выйти';
+        button.textContent = '← Назад';
 
         button.addEventListener(
             'click',
-            async function () {
-                if (
-                    window.AuthModule &&
-                    typeof window.AuthModule.signOut ===
-                    'function'
-                ) {
-                    await window.AuthModule.signOut();
-                }
+            function () {
+                window.location.href = '/';
             }
         );
 

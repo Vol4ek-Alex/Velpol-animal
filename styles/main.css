@@ -57,6 +57,11 @@ body {
     inset: -24px;
     z-index: -3;
     pointer-events: none;
+    display: none;
+}
+
+body[data-module-active="livestock"] .bg-atmospheric {
+    display: block;
     background: linear-gradient(180deg, rgba(7, 17, 31, 0.18), rgba(4, 11, 22, 0.42)),
         url("../assets/bg-farm.jpg") center center / cover no-repeat;
     filter: blur(3px) brightness(0.42);
@@ -90,17 +95,17 @@ body {
 
 .modules-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 24px;
-    margin-bottom: 32px;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
 }
 
 .module-card {
     background: var(--glass);
     backdrop-filter: blur(24px);
     border: 1px solid var(--line);
-    border-radius: var(--card-radius);
-    padding: 32px;
+    border-radius: 14px;
+    padding: 18px 20px;
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: var(--shadow);
@@ -109,9 +114,9 @@ body {
 }
 
 .module-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-3px);
     border-color: var(--line-bright);
-    box-shadow: 0 20px 52px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .module-card.disabled {
@@ -124,34 +129,34 @@ body {
 }
 
 .module-icon {
-    font-size: 4rem;
-    margin-bottom: 16px;
+    font-size: 2rem;
+    margin-bottom: 8px;
     display: block;
 }
 
 .module-title {
-    margin: 0 0 8px;
-    font-size: 1.5rem;
+    margin: 0 0 6px;
+    font-size: 1.05rem;
     font-weight: 700;
     color: #fff;
 }
 
 .module-description {
     margin: 0;
-    font-size: 0.95rem;
+    font-size: 0.82rem;
     color: var(--muted);
-    line-height: 1.5;
+    line-height: 1.45;
 }
 
 .module-badge {
     position: absolute;
-    top: 16px;
-    right: 16px;
+    top: 12px;
+    right: 12px;
     background: var(--amber);
     color: var(--page-bg-deep);
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 0.75rem;
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-size: 0.68rem;
     font-weight: 700;
     text-transform: uppercase;
 }
@@ -159,6 +164,33 @@ body {
 .module-card[data-module="livestock"] .module-icon { color: var(--green); }
 .module-card[data-module="agronomy"] .module-icon { color: var(--blue); }
 .module-card[data-module="mechanization"] .module-icon { color: var(--purple); }
+
+.module-card[data-module="admin"] {
+    grid-column: 1 / -1;
+    max-width: 420px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-color: var(--line-green);
+}
+
+.module-card[data-module="admin"] .module-icon {
+    font-size: 1.5rem;
+    margin: 0;
+    color: var(--green);
+}
+
+.module-card[data-module="admin"] .module-title {
+    margin: 0 0 2px;
+    font-size: 0.95rem;
+}
+
+.module-card[data-module="admin"] .module-description {
+    font-size: 0.76rem;
+}
 
 .login-section {
     background: var(--glass-strong);
@@ -276,7 +308,7 @@ body {
 
 @media (max-width: 768px) {
     .header h1 { font-size: 2rem; }
-    .modules-grid { grid-template-columns: 1fr; }
-    .module-card { padding: 24px; }
-    .module-icon { font-size: 3rem; }
+    .modules-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .module-card { padding: 16px 18px; }
+    .module-icon { font-size: 1.7rem; }
 }

@@ -2,80 +2,65 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0b1728">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Контроль•Агрономия</title>
+    <title>Агрономия • В разработке</title>
     <link rel="manifest" href="../../manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../styles/main.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            padding: 40px;
+        }
+        .icon {
+            font-size: 6rem;
+            margin-bottom: 24px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #fff;
+            margin: 0 0 16px;
+        }
+        p {
+            font-size: 1.2rem;
+            color: var(--muted);
+            margin: 0 0 32px;
+        }
+        .btn-back {
+            padding: 14px 32px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--green-dark), var(--green));
+            border: none;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-back:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(52, 211, 153, 0.3);
+        }
+    </style>
 </head>
 <body>
-    <div class="bg-atmospheric" aria-hidden="true"></div>
-
-    <header class="mobile-header">
-        <button type="button" class="menu-btn" onclick="toggleMenu()" aria-label="Открыть меню">☰ Меню</button>
-        <span style="color:#fff;font-size:.9rem;font-weight:800;">Контроль•Агрономия</span>
-    </header>
-
-    <div id="sidebar-backdrop" aria-hidden="true"></div>
-
-    <button id="floating-editor-btn" class="floating-editor-btn" type="button" onclick="toggleEditMode()">
-        <span id="editor-btn-icon">🔒</span>
-        <span id="editor-btn-text">Просмотр</span>
-    </button>
-
-    <div class="app-layout">
-        <nav id="sidebar" class="glass-panel" aria-label="Главное меню">
-            <div class="brand-box">
-                <div class="brand-logo">🌾</div>
-                <div class="brand-content">
-                    <div class="brand-title">Контроль•Агрономия</div>
-                    <div class="brand-subtitle">Поля &amp; Культуры</div>
-                </div>
-            </div>
-
-            <ul class="menu-list">
-                <li class="menu-item active" data-page="dashboard">
-                    <span>📊</span> Дашборд
-                </li>
-                <li class="menu-item" data-page="fields">
-                    <span>🗺️</span> Поля
-                </li>
-                <li class="menu-item" data-page="crops">
-                    <span>🌱</span> Культуры
-                </li>
-            </ul>
-
-            <div class="sidebar-footer">
-                <div class="sidebar-user" id="sidebar-user" hidden>
-                    <div class="sidebar-user-avatar"><span id="sidebar-user-initials">?</span></div>
-                    <div class="sidebar-user-info">
-                        <div class="sidebar-user-name" id="sidebar-user-name">Пользователь</div>
-                        <div class="sidebar-user-role" id="sidebar-user-role">Гость</div>
-                    </div>
-                </div>
-
-                <button type="button" id="sidebar-logout-button" class="glass-btn auth-logout-button">
-                    <span>↪</span> Выйти
-                </button>
-            </div>
-        </nav>
-
-        <main id="main-content"></main>
+    <div class="bg-atmospheric"></div>
+    <div class="container">
+        <div class="icon">🌾</div>
+        <h1>Модуль Агрономии</h1>
+        <p>Данный модуль находится в разработке. Скоро здесь будет доступно управление посевами, полями, культурами и статистикой по гектарам.</p>
+        <button class="btn-back" onclick="window.location.href='../../'">← Вернуться к выбору модуля</button>
     </div>
-
-    <script src="../../js/config.js"></script>
-    <script src="../../js/modules/common.js"></script>
-    <script src="modules/auth.js"></script>
-    <script src="modules/dashboard.js"></script>
-    <script src="modules/fields.js"></script>
-    <script src="modules/crops.js"></script>
-    <script src="app.js"></script>
 </body>
 </html>

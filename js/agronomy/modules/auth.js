@@ -6,42 +6,19 @@
         user: null,
         profile: null,
         access: {},
-        presenceTimer: null,
         initialized: false,
-
-        escape(value) {
-            if (typeof window.escapeHtml === 'function') {
-                return window.escapeHtml(value);
-            }
-
-            return String(value ?? '')
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        },
 
         isAdmin() {
             return Boolean(this.access && this.access.admin === true);
         },
 
         hasPermission() {
-            // Упрощённая модель прав: админ может всё,
-            // остальные пользователи с доступом к модулю
-            // могут только просматривать данные.
             return this.isAdmin();
         },
 
         canAccessModule(moduleName) {
-            if (!moduleName) {
-                return false;
-            }
-
-            if (this.isAdmin()) {
-                return true;
-            }
-
+            if (!moduleName) return false;
+            if (this.isAdmin()) return true;
             return Boolean(this.access && this.access[moduleName] === true);
         },
 
@@ -58,19 +35,14 @@
                 .eq('user_id', this.user.id)
                 .eq('has_access', true);
 
-            if (response.error) {
-                throw response.error;
-            }
+            if (response.error) throw response.error;
 
             const access = {};
-
             (response.data || []).forEach(row => {
                 access[row.module_name] = true;
             });
 
             this.access = access;
-
-            // Эмуляция объекта profile для обратной совместимости с UsersModule
             this.profile = {
                 id: this.user.id,
                 email: this.user.email,
@@ -81,33 +53,12 @@
             return access;
         },
 
-        async updatePresence() {
-            // Присутствие больше не отслеживается без
-            // отдельной таблицы профилей — функция
-            // оставлена как no-op для совместимости
-            // с остальными модулями.
-        },
-
-        startPresence() {
-            // no-op: presence отключён в упрощённой схеме авторизации
-        },
-
-        stopPresence() {
-            if (this.presenceTimer) {
-                clearInterval(this.presenceTimer);
-                this.presenceTimer = null;
-            }
-        },
-
         redirectToHome() {
             window.location.href = '/';
         },
 
         async initialize() {
-            if (this.initialized) {
-                return;
-            }
-
+            if (this.initialized) return;
             this.initialized = true;
 
             const response = await db.auth.getSession();
@@ -123,13 +74,13 @@
             try {
                 await this.loadAccess();
 
-                if (!this.canAccessModule('livestock')) {
+                if (!this.canAccessModule('agronomy')) {
                     window.showSimpleMessage
                         ? window.showSimpleMessage(
                             'Нет доступа',
-                            'У вас нет доступа к модулю животноводства. Обратитесь к администратору.'
+                            'У вас нет доступа к модулю агрономии. Обратитесь к администратору.'
                         )
-                        : alert('У вас нет доступа к модулю животноводства.');
+                        : alert('У вас нет доступа к модулю агрономии.');
 
                     await db.auth.signOut();
                     this.redirectToHome();
@@ -146,15 +97,10 @@
                 this.user = sessionValue ? sessionValue.user : null;
 
                 if (!sessionValue) {
-                    this.stopPresence();
                     this.access = {};
                     this.redirectToHome();
                 }
             });
         }
     };
-
-    window.addEventListener('beforeunload', () => {
-        window.AuthModule.stopPresence();
-    });
 })();

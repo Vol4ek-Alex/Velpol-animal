@@ -1,6 +1,18 @@
-// Проверка авторизации
-if (!checkModuleAuth()) {
-    window.location.href = '/';
+// Инициализация авторизации
+async function initAuth() {
+    if (window.AuthModule && typeof window.AuthModule.initialize === 'function') {
+        await window.AuthModule.initialize();
+    }
+}
+
+// Проверка авторизации (старая функция для совместимости)
+function checkModuleAuth() {
+    const user = window.CommonUtils.getCurrentUser();
+    if (!user) {
+        window.location.href = '/';
+        return false;
+    }
+    return true;
 }
 
 // Навигация
@@ -30,8 +42,16 @@ function loadPage(page) {
 }
 
 function logout() {
-    window.CommonUtils.logout();
+    db.auth.signOut();
+    localStorage.removeItem('velpol_user');
+    localStorage.removeItem('velpol_module');
+    window.location.href = '/';
 }
 
-// Загрузить дашборд при старте
-loadPage('dashboard');
+// Запуск приложения
+initAuth().then(() => {
+    if (window.AuthModule && window.AuthModule.session) {
+        loadPage('dashboard');
+    }
+});
+

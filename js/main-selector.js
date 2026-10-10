@@ -1,20 +1,94 @@
 let selectedModule = null;
-let authMode = 'login'; // 'login' или 'register'
+let authMode = 'login';
+let currentUser = null;
 
-function selectModule(module) {
-    if (module === 'mechanization') {
-        return;
+async function checkAuth() {
+    const { data } = await db.auth.getSession();
+    
+    if (data.session) {
+        currentUser = data.session.user;
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('modules-section').style.display = 'grid';
+        document.getElementById('logout-container').style.display = 'block';
+        
+        // Проверка прав администратора
+        checkAdminAccess();
+    } else {
+        document.getElementById('login-section').style.display = 'block';
+        document.getElementById('modules-section').style.display = 'none';
+        document.getElementById('logout-container').style.display = 'none';
+        document.getElementById('admin-module').style.display = 'none';
+    }
+}
+
+async function checkAdminAccess() {
+    if (!currentUser) return;
+    
+    const { data, error } = await db
+        .from('module_access')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .eq('module_name', 'admin')
+        .eq('has_access', true)
+        .maybeSingle();
+        
+    if (!error && data) {
+        document.getElementById('admin-module').style.display = 'block';
+    }
+}
+
+async function handleLogout() {
+    await db.auth.signOut();
+    localStorage.removeItem('velpol_user');
+    localStorage.removeItem('velpol_module');
+    checkAuth();
+}
+
+async function selectModule(module) {
+    if (module === 'mechanization' || module === 'agronomy') {
+        return; // Модули в разработке
     }
 
     selectedModule = module;
-    const loginSection = document.getElementById('login-section');
-    updateAuthTitle();
-    loginSection.style.display = 'block';
-    loginSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    if (module === 'admin') {
+        window.location.href = 'admin/index.html';
+        return;
+    }
 
-    document.querySelectorAll('.module-card').forEach(card => {
-        card.style.opacity = card.dataset.module === module ? '1' : '0.5';
-    });
+    try {
+        // Проверить доступ к модулю
+        const { data: accessData, error: accessError } = await db
+            .from('module_access')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .eq('module_name', module)
+            .eq('has_access', true)
+            .maybeSingle();
+
+        if (accessError && accessError.code !== 'PGRST116') {
+            throw accessError;
+        }
+
+        if (!accessData) {
+            alert('У вас нет доступа к данному модулю. Обратитесь к администратору.');
+            return;
+        }
+
+        localStorage.setItem('velpol_user', JSON.stringify(currentUser));
+        localStorage.setItem('velpol_module', module);
+
+        const moduleUrls = {
+            'livestock': 'js/livestock/index.html'
+        };
+
+        if (moduleUrls[module]) {
+            window.location.href = moduleUrls[module];
+        }
+    } catch (error) {
+        console.error('Module access error:', error);
+        alert('Произошла ошибка при проверке доступа.');
+    }
 }
 
 function switchAuthMode(mode) {
@@ -25,8 +99,7 @@ function switchAuthMode(mode) {
     const tabLogin = document.getElementById('tab-login');
     const tabRegister = document.getElementById('tab-register');
     
-    document.getElementById('error-container').innerHTML = '';
-    document.getElementById('success-container').innerHTML = '';
+    clearMessages();
 
     if (mode === 'register') {
         fullNameInput.style.display = 'block';
@@ -51,25 +124,11 @@ function switchAuthMode(mode) {
 
 function updateAuthTitle() {
     const loginTitle = document.getElementById('login-title');
-    const moduleTitles = {
-        'livestock': '🐄 Животноводство',
-        'agronomy': '🌾 Агрономия'
-    };
-    
-    if (selectedModule) {
-        const prefix = authMode === 'register' ? 'Регистрация для модуля' : 'Вход в модуль';
-        loginTitle.textContent = `${prefix} ${moduleTitles[selectedModule]}`;
-    }
+    loginTitle.textContent = authMode === 'register' ? 'Регистрация' : 'Вход в систему';
 }
 
 async function handleAuth(event) {
     event.preventDefault();
-
-    if (!selectedModule) {
-        showError('Выберите модуль');
-        return;
-    }
-
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     
@@ -105,32 +164,24 @@ async function handleRegister(email, password) {
             password: password,
             options: {
                 data: {
-                    full_name: fullName,
-                    requested_module: selectedModule
+                    full_name: fullName
                 }
             }
         });
 
         if (error) {
-            console.error('Supabase Auth Error:', error);
             throw new Error(`Ошибка регистрации: ${error.message}`);
         }
 
-        console.log('Registration success:', data);
-
         showSuccess('✅ Регистрация успешна! Проверьте email для подтверждения.');
-        
-        // Очистить форму
         document.getElementById('auth-form').reset();
         
-        // Показать сообщение
         setTimeout(() => {
             document.getElementById('success-container').innerHTML = 
                 '<div class="success-message">📧 Письмо отправлено! Проверьте почту и подтвердите email. После подтверждения обратитесь к администратору для получения доступа.</div>';
         }, 2000);
 
     } catch (error) {
-        console.error('Full registration error:', error);
         throw error;
     }
 }
@@ -142,33 +193,9 @@ async function handleLogin(email, password) {
     });
 
     if (error) throw error;
-
-    // Проверить доступ к модулю
-    const { data: accessData, error: accessError } = await db
-        .from('module_access')
-        .select('*')
-        .eq('user_id', data.user.id)
-        .eq('module_name', selectedModule)
-        .eq('has_access', true)
-        .maybeSingle();
-
-    if (accessError && accessError.code !== 'PGRST116') {
-        throw accessError;
-    }
-
-    if (!accessData) {
-        throw new Error('У вас нет доступа к данному модулю. Обратитесь к администратору.');
-    }
-
-    localStorage.setItem('velpol_user', JSON.stringify(data.user));
-    localStorage.setItem('velpol_module', selectedModule);
-
-    const moduleUrls = {
-        'livestock': 'js/livestock/index.html',
-        'agronomy': 'js/agronomy/index.html'
-    };
-
-    window.location.href = moduleUrls[selectedModule];
+    
+    // После успешного входа проверяем статус
+    checkAuth();
 }
 
 function showError(message) {
@@ -186,23 +213,6 @@ function clearMessages() {
     document.getElementById('success-container').innerHTML = '';
 }
 
-async function checkAuth() {
-    const { data } = await db.auth.getSession();
-
-    if (data.session) {
-        const savedModule = localStorage.getItem('velpol_module');
-
-        if (savedModule && savedModule !== 'mechanization') {
-            const moduleUrls = {
-                'livestock': 'js/livestock/index.html',
-                'agronomy': 'js/agronomy/index.html'
-            };
-
-            window.location.href = moduleUrls[savedModule];
-        }
-    }
-}
-
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
@@ -211,4 +221,5 @@ if ('serviceWorker' in navigator) {
     });
 }
 
+// Запускаем проверку при загрузке
 checkAuth();

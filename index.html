@@ -21,31 +21,8 @@
             <h1>🌾 Velpol Agro System</h1>
             <p>Комплексная система управления сельским хозяйством</p>
         </div>
-        <div class="modules-grid">
-            <div class="module-card" data-module="livestock" onclick="selectModule('livestock')">
-                <span class="module-icon">🐄</span>
-                <h3 class="module-title">Животноводство</h3>
-                <p class="module-description">
-                    Учет поголовья, рационы кормления, перемещения животных и отчетность
-                </p>
-            </div>
-            <div class="module-card" data-module="agronomy" onclick="selectModule('agronomy')">
-                <span class="module-icon">🌾</span>
-                <h3 class="module-title">Агрономия</h3>
-                <p class="module-description">
-                    Управление посевами, полями, культурами и статистика по гектарам
-                </p>
-            </div>
-            <div class="module-card disabled" data-module="mechanization">
-                <span class="module-badge">В разработке</span>
-                <span class="module-icon">🚜</span>
-                <h3 class="module-title">Механизация</h3>
-                <p class="module-description">
-                    Учет техники, планирование работ и контроль расхода ГСМ
-                </p>
-            </div>
-        </div>
-        <div class="login-section" id="login-section" style="display: none;">
+        
+        <div class="login-section" id="login-section">
             <div class="auth-tabs">
                 <button class="auth-tab active" id="tab-login" onclick="switchAuthMode('login')">Вход</button>
                 <button class="auth-tab" id="tab-register" onclick="switchAuthMode('register')">Регистрация</button>
@@ -60,6 +37,42 @@
                 <input type="password" class="form-input" id="password-confirm" placeholder="Подтвердите пароль" style="display: none;">
                 <button type="submit" class="btn-primary" id="auth-button">Войти</button>
             </form>
+        </div>
+
+        <div class="modules-grid" id="modules-section" style="display: none;">
+            <div class="module-card" data-module="livestock" onclick="selectModule('livestock')">
+                <span class="module-icon">🐄</span>
+                <h3 class="module-title">Животноводство</h3>
+                <p class="module-description">
+                    Учет поголовья, рационы кормления, перемещения животных и отчетность
+                </p>
+            </div>
+            <div class="module-card disabled" data-module="agronomy" onclick="selectModule('agronomy')">
+                <span class="module-badge">В разработке</span>
+                <span class="module-icon">🌾</span>
+                <h3 class="module-title">Агрономия</h3>
+                <p class="module-description">
+                    Управление посевами, полями, культурами и статистика по гектарам
+                </p>
+            </div>
+            <div class="module-card disabled" data-module="mechanization">
+                <span class="module-badge">В разработке</span>
+                <span class="module-icon">🚜</span>
+                <h3 class="module-title">Механизация</h3>
+                <p class="module-description">
+                    Учет техники, планирование работ и контроль расхода ГСМ
+                </p>
+            </div>
+            <div class="module-card" data-module="admin" onclick="selectModule('admin')" id="admin-module" style="display: none;">
+                <span class="module-icon">⚙️</span>
+                <h3 class="module-title">Администрирование</h3>
+                <p class="module-description">
+                    Управление пользователями и правами доступа к модулям
+                </p>
+            </div>
+        </div>
+        <div id="logout-container" style="display: none; text-align: center; margin-top: 20px;">
+            <button class="auth-tab" onclick="handleLogout()">Выйти</button>
         </div>
     </div>
     <script src="js/config.js"></script>

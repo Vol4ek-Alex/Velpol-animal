@@ -447,6 +447,27 @@
                         white-space: nowrap;
                     }
 
+                    /*
+                     * П.7: узкая таблица — «Стоимость»
+                     * и «Замес» не уезжают вправо.
+                     */
+                    .reports-table {
+                        min-width: 480px !important;
+                        width: 480px !important;
+                    }
+
+                    .reports-table th:nth-child(n+3),
+                    .reports-table td:nth-child(n+3) {
+                        width: 88px;
+                    }
+
+                    @media (max-width: 700px) {
+                        .reports-table {
+                            min-width: 420px !important;
+                            width: 420px !important;
+                        }
+                    }
+
                     .reports-empty-cell {
                         padding: 28px !important;
                         color: var(--muted);
@@ -655,7 +676,7 @@
                         </h2>
 
                         <div class="table-responsive">
-                            <table class="glass-table">
+                            <table class="glass-table reports-table">
                                 <thead>
                                     <tr>
                                         <th>

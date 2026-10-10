@@ -1,4 +1,5 @@
 let currentUser = null;
+let currentTab = 'requests';
 
 async function checkAdminAccess() {
     const { data: { session }, error } = await db.auth.getSession();
@@ -130,7 +131,14 @@ async function handleReject(requestId) {
 async function loadUsers() {
     const { data: users, error } = await db.rpc('admin_get_users_with_access');
 
-    document.getElementById('users-section').style.display = 'block';
+    /*
+     * П.2: секция показывается только если
+     * вкладка «Доступы» активна — иначе после
+     * загрузки видны все три вкладки сразу.
+     */
+    if (currentTab === 'users') {
+        document.getElementById('users-section').style.display = 'block';
+    }
 
     const container = document.getElementById('users-container');
 
@@ -240,9 +248,9 @@ async function loadSuggestions() {
     if (counter) {
         counter.hidden = open.length === 0;
         counter.textContent = open.length;
+    }    if (section && currentTab === 'suggestions') {
+        section.style.display = 'block';
     }
-
-    if (section) section.style.display = 'block';
 
     if (!container) return;
 
@@ -260,7 +268,9 @@ async function loadSuggestions() {
         <div class="request-card suggestion-card ${item.is_done ? 'is-blocked' : ''}">
             <div class="suggestion-body">
                 <div class="suggestion-text">${escapeHtml(item.text)}</div>
-                <p class="suggestion-meta">👤 ${escapeHtml(item.user_name || 'Неизвестный')}${item.page ? ' · 📄 ' + escapeHtml(item.page) : ''}</p>
+                <p class="suggestion-meta">
+                    <span class="suggestion-author">👤 ${escapeHtml(item.user_name || 'Неизвестный')}</span>${item.page ? ` · 📄 ${escapeHtml(item.page)}` : ''}
+                </p>
                 <p class="suggestion-meta">📅 ${new Date(item.created_at).toLocaleString('ru-RU')}</p>
             </div>
             <div class="suggestion-actions">
@@ -305,6 +315,8 @@ async function deleteSuggestion(id) {
 }
 
 function switchTab(tabName) {
+    currentTab = tabName;
+
     document.querySelectorAll('.admin-tab').forEach(tab => {
         tab.classList.toggle('active', tab.id === `tab-${tabName}`);
     });

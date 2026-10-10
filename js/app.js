@@ -249,6 +249,17 @@
             return false;
         }
 
+        // История операций — только
+        // для администратора: там
+        // финансовый отчёт по кормам.
+        if (moduleName === 'history') {
+            return Boolean(
+                typeof window.AuthModule.isAdmin ===
+                    'function' &&
+                window.AuthModule.isAdmin()
+            );
+        }
+
         if (
             typeof window.AuthModule.isAdmin ===
             'function' &&
@@ -301,7 +312,7 @@
         }
 
         const names = {
-            dashboard: 'Дашборд',
+            dashboard: 'Статистика',
             diets: 'Рационы',
             herd: 'Поголовье',
             reports: 'Потребность',

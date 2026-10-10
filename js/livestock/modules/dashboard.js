@@ -770,7 +770,7 @@
                     <header class="dashboard-header">
                         <div>
                             <h1 class="dashboard-title">
-                                Дашборд
+                                Статистика
                             </h1>
 
                             <p

@@ -977,15 +977,39 @@
                     }
 
                     .history-item {
+                        position: relative;
                         display: flex;
                         align-items: flex-start;
-                        gap: 12px;
+                        gap: 13px;
                         min-width: 0;
-                        padding: 13px;
-                        border: 1px solid var(--line);
-                        border-radius: 14px;
-                        background: rgba(0,0,0,.16);
+                        padding: 15px 16px;
+                        border: 1px solid
+                            rgba(255, 255, 255, .1);
+                        border-top-color:
+                            rgba(255, 255, 255, .22);
+                        border-radius: 16px;
+                        background:
+                            linear-gradient(
+                                150deg,
+                                rgba(255, 255, 255, .06),
+                                rgba(255, 255, 255, .01) 45%,
+                                transparent
+                            ),
+                            rgba(9, 22, 39, .45);
+                        box-shadow:
+                            0 8px 22px rgba(0, 0, 0, .22),
+                            inset 0 1px 0
+                            rgba(255, 255, 255, .06);
                         animation: tile-in 320ms ease both;
+                        transition:
+                            border-color 180ms ease,
+                            transform 180ms ease;
+                    }
+
+                    .history-item:hover {
+                        border-color:
+                            rgba(255, 255, 255, .2);
+                        transform: translateY(-1px);
                     }
 
                     .history-icon {
@@ -1013,7 +1037,8 @@
                         display: flex;
                         align-items: baseline;
                         justify-content: space-between;
-                        gap: 10px;
+                        gap: 6px 10px;
+                        flex-wrap: wrap;
                     }
 
                     .history-title {
@@ -1056,6 +1081,12 @@
 
                     .history-quantity {
                         flex: 0 0 auto;
+                        padding: 6px 11px;
+                        border: 1px solid
+                            rgba(52, 211, 153, .35);
+                        border-radius: 10px;
+                        background:
+                            rgba(16, 185, 129, .12);
                         color: var(--green);
                         font-family: "JetBrains Mono", monospace;
                         font-size: .86rem;
@@ -1188,17 +1219,12 @@
                         }
 
                         .history-content {
-                            flex-basis: calc(100% - 44px);
-                        }
-
-                        .history-title-row {
-                            align-items: flex-start;
-                            flex-direction: column;
-                            gap: 2px;
+                            flex-basis: calc(100% - 46px);
                         }
 
                         .history-quantity {
-                            margin-left: 44px;
+                            margin-left: 46px;
+                            margin-top: 2px;
                         }
                     }
                 </style>
@@ -1709,32 +1735,139 @@
                     item.movement_type !== 'transfer' &&
                     item.source_group_id
                 ) {
+                    const groupResponse =
+                        await db
+                            .from('farms_and_groups')
+                            .select('id, head_count')
+                            .eq(
+                                'id',
+                                item.source_group_id
+                            )
+                            .maybeSingle();
+
+                    if (groupResponse.error) {
+                        throw groupResponse.error;
+                    }
+
                     const group =
-                        this.groups.find(entry => {
-                            return String(entry.id) ===
-                                String(item.source_group_id);
-                        });
+                        groupResponse.data;
 
                     if (group) {
+                        const current =
+                            this.number(
+                                group.head_count
+                            );
+
+                        // Приход добавлял головы —
+                        // удаляем их; выбытие убирало —
+                        // возвращаем.
+                        const restored =
+                            item.movement_type ===
+                            'arrival'
+                                ? current -
+                                  this.number(
+                                      item.quantity ??
+                                      item.heads
+                                  )
+                                : current +
+                                  this.number(
+                                      item.quantity ??
+                                      item.heads
+                                  );
+
                         const response =
                             await db
                                 .from('farms_and_groups')
                                 .update({
                                     head_count:
-                                        this.number(
-                                            group.head_count
-                                        ) +
-                                        this.number(
-                                            item.quantity ??
-                                            item.heads
-                                        )
+                                        Math.max(0, restored)
                                 })
-                                .eq('id', group.id);
+                                .eq('id', group.id)
+                                .select('id');
 
                         if (response.error) {
                             throw response.error;
                         }
+
+                        if (
+                            !response.data ||
+                            response.data.length === 0
+                        ) {
+                            throw new Error(
+                                'Не удалось изменить поголовье — проверьте права на изменение групп.'
+                            );
+                        }
                     }
+                }
+
+                if (
+                    item.movement_type === 'transfer'
+                ) {
+                    // Перевод: возвращаем головы
+                    // источнику и убираем из приёмника.
+                    const restoreSide =
+                        async (groupId, delta) => {
+                            if (!groupId) {
+                                return;
+                            }
+
+                            const response =
+                                await db
+                                    .from(
+                                        'farms_and_groups'
+                                    )
+                                    .select(
+                                        'id, head_count'
+                                    )
+                                    .eq('id', groupId)
+                                    .maybeSingle();
+
+                            if (response.error) {
+                                throw response.error;
+                            }
+
+                            if (!response.data) {
+                                return;
+                            }
+
+                            const next =
+                                Math.max(
+                                    0,
+                                    this.number(
+                                        response.data
+                                            .head_count
+                                    ) + delta
+                                );
+
+                            const update =
+                                await db
+                                    .from(
+                                        'farms_and_groups'
+                                    )
+                                    .update({
+                                        head_count: next
+                                    })
+                                    .eq('id', groupId)
+                                    .select('id');
+
+                            if (update.error) {
+                                throw update.error;
+                            }
+                        };
+
+                    await restoreSide(
+                        item.source_group_id,
+                        this.number(
+                            item.quantity ?? item.heads
+                        )
+                    );
+
+                    await restoreSide(
+                        item.destination_group_id,
+                        -this.number(
+                            item.quantity ?? item.heads
+                        )
+                    );
                 }
 
                 const response = await db

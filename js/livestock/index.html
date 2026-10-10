@@ -35,7 +35,7 @@
             --page-bg: #091728;
             --page-bg-deep: #060e1b;
 
-            --glass: rgba(20, 39, 64, 0.68);
+            --glass: rgba(20, 39, 64, 0.44);
             --glass-strong: rgba(14, 30, 51, 0.96);
             --input-bg: rgba(3, 10, 20, 0.58);
 
@@ -71,7 +71,12 @@
         html {
             width: 100%;
             min-height: 100%;
-            overflow-x: hidden;
+            /*
+             * clip (не hidden): hidden делает html
+             * scroll-контейнером и ломает
+             * position: sticky у меню.
+             */
+            overflow-x: clip;
             background: var(--page-bg-deep);
         }
 
@@ -83,7 +88,7 @@
             min-height: 100vh;
             min-height: 100dvh;
             margin: 0;
-            overflow-x: hidden;
+            overflow-x: clip;
             color: var(--text);
             background: var(--page-bg);
             font-family: "Exo 2", sans-serif;
@@ -195,20 +200,23 @@
         .glass-panel {
             position: relative;
             min-width: 0;
-            border: 1px solid var(--line);
-            border-top-color: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-top-color: rgba(255, 255, 255, 0.26);
             border-radius: var(--card-radius);
             background:
                 linear-gradient(
-                    145deg,
-                    rgba(255, 255, 255, 0.075),
-                    rgba(255, 255, 255, 0.018) 42%,
+                    150deg,
+                    rgba(255, 255, 255, 0.1),
+                    rgba(255, 255, 255, 0.025) 42%,
                     transparent
                 ),
                 var(--glass);
-            box-shadow: var(--shadow);
-            backdrop-filter: blur(18px) saturate(135%);
-            -webkit-backdrop-filter: blur(18px) saturate(135%);
+            box-shadow:
+                0 14px 40px rgba(0, 0, 0, 0.22),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px) saturate(140%);
+            -webkit-backdrop-filter:
+                blur(20px) saturate(140%);
         }
 
         .glass-panel:hover {
@@ -219,6 +227,7 @@
             position: sticky;
             top: 14px;
             z-index: 100;
+            align-self: flex-start;
             display: flex;
             flex: 0 0 var(--sidebar-width);
             flex-direction: column;
@@ -428,7 +437,12 @@
             right: 0;
             bottom: 0;
             left: 0;
-            z-index: 1;
+            /*
+             * 0: ниже .app-layout (z-index:1),
+             * чтобы подпись была позади карт,
+             * но поверх фона (-3).
+             */
+            z-index: 0;
             padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
             color: var(--subtle);
             font-size: 0.72rem;
@@ -595,15 +609,29 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            min-height: 40px;
-            padding: 9px 15px;
-            border: 1px solid var(--line-bright);
+            min-height: 44px;
+            padding: 10px 18px;
+            border: 1px solid
+                rgba(255, 255, 255, 0.28);
+            border-top-color:
+                rgba(255, 255, 255, 0.45);
             border-radius: 999px;
-            background: rgba(15, 31, 52, 0.92);
+            background:
+                linear-gradient(
+                    150deg,
+                    rgba(255, 255, 255, 0.16),
+                    rgba(255, 255, 255, 0.04) 45%,
+                    rgba(255, 255, 255, 0.01)
+                ),
+                rgba(15, 31, 52, 0.55);
             color: var(--text);
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
-            backdrop-filter: blur(13px);
-            -webkit-backdrop-filter: blur(13px);
+            box-shadow:
+                0 14px 34px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0
+                rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(18px) saturate(150%);
+            -webkit-backdrop-filter:
+                blur(18px) saturate(150%);
             cursor: pointer;
             font-size: 0.8rem;
             font-weight: 700;
@@ -611,7 +639,17 @@
                 opacity 220ms ease,
                 transform 220ms ease,
                 background-color 180ms ease,
-                border-color 180ms ease;
+                border-color 180ms ease,
+                box-shadow 180ms ease;
+        }
+
+        .floating-editor-btn:hover {
+            border-color:
+                rgba(255, 255, 255, 0.4);
+            box-shadow:
+                0 16px 40px rgba(0, 0, 0, 0.48),
+                inset 0 1px 0
+                rgba(255, 255, 255, 0.24);
         }
 
         .floating-editor-btn.active {
@@ -1187,6 +1225,16 @@
                 table-layout: fixed !important;
             }
 
+            /*
+             * П.7: узкие таблицы рационов —
+             * колонка «Замес» не уезжает
+             * за экран.
+             */
+            .diets-table {
+                width: 440px !important;
+                min-width: 440px !important;
+            }
+
             .glass-table th,
             .glass-table td {
                 padding: 10px 11px !important;
@@ -1202,12 +1250,19 @@
             .floating-editor-btn {
                 right: 12px;
                 bottom: calc(12px + env(safe-area-inset-bottom));
-                min-height: 38px;
-                padding: 9px 13px;
-                background: #162f4e;
-                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.38);
-                backdrop-filter: none;
-                -webkit-backdrop-filter: none;
+                min-height: 40px;
+                padding: 9px 14px;
+                background:
+                    linear-gradient(
+                        150deg,
+                        rgba(255, 255, 255, 0.14),
+                        rgba(255, 255, 255, 0.03) 45%,
+                        transparent
+                    ),
+                    rgba(15, 31, 52, 0.72);
+                backdrop-filter: blur(14px) saturate(140%);
+                -webkit-backdrop-filter:
+                    blur(14px) saturate(140%);
                 font-size: 0.74rem;
             }
 
@@ -1296,6 +1351,11 @@
                 min-width: 640px !important;
             }
 
+            .diets-table {
+                width: 400px !important;
+                min-width: 400px !important;
+            }
+
             .glass-table th,
             .glass-table td {
                 padding-right: 8px !important;
@@ -1374,7 +1434,7 @@
                     onclick="navigate('dashboard', this)"
                 >
                     <span>📊</span>
-                    Дашборд
+                    Статистика
                 </li>
 
                 <li

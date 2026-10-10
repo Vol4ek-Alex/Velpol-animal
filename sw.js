@@ -1,4 +1,4 @@
-const CACHE_NAME = 'velpol-agro-v1';
+const CACHE_NAME = 'velpol-agro-v2';
 
 const APP_FILES = [
     './',
@@ -6,6 +6,8 @@ const APP_FILES = [
     './manifest.json',
     './assets/bg-farm.jpg',
     './assets/icon.svg',
+    './assets/icon-192.png',
+    './assets/icon-512.png',
     './styles/main.css',
     './js/config.js',
     './js/app.js',
@@ -13,7 +15,6 @@ const APP_FILES = [
     './js/livestock/index.html',
     './js/livestock/modules/common.js',
     './js/livestock/modules/auth.js',
-    './js/livestock/modules/permissions.js',
     './js/livestock/modules/categories.js',
     './js/livestock/modules/movements.js',
     './js/livestock/modules/dashboard.js',

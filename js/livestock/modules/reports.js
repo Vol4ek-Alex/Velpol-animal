@@ -109,6 +109,7 @@
         calculateSummary(groups) {
             const summary = {};
             let totalWeightKg = 0;
+            let totalCost = 0;
 
             this.diets.forEach(diet => {
                 const group =
@@ -130,6 +131,9 @@
                 const feedUnit =
                     feed?.unit || 'кг';
 
+                const feedPrice =
+                    this.number(feed?.price_per_unit);
+
                 const dailyGroupKg =
                     this.number(diet.norm_per_head) *
                     this.number(group.head_count);
@@ -138,12 +142,16 @@
                     dailyGroupKg *
                     this.daysPeriod;
 
+                const periodCost =
+                    periodKg * feedPrice;
+
                 if (!summary[feedName]) {
                     summary[feedName] = {
                         name: feedName,
                         unit: feedUnit,
                         dailyKg: 0,
-                        periodKg: 0
+                        periodKg: 0,
+                        periodCost: 0
                     };
                 }
 
@@ -153,12 +161,17 @@
                 summary[feedName].periodKg +=
                     periodKg;
 
+                summary[feedName].periodCost +=
+                    periodCost;
+
                 totalWeightKg += periodKg;
+                totalCost += periodCost;
             });
 
             return {
                 list: Object.values(summary),
-                totalWeightKg
+                totalWeightKg,
+                totalCost
             };
         },
 
@@ -187,7 +200,7 @@
                 return `
                     <tr>
                         <td
-                            colspan="4"
+                            colspan="5"
                             class="reports-empty-cell"
                         >
                             Нет назначенных рационов
@@ -225,6 +238,20 @@
                         ${(item.periodKg / 1000).toFixed(2)}
                         т
                     </td>
+
+                    <td class="reports-cost-cell">
+                        ${
+                            item.periodCost > 0
+                                ? item.periodCost.toLocaleString(
+                                    'ru-RU',
+                                    {
+                                        maximumFractionDigits: 2
+                                    }
+                                )
+                                : '—'
+                        }
+                        BYN
+                    </td>
                 </tr>
             `).join('');
         },
@@ -235,6 +262,9 @@
 
             const totalWeightKg =
                 summary.totalWeightKg;
+
+            const totalCost =
+                summary.totalCost || 0;
 
             return `
                 <style>
@@ -300,6 +330,21 @@
 
                     .reports-selector {
                         margin-bottom: 14px;
+                    }
+
+                    .reports-cost-card {
+                        border-color:
+                            rgba(251,191,36,.35);
+                        background:
+                            linear-gradient(
+                                135deg,
+                                rgba(15,23,42,.9),
+                                rgba(251,191,36,.12)
+                            );
+                    }
+
+                    .reports-cost-value {
+                        color: var(--amber);
                     }
 
                     .reports-total-card {
@@ -376,6 +421,16 @@
                         font-size: 1rem;
                         font-weight: 800;
                         text-align: right;
+                    }
+
+                    .reports-cost-cell {
+                        color: var(--amber);
+                        font-family:
+                            "JetBrains Mono",
+                            monospace;
+                        font-weight: 700;
+                        text-align: right;
+                        white-space: nowrap;
                     }
 
                     .reports-empty-cell {
@@ -529,6 +584,48 @@
                         </div>
                     </section>
 
+                    ${
+                        totalCost > 0
+                            ? `
+                                <section
+                                    class="
+                                        glass-panel
+                                        reports-total-card
+                                        reports-cost-card
+                                    "
+                                >
+                                    <div>
+                                        <div
+                                            class="
+                                                reports-total-label
+                                            "
+                                        >
+                                            Стоимость кормов
+                                            (${this.escape(
+                                                this.getPeriodLabel()
+                                            )})
+                                        </div>
+
+                                        <div
+                                            class="
+                                                reports-total-value
+                                                reports-cost-value
+                                            "
+                                        >
+                                            ${totalCost.toLocaleString(
+                                                'ru-RU',
+                                                {
+                                                    maximumFractionDigits: 2
+                                                }
+                                            )}
+                                            <span>BYN</span>
+                                        </div>
+                                    </div>
+                                </section>
+                            `
+                            : ''
+                    }
+
                     <section
                         class="
                             glass-panel
@@ -561,6 +658,10 @@
 
                                         <th>
                                             Объём, тонн
+                                        </th>
+
+                                        <th>
+                                            Стоимость
                                         </th>
                                     </tr>
                                 </thead>
@@ -715,7 +816,20 @@
                     `итого: ${
                         (item.periodKg / 1000)
                             .toFixed(2)
-                    } т\n`;
+                    } т` +
+                    (
+                        item.periodCost > 0
+                            ? ` | ${
+                                item.periodCost.toLocaleString(
+                                    'ru-RU',
+                                    {
+                                        maximumFractionDigits: 2
+                                    }
+                                )
+                            } BYN`
+                            : ''
+                    ) +
+                    `\n`;
             });
 
             text +=
@@ -723,6 +837,18 @@
                     (summary.totalWeightKg / 1000)
                         .toFixed(2)
                 } тонн`;
+
+            if (summary.totalCost > 0) {
+                text +=
+                    `\nСтоимость: ${
+                        summary.totalCost.toLocaleString(
+                            'ru-RU',
+                            {
+                                maximumFractionDigits: 2
+                            }
+                        )
+                    } BYN`;
+            }
 
             return text;
         },

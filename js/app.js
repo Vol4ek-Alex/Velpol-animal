@@ -682,23 +682,9 @@
             );
         }
 
-        header.innerHTML = `
-            <button
-                type="button"
-                class="mobile-menu-icon"
-                id="mobile-menu-icon"
-                aria-label="Открыть меню"
-                aria-expanded="false"
-            >
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-        `;
-
         const menuButton =
-            document.getElementById(
-                'mobile-menu-icon'
+            header.querySelector(
+                '.mobile-menu-icon'
             );
 
         if (menuButton) {
@@ -741,8 +727,8 @@
             );
 
         const menuButton =
-            document.getElementById(
-                'mobile-menu-icon'
+            document.querySelector(
+                '.mobile-menu-icon'
             );
 
         if (!sidebar) {
@@ -784,8 +770,8 @@
             );
 
         const menuButton =
-            document.getElementById(
-                'mobile-menu-icon'
+            document.querySelector(
+                '.mobile-menu-icon'
             );
 
         if (sidebar) {

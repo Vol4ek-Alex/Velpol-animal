@@ -113,11 +113,11 @@
             background:
                 linear-gradient(
                     180deg,
-                    rgba(7, 17, 31, 0.18),
-                    rgba(4, 11, 22, 0.42)
+                    rgba(7, 17, 31, 0.1),
+                    rgba(4, 11, 22, 0.3)
                 ),
                 url("../../assets/bg-farm.jpg") center center / cover no-repeat;
-            filter: blur(14px) brightness(0.78) saturate(1.08);
+            filter: blur(14px) brightness(0.9) saturate(1.08);
         }
 
         .bg-atmospheric::after {
@@ -126,14 +126,14 @@
             background:
                 linear-gradient(
                     180deg,
-                    rgba(5, 13, 25, 0.16) 0%,
-                    rgba(5, 14, 27, 0.1) 45%,
-                    rgba(3, 9, 18, 0.48) 100%
+                    rgba(5, 13, 25, 0.1) 0%,
+                    rgba(5, 14, 27, 0.06) 45%,
+                    rgba(3, 9, 18, 0.34) 100%
                 ),
                 radial-gradient(
                     ellipse at center,
                     rgba(8, 20, 36, 0.02),
-                    rgba(3, 8, 16, 0.36)
+                    rgba(3, 8, 16, 0.26)
                 );
             content: "";
         }
@@ -340,6 +340,76 @@
 
         .mobile-header {
             display: none;
+        }
+
+        .mobile-menu-icon {
+            position: relative;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            width: 42px;
+            min-height: 42px;
+            padding: 0;
+            border: 1px solid var(--line-bright);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.07);
+            cursor: pointer;
+            transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+        }
+
+        .mobile-menu-icon span {
+            display: block;
+            width: 20px;
+            height: 2px;
+            border-radius: 2px;
+            background: #fff;
+            transition: transform 240ms ease, opacity 180ms ease;
+        }
+
+        .mobile-menu-icon[aria-expanded="true"] {
+            border-color: var(--line-green);
+            background: rgba(16, 185, 129, 0.18);
+        }
+
+        .mobile-menu-icon[aria-expanded="true"] span:nth-child(1) {
+            transform: translateY(7px) rotate(45deg);
+        }
+
+        .mobile-menu-icon[aria-expanded="true"] span:nth-child(2) {
+            opacity: 0;
+            transform: scaleX(0);
+        }
+
+        .mobile-menu-icon[aria-expanded="true"] span:nth-child(3) {
+            transform: translateY(-7px) rotate(-45deg);
+        }
+
+        .mobile-menu-icon:active {
+            transform: scale(0.94);
+        }
+
+        @keyframes panel-in {
+            from {
+                opacity: 0;
+                transform: translateY(14px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .glass-panel,
+        .stat-card {
+            animation: panel-in 320ms ease both;
+        }
+
+        #main-content > div:first-child > .stat-card,
+        #main-content > div:first-child > .glass-panel {
+            animation-delay: 40ms;
         }
 
         .menu-btn {
@@ -720,7 +790,7 @@
 
             .bg-atmospheric {
                 inset: -10px;
-                filter: blur(9px) brightness(0.76) saturate(1.04);
+                filter: blur(9px) brightness(0.92) saturate(1.06);
             }
 
             .app-layout {
@@ -738,15 +808,28 @@
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
+                gap: 10px;
                 width: 100%;
                 min-height: calc(54px + env(safe-area-inset-top));
                 padding:
                     env(safe-area-inset-top)
                     12px
                     0;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-                background: rgba(13, 29, 49, 0.98);
-                box-shadow: 0 5px 20px rgba(0, 0, 0, 0.25);
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                background: rgba(11, 24, 42, 0.42);
+                backdrop-filter: blur(16px) saturate(1.2);
+                -webkit-backdrop-filter: blur(16px) saturate(1.2);
+                box-shadow: 0 4px 18px rgba(0, 0, 0, 0.14);
+            }
+
+            .mobile-header .mobile-header-title {
+                overflow: hidden;
+                color: #ffffff;
+                font-size: 0.86rem;
+                font-weight: 800;
+                letter-spacing: -0.01em;
+                text-overflow: ellipsis;
+                white-space: nowrap;
             }
 
             /*
@@ -1056,20 +1139,18 @@
     <header class="mobile-header">
         <button
             type="button"
-            class="menu-btn"
+            class="mobile-menu-icon"
+            id="mobile-menu-icon-static"
             onclick="toggleMenu()"
             aria-label="Открыть меню"
+            aria-expanded="false"
         >
-            ☰ Меню
+            <span></span>
+            <span></span>
+            <span></span>
         </button>
 
-        <span
-            style="
-                color: #ffffff;
-                font-size: 0.9rem;
-                font-weight: 800;
-            "
-        >
+        <span class="mobile-header-title">
             Контроль•животноводство
         </span>
     </header>
@@ -1386,7 +1467,6 @@
     <script src="../../js/config.js"></script>
     <script src="modules/common.js"></script>
     <script src="modules/auth.js"></script>
-    <script src="modules/permissions.js"></script>
 
     <script src="modules/categories.js"></script>
     <script src="modules/movements.js"></script>

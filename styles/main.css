@@ -325,6 +325,28 @@ body[data-module-active="livestock"] .bg-atmospheric {
 @media (max-width: 768px) {
     .header h1 { font-size: 2rem; }
     .modules-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+
+@media (max-width: 700px) {
+    body {
+        padding: 16px 12px 170px;
+        align-items: flex-start;
+    }
+
+    .admin-dock {
+        left: 10px;
+        right: 10px;
+        bottom: calc(12px + env(safe-area-inset-bottom));
+    }
+
+    .admin-dock .module-card {
+        padding: 14px 16px;
+    }
+
+    #logout-container {
+        top: 12px;
+        right: 12px;
+    }
+}
     .module-card { padding: 16px 18px; }
     .module-icon { font-size: 1.7rem; }
 }

@@ -179,6 +179,7 @@
                 Object.keys(feedMap);
 
             let groupTotal = 0;
+            let groupCost = 0;
 
             const rows = feedIds.map(feedId => {
                 const feed =
@@ -199,8 +200,16 @@
                         this.number(group.head_count)
                     );
 
+                const feedPrice =
+                    this.number(feed?.price_per_unit);
+
+                const rowCost =
+                    groupTotalKg * feedPrice;
+
                 groupTotal += groupTotalKg;
+                groupCost += rowCost;
                 totals.totalKg += groupTotalKg;
+                totals.totalCost += rowCost;
 
                 const feedName =
                     feed?.name || 'Корм / добавка';
@@ -385,6 +394,25 @@
                             )}
                             кг
                         </strong>
+                        ${
+                            groupCost > 0
+                                ? `
+                                    <span
+                                        class="
+                                            diet-group-cost
+                                        "
+                                    >
+                                        · ~${groupCost.toLocaleString(
+                                            'ru-RU',
+                                            {
+                                                maximumFractionDigits: 2
+                                            }
+                                        )}
+                                        BYN/сутки
+                                    </span>
+                                `
+                                : ''
+                        }
                     </div>
                 </section>
             `;
@@ -392,7 +420,8 @@
 
         renderPage(groups, feeds, diets) {
             const totals = {
-                totalKg: 0
+                totalKg: 0,
+                totalCost: 0
             };
 
             const groupCards =
@@ -599,6 +628,14 @@
                             monospace;
                     }
 
+                    .diet-group-cost {
+                        color: var(--green);
+                        font-family:
+                            "JetBrains Mono",
+                            monospace;
+                        font-size:.74rem;
+                    }
+
                     .diets-summary {
                         position:fixed;
                         right:20px;
@@ -684,7 +721,7 @@
                             padding:14px;
                         }
 
-                        .diets-summary {
+                        .diets-summary:not(.diets-cost-summary) {
                             right:10px;
                             bottom:calc(
                                 62px +
@@ -692,6 +729,10 @@
                             );
                             left:10px;
                             padding:10px 13px;
+                        }
+
+                        .diets-cost-summary {
+                            margin-top:10px;
                         }
 
                         .diets-summary-value {
@@ -809,6 +850,39 @@
                             кг
                         </div>
                     </div>
+
+                    ${
+                        totals.totalCost > 0
+                            ? `
+                                <div class="diets-summary diets-cost-summary">
+                                    <div>
+                                        <div
+                                            class="
+                                                diets-summary-label
+                                            "
+                                        >
+                                            Стоимость замеса
+                                            (${this.getTimeLabel()})
+                                        </div>
+
+                                        <div
+                                            class="
+                                                diets-summary-value
+                                            "
+                                        >
+                                            ${totals.totalCost.toLocaleString(
+                                                'ru-RU',
+                                                {
+                                                    maximumFractionDigits: 2
+                                                }
+                                            )}
+                                            <span>BYN/сутки</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `
+                            : ''
+                    }
                 </div>
             `;
         },
@@ -1417,15 +1491,47 @@
                             align-items:center;
                             justify-content:space-between;
                             gap:8px;
+                            flex-wrap:wrap;
                             padding:9px;
                             border:1px solid var(--line);
                             border-radius:10px;
                         ">
-                            <span>
+                            <span style="
+                                flex:1 1 120px;
+                                min-width:0;
+                                overflow-wrap:anywhere;
+                            ">
                                 ${this.escape(
                                     feed.name
                                 )}
                             </span>
+
+                            <label style="
+                                display:flex;
+                                align-items:center;
+                                gap:6px;
+                                color:var(--muted);
+                                font-size:.75rem;
+                            ">
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    class="
+                                        modal-input
+                                        feed-price-input
+                                    "
+                                    data-id="${feed.id}"
+                                    value="${this.number(feed.price_per_unit)}"
+                                    title="Цена за единицу, BYN"
+                                    style="
+                                        width:88px;
+                                        min-height:34px;
+                                        padding:6px 8px;
+                                    "
+                                >
+                                BYN/${this.escape(feed.unit || 'кг')}
+                            </label>
 
                             <span style="
                                 display:flex;
@@ -1458,6 +1564,45 @@
                             </span>
                         </div>
                     `).join('');
+
+                list
+                    .querySelectorAll(
+                        '.feed-price-input'
+                    )
+                    .forEach(input => {
+                        input.addEventListener(
+                            'change',
+                            async () => {
+                                const price =
+                                    Math.max(
+                                        0,
+                                        parseFloat(
+                                            input.value
+                                        ) || 0
+                                    );
+
+                                const updated =
+                                    await db
+                                        .from('feeds')
+                                        .update({
+                                            price_per_unit: price,
+                                            updated_at: new Date().toISOString()
+                                        })
+                                        .eq(
+                                            'id',
+                                            input.dataset.id
+                                        );
+
+                                if (updated.error) {
+                                    errorNode.textContent =
+                                        updated.error.message;
+                                    return;
+                                }
+
+                                errorNode.textContent = '';
+                            }
+                        );
+                    });
 
                 list
                     .querySelectorAll(

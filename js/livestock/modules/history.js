@@ -3,8 +3,12 @@
 
     window.HistoryModule = {
         movements: [],
+        groups: [],
+        feeds: [],
+        diets: [],
         selectedType: 'all',
         selectedFarm: 'Все',
+        selectedMonth: '',
 
         escape(value) {
             if (typeof window.escapeHtml === 'function') {
@@ -27,6 +31,11 @@
             return String(value || '')
                 .replace(/["'«»]/g, '')
                 .trim();
+        },
+
+        number(value) {
+            const result = Number(value);
+            return Number.isFinite(result) ? result : 0;
         },
 
         canView() {
@@ -55,8 +64,12 @@
 
         getTypeLabel(type) {
             const labels = {
+                arrival: 'Приход',
+                departure: 'Выбытие',
                 realization: 'Реализация',
                 mortality: 'Падёж',
+                death: 'Падёж',
+                slaughter: 'Забой',
                 transfer: 'Перевод'
             };
 
@@ -65,12 +78,54 @@
 
         getTypeIcon(type) {
             const icons = {
+                arrival: '➕',
+                departure: '➖',
                 realization: '💰',
                 mortality: '⚠️',
+                death: '⚠️',
+                slaughter: '🔪',
                 transfer: '↔️'
             };
 
             return icons[type] || '📋';
+        },
+
+        currentMonthValue() {
+            const now = new Date();
+
+            return [
+                now.getFullYear(),
+                String(now.getMonth() + 1).padStart(2, '0')
+            ].join('-');
+        },
+
+        getMonthBounds(monthValue) {
+            const [year, month] = String(
+                monthValue || this.currentMonthValue()
+            ).split('-').map(Number);
+
+            const start = new Date(year, month - 1, 1);
+
+            const end = new Date(year, month, 1);
+
+            const days = new Date(year, month, 0).getDate();
+
+            const labels = [
+                'Январь', 'Февраль', 'Март', 'Апрель',
+                'Май', 'Июнь', 'Июль', 'Август',
+                'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+            ];
+
+            return {
+                start,
+                end,
+                days,
+                label: `${labels[month - 1]} ${year}`
+            };
+        },
+
+        formatMonthLabel(monthValue) {
+            return this.getMonthBounds(monthValue).label;
         },
 
         formatDate(value) {
@@ -84,33 +139,186 @@
                 return 'Дата не указана';
             }
 
-            return date.toLocaleString('ru-RU', {
+            return date.toLocaleDateString('ru-RU', {
                 year: 'numeric',
                 month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
+                day: '2-digit'
             });
         },
 
-        async loadMovements() {
-            const response = await db
-                .from('herd_movements')
-                .select('*')
-                .order('event_date', {
-                    ascending: false
-                })
-                .order('created_at', {
-                    ascending: false
-                });
+        async loadData() {
+            const [
+                movementsResponse,
+                groupsResponse,
+                feedsResponse,
+                dietsResponse
+            ] = await Promise.all([
+                db
+                    .from('herd_movements')
+                    .select('*')
+                    .order('event_date', { ascending: false })
+                    .order('created_at', { ascending: false }),
 
-            if (response.error) {
-                throw response.error;
+                db
+                    .from('farms_and_groups')
+                    .select('*')
+                    .order('farm_name')
+                    .order('group_name'),
+
+                db
+                    .from('feeds')
+                    .select('*')
+                    .order('name'),
+
+                db
+                    .from('diets')
+                    .select('*')
+            ]);
+
+            if (movementsResponse.error) {
+                throw movementsResponse.error;
             }
 
-            this.movements = response.data || [];
+            if (groupsResponse.error) {
+                throw groupsResponse.error;
+            }
 
-            return this.movements;
+            if (feedsResponse.error) {
+                throw feedsResponse.error;
+            }
+
+            if (dietsResponse.error) {
+                throw dietsResponse.error;
+            }
+
+            this.movements = movementsResponse.data || [];
+            this.groups = groupsResponse.data || [];
+            this.feeds = feedsResponse.data || [];
+            this.diets = dietsResponse.data || [];
+        },
+
+        getMonthMovements(monthValue) {
+            const { start, end } = this.getMonthBounds(
+                monthValue || this.selectedMonth
+            );
+
+            return this.movements.filter(item => {
+                const date = new Date(item.event_date);
+
+                if (Number.isNaN(date.getTime())) {
+                    return false;
+                }
+
+                return date >= start && date < end;
+            });
+        },
+
+        calculateFeedUsage(monthValue) {
+            const { days } = this.getMonthBounds(
+                monthValue || this.selectedMonth
+            );
+
+            const usage = {};
+
+            let totalKg = 0;
+            let totalCost = 0;
+
+            this.diets.forEach(diet => {
+                const group =
+                    this.groups.find(item => {
+                        return String(item.id) ===
+                            String(diet.group_id);
+                    });
+
+                if (!group) {
+                    return;
+                }
+
+                const feed =
+                    this.feeds.find(item => {
+                        return String(item.id) ===
+                            String(diet.feed_id);
+                    });
+
+                if (!feed) {
+                    return;
+                }
+
+                const dailyGroupKg =
+                    this.number(diet.norm_per_head) *
+                    this.number(group.head_count);
+
+                const monthKg =
+                    dailyGroupKg * days;
+
+                const price =
+                    this.number(feed.price_per_unit);
+
+                const key = String(feed.id);
+
+                if (!usage[key]) {
+                    usage[key] = {
+                        name: feed.name,
+                        unit: feed.unit || 'кг',
+                        kg: 0,
+                        cost: 0
+                    };
+                }
+
+                usage[key].kg += monthKg;
+                usage[key].cost += monthKg * price;
+
+                totalKg += monthKg;
+                totalCost += monthKg * price;
+            });
+
+            return {
+                list: Object.values(usage),
+                totalKg,
+                totalCost
+            };
+        },
+
+        calculateHeadStats(monthValue) {
+            const movements =
+                this.getMonthMovements(monthValue);
+
+            const stats = {
+                arrival: 0,
+                mortality: 0,
+                slaughter: 0,
+                realization: 0,
+                transfer: 0
+            };
+
+            movements.forEach(item => {
+                const heads = this.number(
+                    item.quantity ?? item.heads
+                );
+
+                if (item.movement_type === 'arrival') {
+                    stats.arrival += heads;
+                } else if (
+                    item.movement_type === 'mortality' ||
+                    item.movement_type === 'death'
+                ) {
+                    stats.mortality += heads;
+                } else if (
+                    item.movement_type === 'slaughter'
+                ) {
+                    stats.slaughter += heads;
+                } else if (
+                    item.movement_type === 'realization'
+                ) {
+                    stats.realization += heads;
+                } else if (
+                    item.movement_type === 'transfer'
+                ) {
+                    stats.transfer += heads;
+                }
+            });
+
+            return stats;
         },
 
         getFarms() {
@@ -140,7 +348,10 @@
         },
 
         getFilteredMovements() {
-            return this.movements.filter(item => {
+            const monthMovements =
+                this.getMonthMovements();
+
+            return monthMovements.filter(item => {
                 const typeMatches =
                     this.selectedType === 'all' ||
                     item.movement_type === this.selectedType;
@@ -182,6 +393,146 @@
             ].join('');
         },
 
+        renderSummaryTiles() {
+            const usage =
+                this.calculateFeedUsage();
+
+            const stats =
+                this.calculateHeadStats();
+
+            const tiles = [
+                {
+                    icon: '🌾',
+                    label: 'Использовано кормов',
+                    value: `${Math.round(
+                        usage.totalKg
+                    ).toLocaleString('ru-RU')} кг`,
+                    sub: usage.totalCost > 0
+                        ? `~${usage.totalCost.toLocaleString(
+                            'ru-RU',
+                            { maximumFractionDigits: 2 }
+                        )} BYN`
+                        : 'цены не заданы',
+                    accent: 'green'
+                },
+                {
+                    icon: '⚠️',
+                    label: 'Падёж',
+                    value: `${stats.mortality} гол.`,
+                    sub: 'за месяц',
+                    accent: 'red'
+                },
+                {
+                    icon: '🔪',
+                    label: 'Забой',
+                    value: `${stats.slaughter} гол.`,
+                    sub: 'за месяц',
+                    accent: 'amber'
+                },
+                {
+                    icon: '💰',
+                    label: 'Реализация',
+                    value: `${stats.realization} гол.`,
+                    sub: 'за месяц',
+                    accent: 'blue'
+                },
+                {
+                    icon: '➕',
+                    label: 'Приход',
+                    value: `${stats.arrival} гол.`,
+                    sub: 'за месяц',
+                    accent: 'green'
+                },
+                {
+                    icon: '↔️',
+                    label: 'Переводы',
+                    value: `${stats.transfer} гол.`,
+                    sub: 'за месяц',
+                    accent: 'purple'
+                }
+            ];
+
+            return tiles.map((tile, index) => `
+                <div
+                    class="
+                        history-tile
+                        history-tile-${tile.accent}
+                    "
+                    style="animation-delay:${index * 45}ms"
+                >
+                    <div class="history-tile-icon">
+                        ${tile.icon}
+                    </div>
+
+                    <div class="history-tile-body">
+                        <div class="history-tile-label">
+                            ${tile.label}
+                        </div>
+
+                        <div class="history-tile-value">
+                            ${tile.value}
+                        </div>
+
+                        <div class="history-tile-sub">
+                            ${tile.sub}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        },
+
+        renderFeedUsageRows() {
+            const usage =
+                this.calculateFeedUsage();
+
+            if (!usage.list.length) {
+                return `
+                    <div class="history-usage-empty">
+                        Рационы не заданы — расчёт невозможен
+                    </div>
+                `;
+            }
+
+            return `
+                <table class="glass-table history-usage-table">
+                    <thead>
+                        <tr>
+                            <th>Корм</th>
+                            <th>Расход</th>
+                            <th>Стоимость</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        ${usage.list.map(item => `
+                            <tr>
+                                <td>${this.escape(item.name)}</td>
+                                <td>
+                                    ${Math.round(
+                                        item.kg
+                                    ).toLocaleString('ru-RU')}
+                                    ${this.escape(item.unit)}
+                                </td>
+                                <td class="history-usage-cost">
+                                    ${
+                                        item.cost > 0
+                                            ? item.cost.toLocaleString(
+                                                'ru-RU',
+                                                {
+                                                    maximumFractionDigits: 2
+                                                }
+                                            )
+                                            : '—'
+                                    }
+                                    BYN
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        },
+
         renderMovement(item) {
             const source = `
                 ${this.escape(
@@ -221,32 +572,10 @@
             const categoryText = isTransfer
                 ? `
                     ${
-                        item.source_category_name
-                            ? `
-                                <span
-                                    class="
-                                        history-category
-                                    "
-                                >
-                                    Откуда:
-                                    ${this.escape(
-                                        item.source_category_name
-                                    )}
-                                </span>
-                            `
-                            : ''
-                    }
-
-                    ${
                         item.destination_category_name
                             ? `
-                                <span
-                                    class="
-                                        history-category
-                                    "
-                                >
-                                    Куда:
-                                    ${this.escape(
+                                <span class="history-category">
+                                    Куда: ${this.escape(
                                         item.destination_category_name
                                     )}
                                 </span>
@@ -256,16 +585,11 @@
                 `
                 : `
                     ${
-                        item.source_category_name
+                        item.destination_category_name
                             ? `
-                                <span
-                                    class="
-                                        history-category
-                                    "
-                                >
-                                    Категория:
-                                    ${this.escape(
-                                        item.source_category_name
+                                <span class="history-category">
+                                    Категория: ${this.escape(
+                                        item.destination_category_name
                                     )}
                                 </span>
                             `
@@ -332,8 +656,24 @@
             const movements =
                 this.getFilteredMovements();
 
+            const monthValue =
+                this.selectedMonth ||
+                this.currentMonthValue();
+
             return `
                 <style>
+                    @keyframes tile-in {
+                        from {
+                            opacity: 0;
+                            transform: translateY(12px) scale(.97);
+                        }
+
+                        to {
+                            opacity: 1;
+                            transform: translateY(0) scale(1);
+                        }
+                    }
+
                     .history-page {
                         width: 100%;
                         min-width: 0;
@@ -356,11 +696,7 @@
                     .history-title-main {
                         margin: 0;
                         color: #fff;
-                        font-size: clamp(
-                            1.45rem,
-                            2.5vw,
-                            2rem
-                        );
+                        font-size: clamp(1.45rem, 2.5vw, 2rem);
                         font-weight: 800;
                         letter-spacing: -.04em;
                     }
@@ -369,6 +705,136 @@
                         margin: 5px 0 0;
                         color: var(--muted);
                         font-size: .86rem;
+                    }
+
+                    .history-month-row {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        margin-bottom: 14px;
+                        flex-wrap: wrap;
+                    }
+
+                    .history-month-input {
+                        min-height: 44px;
+                        padding: 8px 12px;
+                        border: 1px solid var(--line);
+                        border-radius: 12px;
+                        background: rgba(3,10,20,.75);
+                        color: #fff;
+                        color-scheme: dark;
+                        font: inherit;
+                    }
+
+                    .history-month-label {
+                        color: var(--muted);
+                        font-size: .85rem;
+                        font-weight: 700;
+                    }
+
+                    .history-tiles {
+                        display: grid;
+                        grid-template-columns: repeat(
+                            auto-fit,
+                            minmax(190px, 1fr)
+                        );
+                        gap: 10px;
+                        margin-bottom: 14px;
+                    }
+
+                    .history-tile {
+                        display: flex;
+                        align-items: center;
+                        gap: 11px;
+                        padding: 13px 15px;
+                        border: 1px solid var(--line);
+                        border-radius: 15px;
+                        background: rgba(0,0,0,.16);
+                        animation: tile-in 340ms ease both;
+                        transition: transform 180ms ease, border-color 180ms ease;
+                    }
+
+                    .history-tile:hover {
+                        transform: translateY(-2px);
+                        border-color: var(--line-bright);
+                    }
+
+                    .history-tile-icon {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        flex: 0 0 38px;
+                        width: 38px;
+                        height: 38px;
+                        border: 1px solid var(--line);
+                        border-radius: 11px;
+                        background: rgba(255,255,255,.05);
+                        font-size: 1.05rem;
+                    }
+
+                    .history-tile-body {
+                        min-width: 0;
+                    }
+
+                    .history-tile-label {
+                        color: var(--muted);
+                        font-size: .72rem;
+                        font-weight: 700;
+                        text-transform: uppercase;
+                        letter-spacing: .04em;
+                    }
+
+                    .history-tile-value {
+                        margin-top: 3px;
+                        color: #fff;
+                        font-family: "JetBrains Mono", monospace;
+                        font-size: 1.05rem;
+                        font-weight: 800;
+                    }
+
+                    .history-tile-sub {
+                        margin-top: 2px;
+                        color: var(--subtle);
+                        font-size: .7rem;
+                    }
+
+                    .history-tile-green .history-tile-value { color: var(--green); }
+                    .history-tile-red .history-tile-value { color: var(--red); }
+                    .history-tile-amber .history-tile-value { color: var(--amber); }
+                    .history-tile-blue .history-tile-value { color: var(--blue); }
+                    .history-tile-purple .history-tile-value { color: var(--purple); }
+
+                    .history-usage-panel {
+                        margin-bottom: 14px;
+                    }
+
+                    .history-usage-title {
+                        margin: 0 0 10px;
+                        color: #fff;
+                        font-size: .95rem;
+                        font-weight: 800;
+                    }
+
+                    .history-usage-table {
+                        width: 100%;
+                    }
+
+                    .history-usage-table th,
+                    .history-usage-table td {
+                        padding: 8px 10px;
+                        font-size: .78rem;
+                    }
+
+                    .history-usage-cost {
+                        color: var(--amber);
+                        font-family: "JetBrains Mono", monospace;
+                        white-space: nowrap;
+                    }
+
+                    .history-usage-empty {
+                        padding: 12px 0 2px;
+                        color: var(--muted);
+                        font-size: .8rem;
                     }
 
                     .history-filters {
@@ -408,6 +874,7 @@
                         font-size: .76rem;
                         font-weight: 700;
                         white-space: nowrap;
+                        transition: color 150ms ease, background-color 150ms ease;
                     }
 
                     .history-filter-button.active {
@@ -443,6 +910,7 @@
                         border: 1px solid var(--line);
                         border-radius: 14px;
                         background: rgba(0,0,0,.16);
+                        animation: tile-in 320ms ease both;
                     }
 
                     .history-icon {
@@ -512,9 +980,7 @@
                     .history-quantity {
                         flex: 0 0 auto;
                         color: var(--green);
-                        font-family:
-                            "JetBrains Mono",
-                            monospace;
+                        font-family: "JetBrains Mono", monospace;
                         font-size: .86rem;
                         white-space: nowrap;
                     }
@@ -558,6 +1024,27 @@
                             width: 100%;
                         }
 
+                        .history-month-row {
+                            align-items: stretch;
+                            flex-direction: column;
+                        }
+
+                        .history-month-input {
+                            width: 100%;
+                        }
+
+                        .history-tiles {
+                            grid-template-columns: 1fr 1fr;
+                            gap: 8px;
+                        }
+
+                        .history-tile {
+                            align-items: flex-start;
+                            flex-direction: column;
+                            gap: 8px;
+                            padding: 11px 12px;
+                        }
+
                         .history-filters {
                             grid-template-columns: 1fr;
                         }
@@ -590,19 +1077,15 @@
                             </h1>
 
                             <p class="history-description">
-                                Реализация, падёж и перемещения
-                                поголовья
+                                Итоги месяца: корма, падёж,
+                                реализация, поголовье
                             </p>
                         </div>
 
                         ${
                             this.canUndo()
                                 ? `
-                                    <div
-                                        class="
-                                            history-header-actions
-                                        "
-                                    >
+                                    <div class="history-header-actions">
                                         <button
                                             type="button"
                                             class="
@@ -623,16 +1106,42 @@
                         }
                     </header>
 
+                    <div class="history-month-row">
+                        <input
+                            type="month"
+                            class="history-month-input"
+                            value="${this.escape(monthValue)}"
+                            aria-label="Выбор месяца"
+                        >
+
+                        <span class="history-month-label">
+                            ${this.escape(
+                                this.formatMonthLabel(monthValue)
+                            )}
+                        </span>
+                    </div>
+
+                    <div class="history-tiles">
+                        ${this.renderSummaryTiles()}
+                    </div>
+
+                    <section class="glass-panel history-usage-panel">
+                        <h2 class="history-usage-title">
+                            🌾 Расход кормов за месяц
+                        </h2>
+
+                        ${this.renderFeedUsageRows()}
+                    </section>
+
                     <div class="history-filters">
                         <div class="history-type-filters">
                             ${[
                                 ['all', 'Все операции'],
-                                [
-                                    'realization',
-                                    'Реализация'
-                                ],
+                                ['arrival', 'Приход'],
+                                ['transfer', 'Переводы'],
+                                ['realization', 'Реализация'],
                                 ['mortality', 'Падёж'],
-                                ['transfer', 'Переводы']
+                                ['slaughter', 'Забой']
                             ].map(([type, label]) => `
                                 <button
                                     type="button"
@@ -659,12 +1168,7 @@
                         </select>
                     </div>
 
-                    <section
-                        class="
-                            glass-panel
-                            history-list
-                        "
-                    >
+                    <section class="glass-panel history-list">
                         ${
                             movements.length
                                 ? movements.map(item => {
@@ -674,7 +1178,7 @@
                                 }).join('')
                                 : `
                                     <div class="history-empty">
-                                        Нет операций по выбранным фильтрам
+                                        Нет операций за выбранный месяц
                                     </div>
                                 `
                         }
@@ -692,10 +1196,7 @@
 
             overlay.innerHTML = `
                 <div class="modal-box">
-                    <h3 style="
-                        margin:0;
-                        color:#fff;
-                    ">
+                    <h3 style="margin:0;color:#fff;">
                         Отмена последней операции
                     </h3>
 
@@ -709,10 +1210,7 @@
                         inputmode="numeric"
                         maxlength="4"
                         autocomplete="off"
-                        class="
-                            modal-input
-                            history-pin-input
-                        "
+                        class="modal-input history-pin-input"
                         placeholder="Введите PIN-код"
                         style="margin-top:15px"
                     >
@@ -727,20 +1225,14 @@
                     ">
                         <button
                             type="button"
-                            class="
-                                glass-btn
-                                history-pin-cancel
-                            "
+                            class="glass-btn history-pin-cancel"
                         >
                             Отмена
                         </button>
 
                         <button
                             type="button"
-                            class="
-                                glass-btn
-                                history-pin-submit
-                            "
+                            class="glass-btn history-pin-submit"
                             style="
                                 border-color:var(--amber);
                                 color:var(--amber);
@@ -782,53 +1274,36 @@
                 };
 
                 overlay
-                    .querySelector(
-                        '.history-pin-cancel'
-                    )
-                    .addEventListener(
-                        'click',
-                        () => close(null)
-                    );
+                    .querySelector('.history-pin-cancel')
+                    .addEventListener('click', () => close(null));
 
                 overlay
-                    .querySelector(
-                        '.history-pin-submit'
-                    )
-                    .addEventListener(
-                        'click',
-                        () => {
-                            const pin =
-                                String(
-                                    input.value || ''
-                                ).trim();
+                    .querySelector('.history-pin-submit')
+                    .addEventListener('click', () => {
+                        const pin =
+                            String(input.value || '').trim();
 
-                            if (!/^\d{4}$/.test(pin)) {
-                                errorNode.textContent =
-                                    'Введите PIN из 4 цифр.';
-                                input.focus();
-                                return;
-                            }
-
-                            close(pin);
-                        }
-                    );
-
-                input.addEventListener(
-                    'keydown',
-                    event => {
-                        if (event.key === 'Enter') {
-                            overlay
-                                .querySelector(
-                                    '.history-pin-submit'
-                                )
-                                .click();
+                        if (!/^\d{4}$/.test(pin)) {
+                            errorNode.textContent =
+                                'Введите PIN из 4 цифр.';
+                            input.focus();
+                            return;
                         }
 
-                        if (event.key === 'Escape') {
-                            close(null);
-                        }
+                        close(pin);
+                    });
+
+                input.addEventListener('keydown', event => {
+                    if (event.key === 'Enter') {
+                        overlay
+                            .querySelector('.history-pin-submit')
+                            .click();
                     }
-                );
+
+                    if (event.key === 'Escape') {
+                        close(null);
+                    }
+                });
             });
         },
 
@@ -841,10 +1316,7 @@
 
             overlay.innerHTML = `
                 <div class="modal-box">
-                    <h3 style="
-                        margin:0;
-                        color:#fff;
-                    ">
+                    <h3 style="margin:0;color:#fff;">
                         Подтвердить отмену?
                     </h3>
 
@@ -862,20 +1334,14 @@
                     ">
                         <button
                             type="button"
-                            class="
-                                glass-btn
-                                history-confirm-no
-                            "
+                            class="glass-btn history-confirm-no"
                         >
                             Отмена
                         </button>
 
                         <button
                             type="button"
-                            class="
-                                glass-btn
-                                history-confirm-yes
-                            "
+                            class="glass-btn history-confirm-yes"
                             style="
                                 border-color:var(--red);
                                 color:var(--red);
@@ -903,22 +1369,12 @@
                 };
 
                 overlay
-                    .querySelector(
-                        '.history-confirm-no'
-                    )
-                    .addEventListener(
-                        'click',
-                        () => close(false)
-                    );
+                    .querySelector('.history-confirm-no')
+                    .addEventListener('click', () => close(false));
 
                 overlay
-                    .querySelector(
-                        '.history-confirm-yes'
-                    )
-                    .addEventListener(
-                        'click',
-                        () => close(true)
-                    );
+                    .querySelector('.history-confirm-yes')
+                    .addEventListener('click', () => close(true));
             });
         },
 
@@ -931,10 +1387,7 @@
 
             overlay.innerHTML = `
                 <div class="modal-box">
-                    <h3 style="
-                        margin:0;
-                        color:#fff;
-                    ">
+                    <h3 style="margin:0;color:#fff;">
                         ${this.escape(title)}
                     </h3>
 
@@ -944,10 +1397,7 @@
 
                     <button
                         type="button"
-                        class="
-                            glass-btn
-                            history-message-close
-                        "
+                        class="glass-btn history-message-close"
                         style="
                             width:100%;
                             margin-top:18px;
@@ -960,18 +1410,11 @@
 
             document.body.appendChild(overlay);
 
-            const close = () => {
-                overlay.remove();
-            };
-
             overlay
-                .querySelector(
-                    '.history-message-close'
-                )
-                .addEventListener(
-                    'click',
-                    close
-                );
+                .querySelector('.history-message-close')
+                .addEventListener('click', () => {
+                    overlay.remove();
+                });
         },
 
         async undoLastMovement() {
@@ -1024,7 +1467,7 @@
                 return;
             }
 
-            await this.loadMovements();
+            await this.loadData();
 
             await this.showMessageModal(
                 'Операция отменена',
@@ -1044,10 +1487,31 @@
                 return;
             }
 
+            const monthInput =
+                container.querySelector(
+                    '.history-month-input'
+                );
+
+            if (monthInput) {
+                if (!monthInput.value) {
+                    monthInput.value =
+                        this.currentMonthValue();
+                }
+
+                monthInput.addEventListener(
+                    'change',
+                    () => {
+                        this.selectedMonth =
+                            monthInput.value ||
+                            this.currentMonthValue();
+
+                        this.render();
+                    }
+                );
+            }
+
             container
-                .querySelectorAll(
-                    '.history-filter-button'
-                )
+                .querySelectorAll('.history-filter-button')
                 .forEach(button => {
                     button.addEventListener(
                         'click',
@@ -1108,8 +1572,13 @@
                 return;
             }
 
+            if (!this.selectedMonth) {
+                this.selectedMonth =
+                    this.currentMonthValue();
+            }
+
             try {
-                await this.loadMovements();
+                await this.loadData();
 
                 container.innerHTML =
                     this.renderPage();

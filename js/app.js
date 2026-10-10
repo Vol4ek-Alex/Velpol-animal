@@ -206,8 +206,7 @@
             diets: 'DietsModule',
             herd: 'HerdModule',
             reports: 'ReportsModule',
-            history: 'HistoryModule',
-            users: 'UsersModule'
+            history: 'HistoryModule'
         };
 
         const globalName =
@@ -236,8 +235,7 @@
             diets: 'can_view_diets',
             herd: 'can_view_herd',
             reports: 'can_view_reports',
-            history: 'can_view_history',
-            users: 'can_view_users'
+            history: 'can_view_history'
         };
 
         return permissions[moduleName] || null;
@@ -307,8 +305,7 @@
             diets: 'Рационы',
             herd: 'Поголовье',
             reports: 'Потребность',
-            history: 'История операций',
-            users: 'Пользователи'
+            history: 'История операций'
         };
 
         container.innerHTML = `
@@ -354,8 +351,7 @@
             'diets',
             'herd',
             'reports',
-            'history',
-            'users'
+            'history'
         ];
 
         if (

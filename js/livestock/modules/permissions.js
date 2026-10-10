@@ -54,16 +54,6 @@
                 group: 'Кормление'
             },
             {
-                key: 'can_view_users',
-                label: 'Просмотр пользователей',
-                group: 'Пользователи'
-            },
-            {
-                key: 'can_manage_users',
-                label: 'Управление пользователями',
-                group: 'Пользователи'
-            },
-            {
                 key: 'can_send_messages',
                 label: 'Отправка сообщений',
                 group: 'Пользователи'
@@ -128,8 +118,6 @@
                 can_view_history: false,
                 can_manage_categories: false,
                 can_manage_groups: false,
-                can_view_users: false,
-                can_manage_users: false,
                 can_send_messages: false
             };
         },

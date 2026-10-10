@@ -38,10 +38,22 @@
         .btn:hover { transform: translateY(-2px); }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .logout-btn { position: absolute; top: 20px; right: 20px; }
+        .back-btn { position: absolute; top: 20px; left: 20px; background: rgba(148, 163, 184, 0.15); color: #e2e8f0; border: 1px solid rgba(148, 163, 184, 0.4); }
         .no-requests { text-align: center; padding: 60px 20px; color: #cbd5e1; }
+        .users-section { margin-top: 48px; }
+        .users-section h2 { color: #fff; text-align: center; margin-bottom: 8px; }
+        .users-section .section-subtitle { text-align: center; color: #cbd5e1; margin-bottom: 24px; }
+        .user-card { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; }
+        .user-info h3 { font-size: 1.1rem; margin-bottom: 6px; }
+        .user-info p { color: #cbd5e1; font-size: 0.9rem; margin: 2px 0; }
+        .user-access { display: flex; flex-wrap: wrap; gap: 14px; }
+        .access-toggle { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: #e2e8f0; cursor: pointer; user-select: none; }
+        .access-toggle input { width: 17px; height: 17px; accent-color: #34d399; cursor: pointer; }
+        .user-card.is-blocked { opacity: 0.55; }
     </style>
 </head>
 <body>
+    <button class="btn back-btn" onclick="window.location.href='../index.html'">← Назад</button>
     <button class="btn btn-reject logout-btn" onclick="handleLogout()">Выйти</button>
     
     <div class="admin-container">
@@ -60,6 +72,12 @@
         </div>
 
         <div id="requests-container" class="requests-grid"></div>
+
+        <div id="users-section" class="users-section" style="display: none;">
+            <h2>👤 Доступ к отраслям</h2>
+            <p class="section-subtitle">Отметьте отрасли, к которым пользователь имеет доступ</p>
+            <div id="users-container" class="requests-grid"></div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

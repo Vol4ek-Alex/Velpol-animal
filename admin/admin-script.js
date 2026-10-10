@@ -88,14 +88,11 @@ async function handleApprove(requestId, userId, moduleName) {
 
         if (updateError) throw updateError;
 
-        const { error: accessError } = await db
-            .from('module_access')
-            .upsert({
-                user_id: userId,
-                module_name: moduleName,
-                has_access: true,
-                updated_at: new Date().toISOString()
-            });
+        const { error: accessError } = await db.rpc('admin_set_module_access', {
+            p_user_id: userId,
+            p_module_name: moduleName,
+            p_has_access: true
+        });
 
         if (accessError) throw accessError;
 
@@ -130,6 +127,91 @@ async function handleReject(requestId) {
     }
 }
 
+async function loadUsers() {
+    const { data: users, error } = await db.rpc('admin_get_users_with_access');
+
+    document.getElementById('users-section').style.display = 'block';
+
+    const container = document.getElementById('users-container');
+
+    if (error) {
+        console.error('Error loading users:', error);
+        container.innerHTML = `
+            <div class="request-card">
+                <p style="color:#fb7185;">Не удалось загрузить пользователей: ${error.message}</p>
+                <p style="color:#cbd5e1; font-size:.85rem;">Выполните docs/fix-admin-panel.sql в Supabase SQL Editor.</p>
+            </div>
+        `;
+        return;
+    }
+
+    if (!users || users.length === 0) {
+        container.innerHTML = `
+            <div class="request-card no-requests">
+                <h2>📭 Пользователей нет</h2>
+                <p>Профили появятся после первого входа пользователей в систему</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = users.map(user => {
+        const access = user.access || [];
+        const checkbox = (moduleName) => `
+            <label class="access-toggle">
+                <input type="checkbox"
+                    ${access.includes(moduleName) ? 'checked' : ''}
+                    onchange="handleModuleAccess('${user.id}', '${moduleName}', this.checked, this)">
+                ${getModuleName(moduleName)}
+            </label>
+        `;
+        return `
+            <div class="request-card user-card ${user.is_blocked ? 'is-blocked' : ''}">
+                <div class="user-info">
+                    <h3>${escapeHtml(user.full_name || 'Без имени')}${user.is_blocked ? ' 🚫' : ''}</h3>
+                    <p>👤 ${escapeHtml(user.login || '—')}${user.position ? ' · ' + escapeHtml(user.position) : ''}</p>
+                    <p>Роль: ${escapeHtml(user.role || 'user')}${user.id === currentUser.id ? ' · это вы' : ''}</p>
+                </div>
+                <div class="user-access">
+                    ${checkbox('livestock')}
+                    ${checkbox('agronomy')}
+                    ${checkbox('mechanization')}
+                    ${checkbox('admin')}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+async function handleModuleAccess(userId, moduleName, hasAccess, input) {
+    input.disabled = true;
+
+    try {
+        const { error } = await db.rpc('admin_set_module_access', {
+            p_user_id: userId,
+            p_module_name: moduleName,
+            p_has_access: hasAccess
+        });
+
+        if (error) throw error;
+    } catch (err) {
+        console.error('Module access error:', err);
+        input.checked = !hasAccess;
+        alert('Ошибка: ' + (err.message || 'не удалось изменить доступ'));
+    } finally {
+        input.disabled = false;
+    }
+}
+
 async function handleLogout() {
     await db.auth.signOut();
     window.location.href = '../index.html';
@@ -139,7 +221,8 @@ function getModuleName(name) {
     const names = {
         'livestock': '🐄 Животноводство',
         'agronomy': '🌾 Агрономия',
-        'mechanization': '🚜 Механизация'
+        'mechanization': '🚜 Механизация',
+        'admin': '⚙️ Администрирование'
     };
     return names[name] || name;
 }
@@ -154,5 +237,8 @@ function getStatusText(status) {
 }
 
 checkAdminAccess().then(hasAccess => {
-    if (hasAccess) loadRequests();
+    if (hasAccess) {
+        loadRequests();
+        loadUsers();
+    }
 });

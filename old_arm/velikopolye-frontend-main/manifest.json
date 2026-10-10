@@ -1,0 +1,17 @@
+{
+  "name": "АРМ Великополье",
+  "short_name": "АРМ",
+  "description": "Автоматизированное рабочее место хозяйства Великополье",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#10b981",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2318/2318451.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

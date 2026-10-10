@@ -44,8 +44,8 @@ async function handleLogout() {
 }
 
 async function selectModule(module) {
-    if (module === 'mechanization' || module === 'agronomy') {
-        return; // Модули в разработке
+    if (module === 'agronomy') {
+        return; // Модуль в разработке
     }
 
     selectedModule = module;
@@ -78,7 +78,8 @@ async function selectModule(module) {
         localStorage.setItem('velpol_module', module);
 
         const moduleUrls = {
-            'livestock': 'js/livestock/index.html'
+            'livestock': 'js/livestock/index.html',
+            'mechanization': 'js/mechanization/index.html'
         };
 
         if (moduleUrls[module]) {

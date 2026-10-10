@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'velpol-agro-v3';
+﻿const CACHE_NAME = 'velpol-agro-v4';
 
 const APP_FILES = [
     './',
@@ -28,7 +28,12 @@ const APP_FILES = [
     './js/agronomy/modules/dashboard.js',
     './js/agronomy/modules/fields.js',
     './js/agronomy/modules/crops.js',
-    './mechanization/index.html'
+    './js/mechanization/index.html',
+    './js/mechanization/modules/common.js',
+    './js/mechanization/modules/auth.js',
+    './js/mechanization/modules/app.js',
+    './js/mechanization/modules/dashboard.js',
+    './js/mechanization/modules/fleet.js'
 ];
 
 self.addEventListener('install', event => {

@@ -99,7 +99,7 @@
 
                 await this.loadAccess();
 
-                if (!this.canAccessModule('mech')) {
+                if (!this.canAccessModule('mechanization')) {
                     window.showSimpleMessage
                         ? window.showSimpleMessage(
                             'Нет доступа',

@@ -65,7 +65,9 @@
                     Учет техники, планирование работ и контроль расхода ГСМ
                 </p>
             </div>
-            <div class="module-card" data-module="admin" onclick="selectModule('admin')" id="admin-module" style="display: none;">
+        </div>
+        <div class="admin-dock" id="admin-module" style="display: none;">
+            <div class="module-card" data-module="admin" onclick="selectModule('admin')">
                 <span class="module-icon">⚙️</span>
                 <h3 class="module-title">Администрирование</h3>
                 <p class="module-description">
@@ -73,8 +75,8 @@
                 </p>
             </div>
         </div>
-        <div id="logout-container" style="display: none; text-align: center; margin-top: 20px;">
-            <button class="auth-tab" onclick="handleLogout()">Выйти</button>
+        <div id="logout-container" style="display: none; text-align: center; margin-top: 20px; position: fixed; top: 16px; right: 20px; z-index: 6; margin-top: 0;">
+            <button class="auth-tab" onclick="handleLogout()">Выйти из аккаунта</button>
         </div>
     </div>
     <script src="js/config.js"></script>

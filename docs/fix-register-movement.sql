@@ -12,6 +12,10 @@
 alter table public.diets
     add column if not exists feed_id uuid references public.feeds(id) on delete cascade;
 
+-- FIX 4: diets.name NOT NULL, но код её не пишет — имя корма подтягивается из feeds
+alter table public.diets
+    alter column name drop not null;
+
 -- ---------------------------------------------------------------------------
 -- FIX 1: register_herd_movement
 -- ---------------------------------------------------------------------------
@@ -92,7 +96,16 @@ begin
     )
     values (
         p_source_group_id,
-        p_destination_category_id,
+        coalesce(
+            p_destination_category_id,
+            (
+                select (item ->> 'category_id')::uuid
+                from jsonb_array_elements(p_source_distribution) item
+                where coalesce((item ->> 'heads')::int, 0) > 0
+                order by (item ->> 'heads')::int desc
+                limit 1
+            )
+        ),
         current_date,
         v_type,
         p_quantity,

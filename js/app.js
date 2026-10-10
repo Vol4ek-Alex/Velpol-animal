@@ -908,14 +908,6 @@
             return;
         }
 
-        if (
-            window.MessagesModule &&
-            typeof window.MessagesModule.initialize ===
-            'function'
-        ) {
-            await window.MessagesModule.initialize();
-        }
-
         updateMenuByPermissions();
 
         if (

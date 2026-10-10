@@ -98,6 +98,22 @@ body[data-module-active="livestock"] .bg-atmospheric {
     grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
     gap: 16px;
     margin-bottom: 28px;
+    width: 100%;
+}
+
+.admin-dock {
+    position: fixed;
+    left: 20px;
+    right: 20px;
+    bottom: 16px;
+    display: none;
+    justify-content: center;
+    z-index: 5;
+}
+
+.admin-dock .module-card {
+    max-width: 420px;
+    width: 100%;
 }
 
 .module-card {

@@ -10,7 +10,7 @@ async function checkAuth() {
         document.getElementById('login-section').style.display = 'none';
         document.getElementById('modules-section').style.display = 'grid';
         document.getElementById('logout-container').style.display = 'block';
-        
+
         // Проверка прав администратора
         checkAdminAccess();
     } else {
@@ -18,8 +18,7 @@ async function checkAuth() {
         document.getElementById('modules-section').style.display = 'none';
         document.getElementById('logout-container').style.display = 'none';
         document.getElementById('admin-module').style.display = 'none';
-    }
-}
+    }}
 
 async function checkAdminAccess() {
     if (!currentUser) return;
@@ -33,7 +32,7 @@ async function checkAdminAccess() {
         .maybeSingle();
         
     if (!error && data) {
-        document.getElementById('admin-module').style.display = 'block';
+        document.getElementById('admin-module').style.display = 'flex';
     }
 }
 

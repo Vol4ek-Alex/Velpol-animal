@@ -52,11 +52,6 @@
                 key: 'can_edit_diets',
                 label: 'Изменение рационов',
                 group: 'Кормление'
-            },
-            {
-                key: 'can_send_messages',
-                label: 'Отправка сообщений',
-                group: 'Пользователи'
             }
         ],
 

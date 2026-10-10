@@ -116,7 +116,7 @@
                     rgba(7, 17, 31, 0.18),
                     rgba(4, 11, 22, 0.42)
                 ),
-                url("assets/bg-farm.jpg") center center / cover no-repeat;
+                url("../../assets/bg-farm.jpg") center center / cover no-repeat;
             filter: blur(14px) brightness(0.78) saturate(1.08);
         }
 
@@ -1172,12 +1172,11 @@
 
                 <button
                     type="button"
-                    id="sidebar-logout-button"
                     class="glass-btn auth-logout-button"
-                    hidden
+                    onclick="window.location.href='/'"
                 >
-                    <span>↪</span>
-                    Выйти
+                    <span>←</span>
+                    Назад
                 </button>
             </div>
         </nav>
@@ -1387,7 +1386,6 @@
     <script src="../../js/config.js"></script>
     <script src="modules/common.js"></script>
     <script src="modules/auth.js"></script>
-    <script src="modules/messages.js"></script>
     <script src="modules/permissions.js"></script>
 
     <script src="modules/categories.js"></script>

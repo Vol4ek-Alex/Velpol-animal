@@ -473,6 +473,8 @@
                 'app-booted'
             );
 
+            window.updateModuleBackground();
+
             window.updateFloatingEditor();
 
             if (
@@ -661,6 +663,20 @@
         window.renderCurrentModule();
     };
 
+    window.updateModuleBackground = function () {
+        const map = {
+            dashboard: 'dash',
+            diets: 'diets',
+            herd: 'herd',
+            reports: 'flat',
+            history: 'flat'
+        };
+
+        document.body.dataset.bg =
+            map[window.state.activeModule] ||
+            'flat';
+    };
+
     window.updateFloatingEditor = function () {
         const button =
             document.getElementById(
@@ -688,14 +704,6 @@
             button.classList.add(
                 'editor-hidden'
             );
-
-            if (window.state.isEditMode) {
-                window.state.isEditMode = false;
-
-                document.body.classList.remove(
-                    'edit-mode-active'
-                );
-            }
         }
     };
 

@@ -221,6 +221,22 @@
 
             .users-section h2 { font-size: 1.3rem; }
 
+            .admin-tabs {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+
+            .admin-tab {
+                flex: 1 1 auto;
+                min-height: 42px;
+                padding: 8px 10px;
+                font-size: 0.78rem;
+            }
+
+            .admin-tab .tab-counter {
+                margin-left: 4px;
+            }
+
             .user-card {
                 flex-direction: column;
                 align-items: stretch;
@@ -232,9 +248,13 @@
                 justify-content: space-between;
             }
 
-            .access-toggle { flex: 1 1 45%; font-size: .82rem; }
+            .access-toggle { flex: 1 1 45%; font-size: .8rem; padding: 8px 11px; }
 
-            .access-toggle input { width: 18px; height: 18px; }
+            .access-toggle input { width: 17px; height: 17px; }
+
+            .suggestion-actions { width: 100%; }
+
+            .suggestion-actions .btn { flex: 1 1 auto; }
         }
     </style>
 </head>

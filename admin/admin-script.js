@@ -134,8 +134,7 @@ async function loadUsers() {
 
     const container = document.getElementById('users-container');
 
-    if (error) {
-        console.error('Error loading users:', error);
+    if (error) {        console.error('Error loading users:', error);
         container.innerHTML = `
             <div class="request-card">
                 <p style="color:#fb7185;">Не удалось загрузить пользователей: ${error.message}</p>
@@ -306,28 +305,49 @@ async function deleteSuggestion(id) {
 }
 
 function switchTab(tabName) {
-    const sections = {
-        requests: ['requests-container', 'no-requests', 'loading'],
-        users: ['users-section'],
-        suggestions: ['suggestions-section']
-    };
-
     document.querySelectorAll('.admin-tab').forEach(tab => {
         tab.classList.toggle('active', tab.id === `tab-${tabName}`);
     });
 
-    const allSections = ['users-section', 'suggestions-section'];
-    allSections.forEach(id => {
+    const requestsIds = ['loading', 'no-requests', 'requests-container'];
+    const usersSection = document.getElementById('users-section');
+    const suggestionsSection = document.getElementById('suggestions-section');
+
+    requestsIds.forEach(id => {
         const element = document.getElementById(id);
         if (element) element.style.display = 'none';
     });
 
-    if (tabName === 'users') {
-        document.getElementById('users-section').style.display = 'block';
+    if (usersSection) usersSection.style.display = 'none';
+    if (suggestionsSection) suggestionsSection.style.display = 'none';
+
+    if (tabName === 'requests') {
+        requestsIds.forEach(id => {
+            const element = document.getElementById(id);
+            if (!element) return;
+
+            if (id === 'loading') {
+                element.style.display = 'none';
+            } else if (id === 'no-requests') {
+                const container =
+                    document.getElementById('requests-container');
+                const hasCards =
+                    container && container.children.length > 0;
+
+                element.style.display =
+                    hasCards ? 'none' : 'block';
+            } else {
+                element.style.display = 'grid';
+            }
+        });
     }
 
-    if (tabName === 'suggestions') {
-        document.getElementById('suggestions-section').style.display = 'block';
+    if (tabName === 'users' && usersSection) {
+        usersSection.style.display = 'block';
+    }
+
+    if (tabName === 'suggestions' && suggestionsSection) {
+        suggestionsSection.style.display = 'block';
     }
 }
 
@@ -360,5 +380,6 @@ checkAdminAccess().then(hasAccess => {
         loadRequests();
         loadUsers();
         loadSuggestions();
+        switchTab('requests');
     }
 });

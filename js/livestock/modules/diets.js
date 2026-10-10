@@ -1,8 +1,8 @@
-(function () {
+﻿(function () {
     'use strict';
 
     window.DietsModule = {
-        selectedTime: 'Сутки',
+        selectedTime: 'РЎСѓС‚РєРё',
         activeGroupId: null,
 
         escape(value) {
@@ -84,7 +84,7 @@
         filterGroups(groups) {
             if (
                 !state.currentFarm ||
-                state.currentFarm === 'Все'
+                state.currentFarm === 'Р’СЃРµ'
             ) {
                 return groups;
             }
@@ -147,14 +147,14 @@
 
         getTimeLabel() {
             if (this.selectedTime === 'I') {
-                return 'I кормление';
+                return 'I РєРѕСЂРјР»РµРЅРёРµ';
             }
 
             if (this.selectedTime === 'II') {
-                return 'II кормление';
+                return 'II РєРѕСЂРјР»РµРЅРёРµ';
             }
 
-            return 'Сутки';
+            return 'РЎСѓС‚РєРё';
         },
 
         renderEmpty(message) {
@@ -212,10 +212,10 @@
                 totals.totalCost += rowCost;
 
                 const feedName =
-                    feed?.name || 'Корм / добавка';
+                    feed?.name || 'РљРѕСЂРј / РґРѕР±Р°РІРєР°';
 
                 const unit =
-                    feed?.unit || 'кг';
+                    feed?.unit || 'РєРі';
 
                 return `
                     <tr>
@@ -227,7 +227,7 @@
 
                         <td>
                             ${
-                                this.canEdit()
+                                this.canEdit() && state.isEditMode
                                     ? `
                                         <input
                                             type="number"
@@ -265,7 +265,7 @@
                         </td>
 
                         ${
-                            this.canEdit()
+                            this.canEdit() && state.isEditMode
                                 ? `
                                     <td>
                                         <button
@@ -276,9 +276,9 @@
                                             "
                                             data-group-id="${group.id}"
                                             data-feed-id="${feedId}"
-                                            title="Удалить корм"
+                                            title="РЈРґР°Р»РёС‚СЊ РєРѕСЂРј"
                                         >
-                                            🗑
+                                            рџ—‘
                                         </button>
                                     </td>
                                 `
@@ -316,7 +316,7 @@
                             ${this.number(
                                 group.head_count
                             ).toLocaleString('ru-RU')}
-                            гол.
+                            РіРѕР».
                         </div>
                     </div>
 
@@ -325,22 +325,22 @@
                             <thead>
                                 <tr>
                                     <th>
-                                        Корм / добавка
+                                        РљРѕСЂРј / РґРѕР±Р°РІРєР°
                                     </th>
 
                                     <th>
-                                        Норма,
-                                        кг/гол.
+                                        РќРѕСЂРјР°,
+                                        РєРі/РіРѕР».
                                     </th>
 
                                     <th>
-                                        Замес,
-                                        кг
+                                        Р—Р°РјРµСЃ,
+                                        РєРі
                                     </th>
 
                                     ${
-                                        this.canEdit()
-                                            ? '<th>Действия</th>'
+                                        this.canEdit() && state.isEditMode
+                                            ? '<th>Р”РµР№СЃС‚РІРёСЏ</th>'
                                             : ''
                                     }
                                 </tr>
@@ -353,7 +353,7 @@
                                         <tr>
                                             <td
                                                 colspan="${
-                                                    this.canEdit()
+                                                    this.canEdit() && state.isEditMode
                                                         ? 4
                                                         : 3
                                                 }"
@@ -361,7 +361,7 @@
                                                     diet-empty-row
                                                 "
                                             >
-                                                Рацион не задан
+                                                Р Р°С†РёРѕРЅ РЅРµ Р·Р°РґР°РЅ
                                             </td>
                                         </tr>
                                     `
@@ -371,7 +371,7 @@
                     </div>
 
                     ${
-                        this.canEdit()
+                        this.canEdit() && state.isEditMode
                             ? `
                                 <div class="diet-group-actions">
                                     <button
@@ -379,7 +379,7 @@
                                         class="glass-btn diet-add-feed-button"
                                         data-group-id="${group.id}"
                                     >
-                                        + Добавить корм
+                                        + Р”РѕР±Р°РІРёС‚СЊ РєРѕСЂРј
                                     </button>
                                 </div>
                             `
@@ -387,12 +387,12 @@
                     }
 
                     <div class="diet-group-total">
-                        Замес группы:
+                        Р—Р°РјРµСЃ РіСЂСѓРїРїС‹:
                         <strong>
                             ${groupTotal.toLocaleString(
                                 'ru-RU'
                             )}
-                            кг
+                            РєРі
                         </strong>
                         ${
                             groupCost > 0
@@ -402,13 +402,13 @@
                                             diet-group-cost
                                         "
                                     >
-                                        · ~${groupCost.toLocaleString(
+                                        В· ~${groupCost.toLocaleString(
                                             'ru-RU',
                                             {
                                                 maximumFractionDigits: 2
                                             }
                                         )}
-                                        BYN/сутки
+                                        BYN/СЃСѓС‚РєРё
                                     </span>
                                 `
                                 : ''
@@ -718,6 +718,12 @@
                         white-space:nowrap;
                     }
 
+                    .diets-groups {
+                        display:flex;
+                        flex-direction:column;
+                        gap:14px;
+                    }
+
                     .diets-empty {
                         padding:30px;
                         color:var(--muted);
@@ -782,14 +788,14 @@
                     <header class="diets-header">
                         <div>
                             <h1 class="diets-title">
-                                Загрузочные листы
+                                Р—Р°РіСЂСѓР·РѕС‡РЅС‹Рµ Р»РёСЃС‚С‹
                             </h1>
 
                             <p class="diets-description">
                                 ${
-                                    this.canEdit()
-                                        ? 'Режим редактирования доступен'
-                                        : 'Режим просмотра'
+                                    this.canEdit() && state.isEditMode
+                                        ? 'Р РµР¶РёРј СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ РґРѕСЃС‚СѓРїРµРЅ'
+                                        : 'Р РµР¶РёРј РїСЂРѕСЃРјРѕС‚СЂР°'
                                 }
                             </p>
                         </div>
@@ -803,13 +809,13 @@
                     <div class="diets-toolbar">
                         <div>
                             ${
-                                this.canEdit()
+                                this.canEdit() && state.isEditMode
                                     ? `
                                         <button
                                             type="button"
                                             class="glass-btn diets-feeds-button"
                                         >
-                                            ⚙️ Справочник кормов
+                                            вљ™пёЏ РЎРїСЂР°РІРѕС‡РЅРёРє РєРѕСЂРјРѕРІ
                                         </button>
                                     `
                                     : ''
@@ -818,9 +824,9 @@
 
                         <div class="diets-time-switcher">
                             ${[
-                                ['I', 'I кормление'],
-                                ['II', 'II кормление'],
-                                ['Сутки', '☀️ Сутки']
+                                ['I', 'I РєРѕСЂРјР»РµРЅРёРµ'],
+                                ['II', 'II РєРѕСЂРјР»РµРЅРёРµ'],
+                                ['РЎСѓС‚РєРё', 'вЂпёЏ РЎСѓС‚РєРё']
                             ].map(([value, label]) => `
                                 <button
                                     type="button"
@@ -845,7 +851,7 @@
                         ${
                             groupCards ||
                             this.renderEmpty(
-                                'Нет групп по выбранному объекту.'
+                                'РќРµС‚ РіСЂСѓРїРї РїРѕ РІС‹Р±СЂР°РЅРЅРѕРјСѓ РѕР±СЉРµРєС‚Сѓ.'
                             )
                         }
                     </div>
@@ -857,7 +863,7 @@
                                     diets-summary-label
                                 "
                             >
-                                Итого замес
+                                РС‚РѕРіРѕ Р·Р°РјРµСЃ
                                 (${this.getTimeLabel()})
                             </div>
 
@@ -869,7 +875,7 @@
                                 ${totals.totalKg.toLocaleString(
                                     'ru-RU'
                                 )}
-                                <span>кг</span>
+                                <span>РєРі</span>
                             </div>
                         </div>
 
@@ -879,7 +885,7 @@
                                     diets-summary-label
                                 "
                             >
-                                Стоимость
+                                РЎС‚РѕРёРјРѕСЃС‚СЊ
                             </div>
 
                             <div
@@ -896,10 +902,10 @@
                                                 maximumFractionDigits: 2
                                             }
                                         )
-                                        : 'Н/Д'
+                                        : 'Рќ/Р”'
                                 }
                                 <span>
-                                    BYN/сутки
+                                    BYN/СЃСѓС‚РєРё
                                 </span>
                             </div>
                         </div>
@@ -1012,7 +1018,7 @@
 
             if (!this.canView()) {
                 showAppError(
-                    'У вас нет разрешения на просмотр рационов.'
+                    'РЈ РІР°СЃ РЅРµС‚ СЂР°Р·СЂРµС€РµРЅРёСЏ РЅР° РїСЂРѕСЃРјРѕС‚СЂ СЂР°С†РёРѕРЅРѕРІ.'
                 );
                 return;
             }
@@ -1044,7 +1050,7 @@
                 );
 
                 showAppError(
-                    'Не удалось загрузить рационы.',
+                    'РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ СЂР°С†РёРѕРЅС‹.',
                     error
                 );
             }
@@ -1053,8 +1059,8 @@
         async openFeedModal(groupId) {
             if (!this.canEdit()) {
                 showSimpleMessage(
-                    'Нет доступа',
-                    'Администратор запретил изменение рационов.'
+                    'РќРµС‚ РґРѕСЃС‚СѓРїР°',
+                    'РђРґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ Р·Р°РїСЂРµС‚РёР» РёР·РјРµРЅРµРЅРёРµ СЂР°С†РёРѕРЅРѕРІ.'
                 );
 
                 return;
@@ -1088,7 +1094,7 @@
                         margin:0;
                         color:#fff;
                     ">
-                        Добавить корм в рацион
+                        Р”РѕР±Р°РІРёС‚СЊ РєРѕСЂРј РІ СЂР°С†РёРѕРЅ
                     </h3>
 
                     <div style="
@@ -1102,7 +1108,7 @@
                             font-size:.76rem;
                             font-weight:600;
                         ">
-                            Корм
+                            РљРѕСЂРј
 
                             <select
                                 class="
@@ -1128,8 +1134,8 @@
                             font-size:.76rem;
                             font-weight:600;
                         ">
-                            Суточная норма,
-                            кг на голову
+                            РЎСѓС‚РѕС‡РЅР°СЏ РЅРѕСЂРјР°,
+                            РєРі РЅР° РіРѕР»РѕРІСѓ
 
                             <input
                                 type="number"
@@ -1158,7 +1164,7 @@
                                 diet-feed-cancel
                             "
                         >
-                            Отмена
+                            РћС‚РјРµРЅР°
                         </button>
 
                         <button
@@ -1173,7 +1179,7 @@
                                 color:var(--green);
                             "
                         >
-                            Сохранить
+                            РЎРѕС…СЂР°РЅРёС‚СЊ
                         </button>
                     </div>
                 </div>
@@ -1211,7 +1217,7 @@
 
                         if (!feedId || norm <= 0) {
                             alert(
-                                'Выберите корм и укажите норму.'
+                                'Р’С‹Р±РµСЂРёС‚Рµ РєРѕСЂРј Рё СѓРєР°Р¶РёС‚Рµ РЅРѕСЂРјСѓ.'
                             );
                             return;
                         }
@@ -1260,7 +1266,7 @@
                         } catch (error) {
                             alert(
                                 error.message ||
-                                'Не удалось добавить корм.'
+                                'РќРµ СѓРґР°Р»РѕСЃСЊ РґРѕР±Р°РІРёС‚СЊ РєРѕСЂРј.'
                             );
                         }
                     }
@@ -1342,7 +1348,7 @@
             } catch (error) {
                 alert(
                     error.message ||
-                    'Не удалось сохранить норму.'
+                    'РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ РЅРѕСЂРјСѓ.'
                 );
 
                 await this.render();
@@ -1352,8 +1358,8 @@
         async deleteRow(groupId, feedId) {
             if (!this.canEdit()) {
                 showSimpleMessage(
-                    'Нет доступа',
-                    'Администратор запретил изменение рационов.'
+                    'РќРµС‚ РґРѕСЃС‚СѓРїР°',
+                    'РђРґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ Р·Р°РїСЂРµС‚РёР» РёР·РјРµРЅРµРЅРёРµ СЂР°С†РёРѕРЅРѕРІ.'
                 );
 
                 return;
@@ -1361,8 +1367,8 @@
 
             const confirmed =
                 await this.confirmModal(
-                    'Удалить корм?',
-                    'Корм будет удалён из рациона группы.'
+                    'РЈРґР°Р»РёС‚СЊ РєРѕСЂРј?',
+                    'РљРѕСЂРј Р±СѓРґРµС‚ СѓРґР°Р»С‘РЅ РёР· СЂР°С†РёРѕРЅР° РіСЂСѓРїРїС‹.'
                 );
 
             if (!confirmed) {
@@ -1385,7 +1391,7 @@
             } catch (error) {
                 alert(
                     error.message ||
-                    'Не удалось удалить корм.'
+                    'РќРµ СѓРґР°Р»РѕСЃСЊ СѓРґР°Р»РёС‚СЊ РєРѕСЂРј.'
                 );
             }
         },
@@ -1393,8 +1399,8 @@
         async openManageFeedsModal() {
             if (!this.canEdit()) {
                 showSimpleMessage(
-                    'Нет доступа',
-                    'Администратор запретил управление кормами.'
+                    'РќРµС‚ РґРѕСЃС‚СѓРїР°',
+                    'РђРґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ Р·Р°РїСЂРµС‚РёР» СѓРїСЂР°РІР»РµРЅРёРµ РєРѕСЂРјР°РјРё.'
                 );
 
                 return;
@@ -1412,7 +1418,7 @@
                         margin:0;
                         color:#fff;
                     ">
-                        Справочник кормов
+                        РЎРїСЂР°РІРѕС‡РЅРёРє РєРѕСЂРјРѕРІ
                     </h3>
 
                     <div style="
@@ -1426,7 +1432,7 @@
                                 modal-input
                                 feed-name-input
                             "
-                            placeholder="Название корма"
+                            placeholder="РќР°Р·РІР°РЅРёРµ РєРѕСЂРјР°"
                         >
 
                         <button
@@ -1437,7 +1443,7 @@
                             "
                             style="color:var(--green)"
                         >
-                            Добавить
+                            Р”РѕР±Р°РІРёС‚СЊ
                         </button>
                     </div>
 
@@ -1474,7 +1480,7 @@
                             margin-top:16px;
                         "
                     >
-                        Закрыть
+                        Р—Р°РєСЂС‹С‚СЊ
                     </button>
                 </div>
             `;
@@ -1544,14 +1550,14 @@
                                     "
                                     data-id="${feed.id}"
                                     value="${this.number(feed.price_per_unit)}"
-                                    title="Цена за единицу, BYN"
+                                    title="Р¦РµРЅР° Р·Р° РµРґРёРЅРёС†Сѓ, BYN"
                                     style="
                                         width:88px;
                                         min-height:34px;
                                         padding:6px 8px;
                                     "
                                 >
-                                BYN/${this.escape(feed.unit || 'кг')}
+                                BYN/${this.escape(feed.unit || 'РєРі')}
                             </label>
 
                             <span style="
@@ -1566,7 +1572,7 @@
                                     "
                                     data-id="${feed.id}"
                                 >
-                                    ✏️
+                                    вњЏпёЏ
                                 </button>
 
                                 <button
@@ -1580,7 +1586,7 @@
                                         color:var(--red);
                                     "
                                 >
-                                    🗑
+                                    рџ—‘
                                 </button>
                             </span>
                         </div>
@@ -1646,7 +1652,7 @@
 
                                 const name =
                                     await this.textModal(
-                                        'Новое название корма',
+                                        'РќРѕРІРѕРµ РЅР°Р·РІР°РЅРёРµ РєРѕСЂРјР°',
                                         feed.name
                                     );
 
@@ -1719,7 +1725,7 @@
                                     ) > 0
                                 ) {
                                     errorNode.textContent =
-                                        'Корм используется в рационах.';
+                                        'РљРѕСЂРј РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РІ СЂР°С†РёРѕРЅР°С….';
                                     return;
                                 }
 
@@ -1761,7 +1767,7 @@
 
                         if (!name) {
                             errorNode.textContent =
-                                'Введите название корма.';
+                                'Р’РІРµРґРёС‚Рµ РЅР°Р·РІР°РЅРёРµ РєРѕСЂРјР°.';
                             return;
                         }
 
@@ -1770,7 +1776,7 @@
                                 .from('feeds')
                                 .insert({
                                     name,
-                                    unit: 'кг'
+                                    unit: 'РєРі'
                                 });
 
                         if (response.error) {
@@ -1837,7 +1843,7 @@
                                 text-modal-cancel
                             "
                         >
-                            Отмена
+                            РћС‚РјРµРЅР°
                         </button>
 
                         <button
@@ -1852,7 +1858,7 @@
                                 color:var(--green);
                             "
                         >
-                            Сохранить
+                            РЎРѕС…СЂР°РЅРёС‚СЊ
                         </button>
                     </div>
                 </div>
@@ -1944,7 +1950,7 @@
                                 diet-confirm-no
                             "
                         >
-                            Отмена
+                            РћС‚РјРµРЅР°
                         </button>
 
                         <button
@@ -1958,7 +1964,7 @@
                                 color:var(--red);
                             "
                         >
-                            Подтвердить
+                            РџРѕРґС‚РІРµСЂРґРёС‚СЊ
                         </button>
                     </div>
                 </div>

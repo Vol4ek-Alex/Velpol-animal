@@ -972,8 +972,8 @@
                     .history-list {
                         display: flex;
                         flex-direction: column;
-                        gap: 8px;
-                        padding: 14px;
+                        gap: 12px;
+                        padding: 16px;
                     }
 
                     .history-item {
@@ -1075,11 +1075,18 @@
                     }
 
                     .history-report-hint {
+                        margin-bottom: 14px;
                         padding: 18px 20px;
                         color: var(--muted);
                         font-size: .82rem;
                         line-height: 1.55;
                         text-align: center;
+                    }
+
+                    .history-report-clear {
+                        border-color:
+                            rgba(251, 113, 133, .45);
+                        color: var(--red);
                     }
 
                     .history-edit-button.active {
@@ -1262,6 +1269,23 @@
                         >
                             📊 Сформировать отчёт
                         </button>
+
+                        ${
+                            this.reportMonth
+                                ? `
+                                    <button
+                                        type="button"
+                                        class="
+                                            glass-btn
+                                            history-report-clear
+                                        "
+                                        aria-label="Очистить отчёт"
+                                    >
+                                        ✕ Сбросить
+                                    </button>
+                                `
+                                : ''
+                        }
                     </div>
 
                     ${
@@ -1832,6 +1856,22 @@
                         this.reportMonth =
                             this.selectedMonth ||
                             this.currentMonthValue();
+
+                        this.render();
+                    }
+                );
+            }
+
+            const clearButton =
+                container.querySelector(
+                    '.history-report-clear'
+                );
+
+            if (clearButton) {
+                clearButton.addEventListener(
+                    'click',
+                    () => {
+                        this.reportMonth = '';
 
                         this.render();
                     }

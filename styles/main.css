@@ -1,4 +1,4 @@
-:root {
+﻿:root {
     color-scheme: dark;
     --page-bg: #091728;
     --page-bg-deep: #060e1b;
@@ -63,11 +63,11 @@ body {
 body[data-module-active="livestock"] .bg-atmospheric {
     display: block;
     background: linear-gradient(180deg, rgba(7, 17, 31, 0.18), rgba(4, 11, 22, 0.42)),
-        url("../assets/bg-farm.jpg") center center / cover no-repeat;
+        url("../assets/bg_farm_dash.jpg") center center / cover no-repeat;
     filter: blur(3px) brightness(0.42);
 }
 
-/* Плавающий замок на фоне входа */
+/* РџР»Р°РІР°СЋС‰РёР№ Р·Р°РјРѕРє РЅР° С„РѕРЅРµ РІС…РѕРґР° */
 .bg-lock {
     position: fixed;
     top: 8%;

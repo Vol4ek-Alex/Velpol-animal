@@ -1,10 +1,10 @@
-const CACHE_NAME = 'velpol-agro-v2';
+﻿const CACHE_NAME = 'velpol-agro-v3';
 
 const APP_FILES = [
     './',
     './index.html',
     './manifest.json',
-    './assets/bg-farm.jpg',
+    './assets/bg_farm_dash.jpg',
     './assets/icon.svg',
     './assets/icon-192.png',
     './assets/icon-512.png',

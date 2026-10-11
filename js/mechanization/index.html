@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -15,8 +15,8 @@
     <title>Контроль•механизация</title>
 
     <link rel="manifest" href="../../manifest.json">
-    <link rel="icon" type="image/svg+xml" href="../../assets/icon.svg">
-    <link rel="apple-touch-icon" href="../../assets/icon.svg">
+    <link rel="icon" type="image/svg+xml" href="../../assets/icons/icon.svg">
+    <link rel="apple-touch-icon" href="../../assets/icons/icon.svg">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -122,18 +122,87 @@
             transition: opacity 900ms ease;
         }
 
-        .bg-layer-mech {
+        .bg-layer-stat {
             background:
                 linear-gradient(
                     180deg,
                     rgba(7, 17, 31, 0.1),
                     rgba(4, 11, 22, 0.3)
                 ),
-                url("../../assets/bg_farm_dash.jpg") center center / cover no-repeat;
+                url("../../assets/backgrounds/bg_mech_stat.jpg") center center / cover no-repeat;
         }
 
-        body[data-bg="mech"] .bg-layer-mech {
+        .bg-layer-park {
+            background:
+                linear-gradient(
+                    180deg,
+                    rgba(7, 17, 31, 0.1),
+                    rgba(4, 11, 22, 0.3)
+                ),
+                url("../../assets/backgrounds/bg_mech_park.jpg") center center / cover no-repeat;
+        }
+
+        body[data-bg="stat"] .bg-layer-stat,
+        body[data-bg="park"] .bg-layer-park {
             opacity: 1;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .modal-overlay-fleet {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .suggestion-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            width: 100%;
+            min-height: 36px;
+            padding: 7px 12px;
+            border: 1px dashed rgba(255, 255, 255, 0.22);
+            border-radius: 12px;
+            background: transparent;
+            color: var(--subtle);
+            cursor: pointer;
+            font-size: 0.74rem;
+            font-weight: 600;
+            transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease;
+        }
+
+        .suggestion-button:hover {
+            color: var(--green);
+            border-color: rgba(52, 211, 153, 0.45);
+            background: rgba(52, 211, 153, 0.06);
+        }
+
+        .suggestion-textarea {
+            width: 100%;
+            min-height: 110px;
+            padding: 12px 14px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--input-bg);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 0.86rem;
+            line-height: 1.5;
+            resize: vertical;
+        }
+
+        .suggestion-textarea:focus {
+            outline: none;
+            border-color: var(--green);
         }
 
         .bg-atmospheric::after {
@@ -724,9 +793,10 @@
     </style>
 </head>
 
-<body data-module-active="mechanization" data-bg="mech">
+<body data-module-active="mechanization" data-bg="stat">
     <div class="bg-atmospheric" aria-hidden="true">
-        <div class="bg-layer bg-layer-mech"></div>
+        <div class="bg-layer bg-layer-stat"></div>
+        <div class="bg-layer bg-layer-park"></div>
     </div>
 
     <header class="mobile-header">
@@ -786,6 +856,14 @@
             <div class="sidebar-footer">
                 <button
                     type="button"
+                    class="suggestion-button"
+                    onclick="openSuggestionModal()"
+                >
+                    💡 Оставить предложение
+                </button>
+
+                <button
+                    type="button"
                     class="glass-btn auth-logout-button"
                     onclick="window.location.href='/'"
                 >
@@ -802,6 +880,103 @@
         СХК «Великополье» · 2026 г.
     </footer>
 
+    <div
+        id="suggestion-modal"
+        style="
+            position: fixed;
+            inset: 0;
+            z-index: 11000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(6px);
+        "
+    >
+        <div
+            class="glass-panel"
+            style="
+                width: 100%;
+                max-width: 440px;
+                padding: 22px;
+                max-height: calc(100dvh - 32px);
+                overflow-y: auto;
+            "
+        >
+            <div
+                style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 12px;
+                "
+            >
+                <h3
+                    style="
+                        margin: 0;
+                        color: #fff;
+                        font-size: 1.05rem;
+                        font-weight: 800;
+                    "
+                >
+                    💡 Оставить предложение
+                </h3>
+
+                <button
+                    type="button"
+                    onclick="closeSuggestionModal()"
+                    aria-label="Закрыть"
+                    style="
+                        border: none;
+                        background: none;
+                        color: var(--muted);
+                        cursor: pointer;
+                        font-size: 1.35rem;
+                    "
+                >
+                    ✕
+                </button>
+            </div>
+
+            <p
+                style="
+                    margin: 10px 0 12px;
+                    color: var(--muted);
+                    font-size: 0.8rem;
+                    line-height: 1.55;
+                "
+            >
+                Заметили неудобство или есть идея,
+                как улучшить приложение?
+                Напишите нам — каждое предложение
+                попадает напрямую к администратору.
+            </p>
+
+            <textarea
+                id="suggestion-text"
+                class="suggestion-textarea"
+                maxlength="1000"
+                placeholder="Ваше предложение..."
+            ></textarea>
+
+            <button
+                type="button"
+                class="glass-btn"
+                id="suggestion-send-button"
+                style="
+                    width: 100%;
+                    margin-top: 12px;
+                    border-color: var(--green-dark);
+                    color: var(--green);
+                "
+                onclick="sendSuggestion()"
+            >
+                ✈ Отправить
+            </button>
+        </div>
+    </div>
+
     <script type="module">
         import { init as initDashboard } from './dashboard.js';
         import { init as initFleet } from './fleet.js';
@@ -815,13 +990,18 @@
             fleet: initFleet
         };
 
-        let currentModule = 'dashboard';
+        let currentModule = null;
+
+        function switchBg(moduleId) {
+            document.body.dataset.bg = moduleId === 'fleet' ? 'park' : 'stat';
+        }
 
         window.navigate = async function(moduleId, menuItem) {
             if (currentModule === moduleId) return;
-            
+
             currentModule = moduleId;
-            
+            switchBg(moduleId);
+
             document.querySelectorAll('.menu-item').forEach(item => {
                 item.classList.remove('active');
             });
@@ -873,6 +1053,66 @@
         }
 
         window.closeMobileMenu = closeMobileMenu;
+
+        function showSimpleMessage(title, message) {
+            const modal = document.getElementById('suggestion-modal');
+            if (!modal) { alert(message); return; }
+            closeSuggestionModal();
+            setTimeout(() => { alert(title + '\n\n' + message); }, 120);
+        }
+        window.showSimpleMessage = showSimpleMessage;
+
+        window.openSuggestionModal = function () {
+            const modal = document.getElementById('suggestion-modal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            const textarea = document.getElementById('suggestion-text');
+            if (textarea) {
+                textarea.value = '';
+                setTimeout(() => textarea.focus(), 60);
+            }
+        };
+
+        window.closeSuggestionModal = function () {
+            const modal = document.getElementById('suggestion-modal');
+            if (modal) modal.style.display = 'none';
+        };
+
+        window.sendSuggestion = async function () {
+            const textarea = document.getElementById('suggestion-text');
+            const sendButton = document.getElementById('suggestion-send-button');
+            const text = String(textarea ? textarea.value : '').trim();
+
+            if (text.length < 3) {
+                window.showSimpleMessage('Пустое предложение', 'Опишите вашу идею подробнее — минимум 3 символа.');
+                return;
+            }
+
+            if (sendButton) sendButton.disabled = true;
+
+            try {
+                const { error } = await window._supabase
+                    .from('suggestions')
+                    .insert({
+                        text: text,
+                        user_id: null,
+                        user_name: localStorage.getItem('velpol_user')
+                            ? (JSON.parse(localStorage.getItem('velpol_user')).email || 'Неизвестный')
+                            : 'Неизвестный',
+                        page: 'mechanization'
+                    });
+
+                if (error) throw error;
+
+                window.closeSuggestionModal();
+                window.showSimpleMessage('Спасибо!', 'Ваше предложение отправлено администратору.');
+            } catch (error) {
+                console.error('Suggestion error:', error);
+                window.showSimpleMessage('Ошибка', 'Не удалось отправить предложение. Попробуйте позже.');
+            } finally {
+                if (sendButton) sendButton.disabled = false;
+            }
+        };
 
         document.addEventListener('DOMContentLoaded', async () => {
             setupMobileMenu();

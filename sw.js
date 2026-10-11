@@ -1,13 +1,19 @@
-﻿const CACHE_NAME = 'velpol-agro-v4';
+﻿const CACHE_NAME = 'velpol-agro-v5';
 
 const APP_FILES = [
     './',
     './index.html',
     './manifest.json',
-    './assets/bg_farm_dash.jpg',
-    './assets/icon.svg',
-    './assets/icon-192.png',
-    './assets/icon-512.png',
+    './assets/backgrounds/bg_farm_dash.jpg',
+    './assets/backgrounds/bg_farm_diets.jpg',
+    './assets/backgrounds/bg_farm_herd.jpg',
+    './assets/backgrounds/bg_mech_stat.jpg',
+    './assets/backgrounds/bg_mech_park.jpg',
+    './assets/backgrounds/farm_card.jpg',
+    './assets/backgrounds/mech-card.jpg',
+    './assets/icons/icon.svg',
+    './assets/icons/icon-192.png',
+    './assets/icons/icon-512.png',
     './styles/main.css',
     './js/config.js',
     './js/app.js',
@@ -23,17 +29,9 @@ const APP_FILES = [
     './js/livestock/modules/reports.js',
     './js/livestock/modules/history.js',
     './js/agronomy/index.html',
-    './js/agronomy/styles.css',
-    './js/agronomy/app.js',
-    './js/agronomy/modules/dashboard.js',
-    './js/agronomy/modules/fields.js',
-    './js/agronomy/modules/crops.js',
     './js/mechanization/index.html',
-    './js/mechanization/modules/common.js',
-    './js/mechanization/modules/auth.js',
-    './js/mechanization/modules/app.js',
-    './js/mechanization/modules/dashboard.js',
-    './js/mechanization/modules/fleet.js'
+    './js/mechanization/dashboard.js',
+    './js/mechanization/fleet.js'
 ];
 
 self.addEventListener('install', event => {

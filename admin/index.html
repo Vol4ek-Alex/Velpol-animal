@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="../styles/main.css">
     <style>
         body { background: linear-gradient(135deg, #1e293b, #0f172a); min-height: 100vh; padding: 20px; }
-        .admin-container { max-width: 1200px; margin: 0 auto; }
+        .admin-container { max-width: 1200px; width: 100%; margin: 0 auto; }
         .admin-header { text-align: center; margin-bottom: 40px; color: #fff; }
         .admin-header h1 { font-size: 2.5rem; margin-bottom: 10px; }
         .requests-grid { display: grid; gap: 20px; }
@@ -46,6 +46,21 @@
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .logout-btn { position: absolute; top: 20px; right: 20px; }
         .back-btn { position: absolute; top: 20px; left: 20px; background: rgba(148, 163, 184, 0.15); color: #e2e8f0; border: 1px solid rgba(148, 163, 184, 0.4); }
+
+        .admin-topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto 12px;
+        }
+
+        .admin-topbar .back-btn,
+        .admin-topbar .logout-btn {
+            position: static;
+        }
         .no-requests { text-align: center; padding: 60px 20px; color: #cbd5e1; }
         .users-section { margin-top: 48px; }
         .users-section h2 { color: #fff; text-align: center; margin-bottom: 8px; }
@@ -199,18 +214,20 @@
 
             .admin-header p { font-size: .85rem; }
 
-            .back-btn,
-            .logout-btn {
-                position: static;
-                display: inline-block;
-            }
-
             .admin-topbar {
-                display: flex;
                 justify-content: space-between;
                 gap: 8px;
                 margin-bottom: 18px;
             }
+
+            .admin-topbar .back-btn,
+            .admin-topbar .logout-btn {
+                flex: 0 0 auto;
+                padding: 10px 14px;
+                font-size: 0.85rem;
+            }
+
+            .admin-container { min-width: 0; }
 
             .request-card { padding: 15px; }
 
@@ -236,6 +253,7 @@
 
             .admin-tabs {
                 width: 100%;
+                justify-content: flex-start;
                 margin-bottom: 20px;
             }
 

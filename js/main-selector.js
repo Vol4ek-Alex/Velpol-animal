@@ -47,7 +47,6 @@ async function selectModule(module) {
     if (module === 'agronomy') {
         return; // Модуль в разработке
     }
-
     selectedModule = module;
     
     if (module === 'admin') {
@@ -223,3 +222,19 @@ if ('serviceWorker' in navigator) {
 
 // Запускаем проверку при загрузке
 checkAuth();
+
+// Плавная смена фона при наведении на карточки отраслей
+document.querySelectorAll('.module-card[data-module]').forEach(function (card) {
+    card.addEventListener('mouseenter', function () {
+        const module = card.getAttribute('data-module');
+        if (module === 'livestock') {
+            document.body.setAttribute('data-hover-bg', 'farm');
+        } else if (module === 'mechanization') {
+            document.body.setAttribute('data-hover-bg', 'mech');
+        }
+    });
+
+    card.addEventListener('mouseleave', function () {
+        document.body.setAttribute('data-hover-bg', 'none');
+    });
+});

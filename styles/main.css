@@ -57,14 +57,32 @@ body {
     inset: -24px;
     z-index: -3;
     pointer-events: none;
-    display: none;
+    filter: blur(3px) brightness(0.42);
+    background: var(--page-bg);
 }
 
-body[data-module-active="livestock"] .bg-atmospheric {
-    display: block;
-    background: linear-gradient(180deg, rgba(7, 17, 31, 0.18), rgba(4, 11, 22, 0.42)),
-        url("../assets/bg_farm_dash.jpg") center center / cover no-repeat;
-    filter: blur(3px) brightness(0.42);
+.bg-hover-layer {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 700ms ease;
+    background: linear-gradient(180deg, rgba(7, 17, 31, 0.35), rgba(4, 11, 22, 0.5)),
+        url("../assets/backgrounds/bg_farm_dash.jpg") center center / cover no-repeat;
+}
+
+.bg-hover-layer[data-layer="farm"] {
+    background: linear-gradient(180deg, rgba(7, 17, 31, 0.35), rgba(4, 11, 22, 0.5)),
+        url("../assets/backgrounds/farm_card.jpg") center center / cover no-repeat;
+}
+
+.bg-hover-layer[data-layer="mech"] {
+    background: linear-gradient(180deg, rgba(7, 17, 31, 0.35), rgba(4, 11, 22, 0.5)),
+        url("../assets/backgrounds/mech-card.jpg") center center / cover no-repeat;
+}
+
+body[data-hover-bg="farm"] .bg-hover-layer[data-layer="farm"],
+body[data-hover-bg="mech"] .bg-hover-layer[data-layer="mech"] {
+    opacity: 1;
 }
 
 /* Плавающий замок на фоне входа */
@@ -157,18 +175,7 @@ body[data-module-active="livestock"] .bg-atmospheric {
 }
 
 .admin-dock {
-    position: fixed;
-    left: 20px;
-    right: 20px;
-    bottom: 16px;
     display: none;
-    justify-content: center;
-    z-index: 5;
-}
-
-.admin-dock .module-card {
-    max-width: 420px;
-    width: 100%;
 }
 
 .module-card {
@@ -237,7 +244,6 @@ body[data-module-active="livestock"] .bg-atmospheric {
 .module-card[data-module="mechanization"] .module-icon { color: var(--purple); }
 
 .module-card[data-module="admin"] {
-    grid-column: 1 / -1;
     max-width: 420px;
     margin: 0 auto;
     width: 100%;
@@ -377,31 +383,19 @@ body[data-module-active="livestock"] .bg-atmospheric {
     color: var(--blue);
 }
 
-@media (max-width: 768px) {
-    .header h1 { font-size: 2rem; }
-    .modules-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-
 @media (max-width: 700px) {
     body {
-        padding: 16px 12px 170px;
+        padding: 16px 12px 40px;
         align-items: flex-start;
     }
 
-    .admin-dock {
-        left: 10px;
-        right: 10px;
-        bottom: calc(12px + env(safe-area-inset-bottom));
-    }
-
-    .admin-dock .module-card {
-        padding: 14px 16px;
-    }
+    .header h1 { font-size: 2rem; }
 
     #logout-container {
         top: 12px;
         right: 12px;
     }
-}
+
     .module-card { padding: 16px 18px; }
     .module-icon { font-size: 1.7rem; }
 }

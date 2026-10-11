@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -8,19 +8,21 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Великополье Control Panel</title>
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
-    <link rel="apple-touch-icon" href="assets/icon-192.png">
+    <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="styles/main.css">
 </head>
-<body>
-    <div class="bg-atmospheric"></div>
+<body data-hover-bg="none">
+    <div class="bg-atmospheric" aria-hidden="true">
+        <div class="bg-hover-layer" data-layer="farm"></div>
+        <div class="bg-hover-layer" data-layer="mech"></div>
+    </div>
     <div class="bg-lock" aria-hidden="true">🔒</div>
-    <div class="container" id="app">
-        <div class="header">
+    <div class="container" id="app">        <div class="header">
             <h1>🌾 Великополье Control Panel</h1>
             <p>Комплексная система управления сельским хозяйством</p>
         </div>
@@ -50,6 +52,13 @@
                     Учет поголовья, рационы кормления, перемещения животных и отчетность
                 </p>
             </div>
+            <div class="module-card" data-module="mechanization" onclick="selectModule('mechanization')">
+                <span class="module-icon">🚜</span>
+                <h3 class="module-title">Механизация</h3>
+                <p class="module-description">
+                    Учет техники, планирование работ и контроль расхода ГСМ
+                </p>
+            </div>
             <div class="module-card disabled" data-module="agronomy" onclick="selectModule('agronomy')">
                 <span class="module-badge">В разработке</span>
                 <span class="module-icon">🌾</span>
@@ -58,16 +67,7 @@
                     Управление посевами, полями, культурами и статистика по гектарам
                 </p>
             </div>
-            <div class="module-card" data-module="mechanization" onclick="selectModule('mechanization')">
-                <span class="module-icon">🚜</span>
-                <h3 class="module-title">Механизация</h3>
-                <p class="module-description">
-                    Учет техники, планирование работ и контроль расхода ГСМ
-                </p>
-            </div>
-        </div>
-        <div class="admin-dock" id="admin-module" style="display: none;">
-            <div class="module-card" data-module="admin" onclick="selectModule('admin')">
+            <div class="module-card" data-module="admin" id="admin-module" style="display: none;" onclick="selectModule('admin')">
                 <span class="module-icon">⚙️</span>
                 <h3 class="module-title">Администрирование</h3>
                 <p class="module-description">

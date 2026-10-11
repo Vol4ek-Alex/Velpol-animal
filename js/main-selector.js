@@ -17,12 +17,12 @@ async function checkAuth() {
         document.getElementById('login-section').style.display = 'block';
         document.getElementById('modules-section').style.display = 'none';
         document.getElementById('logout-container').style.display = 'none';
-        document.getElementById('admin-module').style.display = 'none';
+        document.body.classList.remove('has-admin');
     }}
 
 async function checkAdminAccess() {
     if (!currentUser) return;
-    
+
     const { data, error } = await db
         .from('module_access')
         .select('*')
@@ -30,9 +30,9 @@ async function checkAdminAccess() {
         .eq('module_name', 'admin')
         .eq('has_access', true)
         .maybeSingle();
-        
+
     if (!error && data) {
-        document.getElementById('admin-module').style.display = 'flex';
+        document.body.classList.add('has-admin');
     }
 }
 

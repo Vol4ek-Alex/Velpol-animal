@@ -267,10 +267,11 @@ async function loadSuggestions() {
     container.innerHTML = items.map(item => `
         <div class="request-card suggestion-card ${item.is_done ? 'is-blocked' : ''}">
             <div class="suggestion-body">
+                <div class="suggestion-author-row">
+                    <span class="suggestion-author" title="Автор предложения">👤 ${escapeHtml(item.user_name || 'Неизвестный')}</span>
+                    ${item.page ? `<span class="suggestion-page">📄 ${escapeHtml(item.page)}</span>` : ''}
+                </div>
                 <div class="suggestion-text">${escapeHtml(item.text)}</div>
-                <p class="suggestion-meta">
-                    <span class="suggestion-author">👤 ${escapeHtml(item.user_name || 'Неизвестный')}</span>${item.page ? ` · 📄 ${escapeHtml(item.page)}` : ''}
-                </p>
                 <p class="suggestion-meta">📅 ${new Date(item.created_at).toLocaleString('ru-RU')}</p>
             </div>
             <div class="suggestion-actions">

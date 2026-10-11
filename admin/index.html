@@ -6,7 +6,7 @@
     <title>Админ-панель - Великополье Control Panel</title>
     <link rel="stylesheet" href="../styles/main.css">
     <style>
-        body { background: linear-gradient(135deg, #1e293b, #0f172a); min-height: 100vh; padding: 20px; }
+        body { background: linear-gradient(135deg, #1e293b, #0f172a); min-height: 100vh; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
         .admin-container { max-width: 1200px; width: 100%; margin: 0 auto; }
         .admin-header { text-align: center; margin-bottom: 40px; color: #fff; }
         .admin-header h1 { font-size: 2.5rem; margin-bottom: 10px; }
@@ -158,8 +158,28 @@
             gap: 14px;
         }
         .suggestion-body { flex: 1 1 320px; min-width: 0; }
+        .suggestion-author-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .suggestion-author {
+            padding: 4px 12px;
+            border: 1px solid rgba(125, 211, 252, 0.4);
+            border-radius: 999px;
+            background: rgba(56, 189, 248, 0.12);
+            color: #7dd3fc;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+        .suggestion-page {
+            color: #94a3b8;
+            font-size: 0.8rem;
+        }
         .suggestion-text {
-            margin: 10px 0 0;
+            margin: 4px 0 8px;
             color: #e2e8f0;
             font-size: 0.95rem;
             line-height: 1.55;
@@ -167,14 +187,6 @@
             white-space: pre-wrap;
         }
         .suggestion-meta { color: #94a3b8; font-size: 0.8rem; margin: 3px 0; }
-        .suggestion-author {
-            padding: 3px 10px;
-            border: 1px solid rgba(125, 211, 252, 0.4);
-            border-radius: 999px;
-            background: rgba(56, 189, 248, 0.12);
-            color: #7dd3fc;
-            font-weight: 700;
-        }
         .suggestion-actions { display: flex; gap: 10px; }
         .btn-done { background: linear-gradient(135deg, #64748b, #475569); color: #fff; }
         .btn-delete { background: linear-gradient(135deg, #ef4444, #fb7185); color: #fff; }

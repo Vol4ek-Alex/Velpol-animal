@@ -67,7 +67,7 @@
                     Управление посевами, полями, культурами и статистика по гектарам
                 </p>
             </div>
-            <div class="module-card" data-module="admin" id="admin-module" style="display: none;" onclick="selectModule('admin')">
+            <div class="module-card" data-module="admin" id="admin-module" onclick="selectModule('admin')">
                 <span class="module-icon">⚙️</span>
                 <h3 class="module-title">Администрирование</h3>
                 <p class="module-description">
@@ -78,6 +78,7 @@
         <div id="logout-container" style="display: none; text-align: center; margin-top: 20px; position: fixed; top: 16px; right: 20px; z-index: 6; margin-top: 0;">
             <button class="auth-tab" onclick="handleLogout()">Выйти из аккаунта</button>
         </div>
+        <button type="button" class="admin-dock" id="admin-dock" onclick="selectModule('admin')">⚙️ Администрирование</button>
     </div>
     <script src="js/config.js"></script>
     <script src="js/main-selector.js"></script>

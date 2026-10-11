@@ -32,6 +32,7 @@ async function loadRequests() {
     const { data: accounts, error } = await db
         .from('account_verification')
         .select('*')
+        .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -73,8 +74,7 @@ async function loadRequests() {
                     ${getVerificationStatusText(acc.status)}
                 </div>
             </div>
-            ${acc.status === 'pending' ? `
-                <div class="request-actions">
+            <div class="request-actions">
                     <button class="btn btn-approve" onclick="handleVerify('${acc.user_id}')">
                         ✅ Подтвердить аккаунт
                     </button>
@@ -82,7 +82,6 @@ async function loadRequests() {
                         🗑 Удалить из базы
                     </button>
                 </div>
-            ` : ''}
         </div>
     `).join('');
 }

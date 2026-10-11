@@ -1023,7 +1023,7 @@
         }
     };
 
-    window.showWelcomeScreen = function () {
+    window.showWelcomeScreen = async function () {
         const container =
             document.getElementById(
                 'main-content'

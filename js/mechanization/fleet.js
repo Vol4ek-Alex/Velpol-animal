@@ -236,7 +236,7 @@ function getDriverRole(type) {
 }
 
 // ===== Инициализация модуля =====
-function setupFleet() {
+async function setupFleet() {
     // Поиск
     const searchInput = document.getElementById('vehicleSearchInput');
     if (searchInput) {

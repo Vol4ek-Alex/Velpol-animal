@@ -93,8 +93,7 @@
 
         button,
         input,
-        select,
-        textarea {
+        select {
             font-family: inherit;
         }
 
@@ -108,8 +107,33 @@
             z-index: -3;
             pointer-events: none;
             background:
-                linear-gradient(180deg, #0a1930, #060e1b);
+                linear-gradient(
+                    180deg,
+                    #0a1930,
+                    #060e1b
+                );
             filter: blur(14px) brightness(0.9) saturate(1.08);
+        }
+
+        .bg-layer {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            transition: opacity 900ms ease;
+        }
+
+        .bg-layer-mech {
+            background:
+                linear-gradient(
+                    180deg,
+                    rgba(7, 17, 31, 0.1),
+                    rgba(4, 11, 22, 0.3)
+                ),
+                url("../../assets/bg_farm_dash.jpg") center center / cover no-repeat;
+        }
+
+        body[data-bg="mech"] .bg-layer-mech {
+            opacity: 1;
         }
 
         .bg-atmospheric::after {
@@ -268,6 +292,11 @@
             border-top: 1px solid var(--line);
         }
 
+        .sidebar-footer .auth-logout-button {
+            width: 100%;
+            min-height: 42px;
+        }
+
         .menu-item {
             position: relative;
             display: flex;
@@ -337,7 +366,11 @@
 
         .menu-item.active > span:first-child {
             border-color: rgba(52, 211, 153, 0.55);
-            background: linear-gradient(135deg, #34d399, #047857);
+            background: linear-gradient(
+                135deg,
+                #34d399,
+                #047857
+            );
             box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
         }
 
@@ -350,6 +383,20 @@
             border-radius: 0 4px 4px 0;
             background: var(--green);
             box-shadow: 0 0 12px var(--green);
+            content: "";
+        }
+
+        .menu-item.active::after {
+            position: absolute;
+            top: 0;
+            right: -60px;
+            width: 44px;
+            height: 100%;
+            background: radial-gradient(
+                ellipse,
+                rgba(52, 211, 153, 0.14),
+                transparent 70%
+            );
             content: "";
         }
 
@@ -368,58 +415,20 @@
             user-select: none;
         }
 
-        .suggestion-button {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 7px;
-            width: 100%;
-            min-height: 36px;
-            padding: 7px 12px;
-            border: 1px dashed rgba(255, 255, 255, 0.22);
-            border-radius: 12px;
-            background: transparent;
-            color: var(--subtle);
-            cursor: pointer;
-            font-size: 0.74rem;
-            font-weight: 600;
-            transition:
-                color 180ms ease,
-                border-color 180ms ease,
-                background-color 180ms ease;
-        }
-
-        .suggestion-button:hover {
-            border-color: rgba(52, 211, 153, 0.5);
-            background: rgba(16, 185, 129, 0.08);
-            color: var(--green);
-        }
-
-        .suggestion-textarea {
-            width: 100%;
-            min-height: 110px;
-            padding: 11px 13px;
-            outline: none;
-            border: 1px solid var(--line);
-            border-radius: 12px;
-            background: var(--input-bg);
-            color: #fff;
-            font: inherit;
-            font-size: 0.86rem;
-            line-height: 1.5;
-            resize: vertical;
-        }
-
-        .suggestion-textarea:focus {
-            border-color: var(--green);
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
-        }
-
         #main-content {
             flex: 1 1 auto;
             width: 100%;
             min-width: 0;
             padding-bottom: 150px;
+            animation: none !important;
+            transition: none !important;
+        }
+
+        #main-content.module-loading,
+        #main-content.module-loaded {
+            opacity: 1 !important;
+            animation: none !important;
+            transition: none !important;
         }
 
         .mobile-header {
@@ -496,172 +505,16 @@
             animation-delay: 40ms;
         }
 
-        @keyframes modal-in {
-            from {
-                opacity: 0;
-                transform: translateY(18px) scale(0.97);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .modal-overlay.open .modal-box {
-            animation: modal-in 240ms ease both;
-        }
-
-        @keyframes row-in {
-            from {
-                opacity: 0;
-                transform: translateY(8px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .mech-card,
-        .mech-alert {
-            animation: row-in 260ms ease both;
-        }
-
-        .stat-card {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 5px;
-            padding: 18px;
-        }
-
-        .stat-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
-            min-height: 22px;
-            color: var(--muted);
-            font-size: 0.79rem;
-            font-weight: 600;
-        }
-
-        .stat-value {
+        .menu-btn {
             min-height: 38px;
+            padding: 7px 12px;
+            border: 1px solid var(--line-bright);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.07);
             color: #fff;
-            font-family: "JetBrains Mono", monospace;
-            font-size: 1.7rem;
-            font-weight: 700;
-            letter-spacing: -0.06em;
-            line-height: 1.1;
-            white-space: nowrap;
-        }
-
-        .badge,
-        .badge-green,
-        .badge-red,
-        .badge-amber,
-        .badge-blue {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: fit-content;
-            min-height: 23px;
-            padding: 4px 10px;
-            border-radius: 999px;
-            white-space: nowrap;
-            font-size: 0.7rem;
-            font-weight: 700;
-            line-height: 1.15;
-        }
-
-        .badge-green {
-            border: 1px solid rgba(52, 211, 153, 0.4);
-            background: rgba(16, 185, 129, 0.18);
-            color: #6ee7b7;
-        }
-
-        .badge-red {
-            border: 1px solid rgba(251, 113, 133, 0.4);
-            background: rgba(244, 63, 94, 0.18);
-            color: #fda4af;
-        }
-
-        .badge-amber {
-            border: 1px solid rgba(251, 191, 36, 0.4);
-            background: rgba(245, 158, 11, 0.18);
-            color: #fde68a;
-        }
-
-        .badge-blue {
-            border: 1px solid rgba(125, 211, 252, 0.4);
-            background: rgba(56, 189, 248, 0.16);
-            color: #bae6fd;
-        }
-
-        .mech-grid {
-            display: grid;
-            gap: 12px;
-            margin-bottom: 15px;
-        }
-
-        .mech-grid.cols-4 {
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-        }
-
-        .mech-grid.cols-3 {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-        }
-
-        .mech-grid.cols-2 {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        .mech-toolbar {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 10px;
-            width: 100%;
-        }
-
-        .mech-search {
-            flex: 1 1 240px;
-            min-width: 0;
-            min-height: 42px;
-            padding: 10px 14px;
-            outline: none;
-            border: 1px solid var(--line);
-            border-radius: 12px;
-            background: var(--input-bg);
-            color: #fff;
-            font-size: 0.86rem;
-            font-weight: 500;
-        }
-
-        .mech-search:focus {
-            border-color: var(--green);
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
-        }
-
-        .mech-select {
-            min-height: 42px;
-            padding: 10px 12px;
-            outline: none;
-            border: 1px solid var(--line);
-            border-radius: 12px;
-            background: var(--input-bg);
-            color: #fff;
-            font-size: 0.84rem;
-            font-weight: 600;
             cursor: pointer;
-        }
-
-        .mech-select:focus {
-            border-color: var(--green);
+            font-size: 0.8rem;
+            font-weight: 700;
         }
 
         .glass-btn {
@@ -699,532 +552,6 @@
             outline-offset: 2px;
         }
 
-        .glass-btn.primary {
-            border-color: rgba(52, 211, 153, 0.55);
-            background: linear-gradient(135deg, #10b981, #047857);
-            color: #fff;
-        }
-
-        .glass-btn.primary:hover {
-            background: linear-gradient(135deg, #34d399, #059669);
-        }
-
-        .glass-btn.danger {
-            border-color: rgba(251, 113, 133, 0.4);
-            background: rgba(244, 63, 94, 0.12);
-            color: #fda4af;
-        }
-
-        .glass-btn.danger:hover {
-            background: rgba(244, 63, 94, 0.22);
-        }
-
-        .mech-card {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            padding: 15px;
-            cursor: pointer;
-            transition:
-                border-color 180ms ease,
-                transform 180ms ease,
-                box-shadow 180ms ease;
-        }
-
-        .mech-card:hover {
-            border-color: rgba(52, 211, 153, 0.4);
-            transform: translateY(-2px);
-            box-shadow:
-                0 18px 44px rgba(0, 0, 0, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        }
-
-        .mech-card.status-broken {
-            border-color: rgba(251, 113, 133, 0.45);
-        }
-
-        .mech-card.status-warranty {
-            border-color: rgba(125, 211, 252, 0.45);
-        }
-
-        .mech-card-title {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-            width: 100%;
-            color: #fff;
-            font-size: 0.92rem;
-            font-weight: 800;
-        }
-
-        .mech-plate {
-            display: inline-block;
-            padding: 4px 10px;
-            border: 1px solid var(--line-bright);
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.06);
-            color: #fff;
-            font-family: "JetBrains Mono", monospace;
-            font-size: 0.78rem;
-            font-weight: 700;
-            letter-spacing: 0.04em;
-        }
-
-        .mech-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-            width: 100%;
-            font-size: 0.8rem;
-        }
-
-        .mech-row .label {
-            color: var(--muted);
-            font-weight: 600;
-        }
-
-        .mech-row .value {
-            color: #fff;
-            font-weight: 700;
-            text-align: right;
-        }
-
-        .mech-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-        }
-
-        .mech-tag {
-            padding: 3px 8px;
-            border: 1px solid rgba(255, 255, 255, 0.22);
-            border-radius: 999px;
-            color: #10151d;
-            font-size: 0.64rem;
-            font-weight: 800;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-        }
-
-        .mech-alert {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 10px;
-            padding: 11px 13px;
-            border: 1px solid var(--line);
-            border-radius: 14px;
-            background: rgba(255, 255, 255, 0.04);
-        }
-
-        .mech-alert.warning {
-            border-color: rgba(251, 191, 36, 0.4);
-            background: rgba(245, 158, 11, 0.1);
-        }
-
-        .mech-alert.danger {
-            border-color: rgba(251, 113, 133, 0.45);
-            background: rgba(244, 63, 94, 0.12);
-        }
-
-        .mech-alert.ok {
-            border-color: rgba(52, 211, 153, 0.4);
-            background: rgba(16, 185, 129, 0.1);
-        }
-
-        .mech-alert .text {
-            flex: 1 1 auto;
-            min-width: 0;
-            color: var(--text);
-            font-size: 0.82rem;
-            font-weight: 600;
-            line-height: 1.4;
-        }
-
-        .mech-alert .text b {
-            color: #fff;
-        }
-
-        .mech-alert .sub {
-            margin-top: 2px;
-            color: var(--muted);
-            font-size: 0.72rem;
-            font-weight: 600;
-        }
-
-        .mech-empty {
-            padding: 22px 14px;
-            border: 1px dashed var(--line);
-            border-radius: 14px;
-            color: var(--muted);
-            font-size: 0.82rem;
-            font-weight: 600;
-            text-align: center;
-        }
-
-        .mech-scroll {
-            display: flex;
-            flex-direction: column;
-            gap: 9px;
-            max-height: 400px;
-            padding-right: 4px;
-            overflow-y: auto;
-            scrollbar-width: thin;
-        }
-
-        .mech-panel-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            margin-bottom: 12px;
-            padding-bottom: 11px;
-            border-bottom: 1px solid var(--line);
-        }
-
-        .mech-panel-title {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #fff;
-            font-size: 0.84rem;
-            font-weight: 800;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-        }
-
-        .mech-counter {
-            min-width: 26px;
-            padding: 3px 9px;
-            border: 1px solid var(--line);
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.06);
-            color: var(--muted);
-            font-size: 0.72rem;
-            font-weight: 800;
-            text-align: center;
-        }
-
-        .mech-input-row {
-            display: flex;
-            gap: 8px;
-            width: 100%;
-        }
-
-        .mech-input-row .mech-search {
-            flex: 1 1 auto;
-        }
-
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 10000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-            overflow-y: auto;
-            background: rgba(3, 8, 16, 0.78);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-
-        .modal-overlay.open {
-            display: flex;
-        }
-
-        .modal-box {
-            width: 100%;
-            max-width: 480px;
-            max-height: calc(100dvh - 32px);
-            padding: 22px;
-            overflow-y: auto;
-            border: 1px solid var(--line-bright);
-            border-radius: 22px;
-            background:
-                linear-gradient(
-                    145deg,
-                    rgba(255, 255, 255, 0.08),
-                    transparent 44%
-                ),
-                rgba(15, 31, 52, 0.97);
-            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.58);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-        }
-
-        .modal-input {
-            width: 100%;
-            min-height: 44px;
-            padding: 10px 13px;
-            outline: none;
-            border: 1px solid var(--line);
-            border-radius: 11px;
-            background: var(--input-bg);
-            color: #fff;
-            font-size: 16px;
-            font-weight: 500;
-        }
-
-        .modal-input:focus {
-            border-color: var(--green);
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
-        }
-
-        .modal-label {
-            display: block;
-            margin-bottom: 6px;
-            color: var(--muted);
-            font-size: 0.74rem;
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-        }
-
-        .modal-close-x {
-            border: none;
-            background: none;
-            color: var(--muted);
-            cursor: pointer;
-            font-size: 1.35rem;
-            line-height: 1;
-        }
-
-        .modal-close-x:hover {
-            color: #fff;
-        }
-
-        .mech-form-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 12px;
-        }
-
-        .mech-form-grid .full {
-            grid-column: 1 / -1;
-        }
-
-        .modal-list {
-            display: flex;
-            flex-direction: column;
-            gap: 7px;
-            max-height: 220px;
-            margin-top: 8px;
-            padding-right: 4px;
-            overflow-y: auto;
-            scrollbar-width: thin;
-        }
-
-        .modal-list-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-            padding: 8px 11px;
-            border: 1px solid var(--line);
-            border-radius: 11px;
-            background: rgba(255, 255, 255, 0.04);
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: var(--text);
-        }
-
-        .modal-list-item .del {
-            border: none;
-            background: none;
-            color: #fda4af;
-            cursor: pointer;
-            font-size: 0.74rem;
-            font-weight: 800;
-        }
-
-        .modal-list-item .del:hover {
-            text-decoration: underline;
-        }
-
-        .mech-checkboxes {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 7px;
-            max-height: 130px;
-            padding: 10px;
-            border: 1px solid var(--line);
-            border-radius: 12px;
-            background: var(--input-bg);
-            overflow-y: auto;
-            scrollbar-width: thin;
-        }
-
-        .mech-check-tag {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 5px 9px;
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            border-radius: 999px;
-            color: #10151d;
-            cursor: pointer;
-            font-size: 0.7rem;
-            font-weight: 800;
-            user-select: none;
-        }
-
-        .mech-check-tag input {
-            accent-color: #10b981;
-        }
-
-        .mech-catbar {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 6px;
-            width: 100%;
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid var(--line);
-        }
-
-        .mech-cat-btn {
-            min-height: 32px;
-            padding: 5px 11px;
-            border: 1px solid var(--line);
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--muted);
-            cursor: pointer;
-            font-size: 0.74rem;
-            font-weight: 700;
-            transition:
-                color 150ms ease,
-                background-color 150ms ease,
-                border-color 150ms ease;
-        }
-
-        .mech-cat-btn:hover {
-            color: #fff;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .mech-cat-btn.active {
-            border-color: rgba(52, 211, 153, 0.55);
-            background: rgba(16, 185, 129, 0.18);
-            color: #6ee7b7;
-        }
-
-        .mech-cat-dropdown {
-            position: relative;
-        }
-
-        .mech-cat-menu {
-            position: absolute;
-            top: calc(100% + 5px);
-            left: 0;
-            z-index: 500;
-            display: none;
-            flex-direction: column;
-            width: 230px;
-            max-height: 240px;
-            padding: 5px;
-            border: 1px solid var(--line-bright);
-            border-radius: 13px;
-            background: var(--glass-strong);
-            box-shadow: 0 18px 46px rgba(0, 0, 0, 0.5);
-            overflow-y: auto;
-            scrollbar-width: thin;
-        }
-
-        .mech-cat-menu.open {
-            display: flex;
-        }
-
-        .mech-cat-menu button {
-            border: none;
-            background: none;
-            color: var(--muted);
-            cursor: pointer;
-            font-size: 0.78rem;
-            font-weight: 600;
-            text-align: left;
-            padding: 8px 10px;
-            border-radius: 8px;
-        }
-
-        .mech-cat-menu button:hover {
-            background: rgba(255, 255, 255, 0.08);
-            color: #fff;
-        }
-
-        .mech-cat-menu button.active {
-            background: rgba(16, 185, 129, 0.16);
-            color: #6ee7b7;
-            font-weight: 800;
-        }
-
-        .mech-section-label {
-            margin-bottom: 7px;
-            color: var(--subtle);
-            font-size: 0.68rem;
-            font-weight: 800;
-            letter-spacing: 0.07em;
-            text-transform: uppercase;
-        }
-
-        .mech-hint {
-            margin-top: 4px;
-            color: var(--subtle);
-            font-size: 0.72rem;
-            font-weight: 600;
-        }
-
-        .mech-clock {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 16px;
-        }
-
-        .mech-clock .time {
-            color: #fff;
-            font-family: "JetBrains Mono", monospace;
-            font-size: 1.05rem;
-            font-weight: 700;
-            line-height: 1.1;
-        }
-
-        .mech-clock .date {
-            margin-top: 2px;
-            color: var(--subtle);
-            font-size: 0.62rem;
-            font-weight: 700;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-        }
-
-        .app-error {
-            max-width: 620px;
-            margin: 30px auto;
-            padding: 28px;
-            text-align: center;
-        }
-
-        .app-error-icon {
-            margin-bottom: 10px;
-            font-size: 2.2rem;
-        }
-
-        .app-error h2 {
-            margin: 0 0 10px;
-            font-size: 1.15rem;
-        }
-
-        .app-error p {
-            margin: 0 0 18px;
-            color: var(--muted);
-            line-height: 1.5;
-        }
-
         #sidebar-backdrop {
             display: none;
         }
@@ -1245,14 +572,6 @@
 
             .brand-title {
                 font-size: 0.88rem;
-            }
-
-            .mech-grid.cols-4 {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
-            .mech-grid.cols-3 {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
         }
 
@@ -1372,6 +691,11 @@
                 line-height: 1.05;
             }
 
+            .mobile-header .menu-btn {
+                position: relative;
+                z-index: 1500;
+            }
+
             #main-content {
                 width: 100%;
                 min-width: 0;
@@ -1379,116 +703,13 @@
                 padding: 12px 0 150px;
             }
 
-            #main-content h1 {
-                font-size: 1.28rem !important;
-                line-height: 1.2 !important;
-            }
-
-            #main-content h3 {
-                font-size: 0.98rem !important;
-            }
-
-            .mech-grid.cols-4,
-            .mech-grid.cols-3,
-            .mech-grid.cols-2 {
-                grid-template-columns: minmax(0, 1fr) !important;
-            }
-
-            .stat-card {
-                padding: 15px;
-                border-radius: 17px;
-            }
-
-            .stat-value {
-                min-height: 32px;
-                font-size: 1.45rem;
-            }
-
-            #main-content .glass-panel {
-                max-width: 100%;
-                border-radius: 17px;
-            }
-
-            #main-content > .glass-panel,
-            #main-content > div > .glass-panel {
-                padding: 14px;
-            }
-
-            .glass-btn {
-                min-height: 42px;
-                padding: 9px 12px;
-                font-size: 0.76rem;
-            }
-
-            .mech-toolbar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .mech-form-grid {
-                grid-template-columns: minmax(0, 1fr);
-            }
-
-            .modal-overlay {
-                align-items: flex-end;
-                padding: 8px;
-                padding-bottom: env(safe-area-inset-bottom);
-                background: rgba(3, 8, 16, 0.84);
-                backdrop-filter: none;
-                -webkit-backdrop-filter: none;
-            }
-
-            .modal-box {
-                width: 100%;
-                max-width: 100%;
-                max-height: calc(100dvh - 16px);
-                padding: 17px;
-                padding-bottom: calc(17px + env(safe-area-inset-bottom));
-                border-radius: 20px;
-                background: var(--glass-strong);
-                backdrop-filter: none;
-                -webkit-backdrop-filter: none;
-            }
-
-            .modal-input {
-                min-height: 46px;
-            }
-
             .glass-panel:hover,
             .glass-btn:hover,
-            .menu-item:hover,
-            .mech-card:hover {
+            .menu-item:hover {
                 border-color: inherit;
                 background: inherit;
                 box-shadow: inherit;
                 transform: none;
-            }
-
-            .mech-card.status-broken:hover {
-                border-color: rgba(251, 113, 133, 0.45);
-            }
-
-            .mech-card.status-warranty:hover {
-                border-color: rgba(125, 211, 252, 0.45);
-            }
-        }
-
-        @media (max-width: 380px) {
-            .app-layout {
-                padding-right: 8px;
-                padding-left: 8px;
-            }
-
-            .brand-title {
-                font-size: 0.9rem;
-            }
-
-            #main-content h1 {
-                font-size: 1.16rem !important;
-            }
-
-            .stat-value {
-                font-size: 1.38rem;
             }
         }
 
@@ -1503,13 +724,16 @@
     </style>
 </head>
 
-<body data-module-active="mech">
-    <div class="bg-atmospheric" aria-hidden="true"></div>
+<body data-module-active="mechanization" data-bg="mech">
+    <div class="bg-atmospheric" aria-hidden="true">
+        <div class="bg-layer bg-layer-mech"></div>
+    </div>
 
     <header class="mobile-header">
         <button
             type="button"
             class="mobile-menu-icon"
+            id="mobile-menu-icon-static"
             aria-label="Открыть меню"
             aria-expanded="false"
         >
@@ -1536,7 +760,7 @@
                     </div>
 
                     <div class="brand-subtitle">
-                        Техника & Автопарк
+                        Учет техники
                     </div>
                 </div>
             </div>
@@ -1562,14 +786,6 @@
             <div class="sidebar-footer">
                 <button
                     type="button"
-                    class="suggestion-button"
-                    onclick="openSuggestionModal()"
-                >
-                    💡 Оставить предложение
-                </button>
-
-                <button
-                    type="button"
                     class="glass-btn auth-logout-button"
                     onclick="window.location.href='/'"
                 >
@@ -1586,80 +802,85 @@
         СХК «Великополье» · 2026 г.
     </footer>
 
-    <div id="suggestion-modal" class="modal-overlay">
-        <div class="modal-box">
-            <div
-                style="
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    gap: 12px;
-                "
-            >
-                <h3
-                    style="
-                        margin: 0;
-                        color: #fff;
-                        font-size: 1.05rem;
-                        font-weight: 800;
-                    "
-                >
-                    💡 Оставить предложение
-                </h3>
+    <script type="module">
+        import { init as initDashboard } from './dashboard.js';
+        import { init as initFleet } from './fleet.js';
 
-                <button
-                    type="button"
-                    class="modal-close-x"
-                    onclick="closeSuggestionModal()"
-                    aria-label="Закрыть"
-                >
-                    ✕
-                </button>
-            </div>
+        const SUPABASE_URL = "https://eaiitxfoqlkmykyqqapg.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_3sU4_opgqfZ5tPzk1bW5Ig_6XlX97pm";
+        window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-            <p
-                style="
-                    margin: 10px 0 12px;
-                    color: var(--muted);
-                    font-size: 0.8rem;
-                    line-height: 1.55;
-                "
-            >
-                Заметили неудобство или есть идея,
-                как улучшить приложение?
-                Напишите нам — каждое предложение
-                попадает напрямую к администратору.
-            </p>
+        const modules = {
+            dashboard: initDashboard,
+            fleet: initFleet
+        };
 
-            <textarea
-                id="suggestion-text"
-                class="suggestion-textarea"
-                maxlength="1000"
-                placeholder="Ваше предложение..."
-            ></textarea>
+        let currentModule = 'dashboard';
 
-            <button
-                type="button"
-                class="glass-btn"
-                id="suggestion-send-button"
-                style="
-                    width: 100%;
-                    margin-top: 12px;
-                    border-color: var(--green-dark);
-                    color: var(--green);
-                "
-                onclick="sendSuggestion()"
-            >
-                ✈ Отправить
-            </button>
-        </div>
-    </div>
+        window.navigate = async function(moduleId, menuItem) {
+            if (currentModule === moduleId) return;
+            
+            currentModule = moduleId;
+            
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            if (menuItem) {
+                menuItem.classList.add('active');
+            }
 
-    <script src="../../js/config.js"></script>
-    <script src="modules/common.js"></script>
-    <script src="modules/auth.js"></script>
-    <script src="modules/dashboard.js"></script>
-    <script src="modules/fleet.js"></script>
-    <script src="modules/app.js"></script>
+            closeMobileMenu();
+
+            const content = document.getElementById('main-content');
+            content.innerHTML = '<div style="text-align: center; padding: 60px 20px; color: var(--muted);">Загрузка...</div>';
+
+            if (modules[moduleId]) {
+                await modules[moduleId]();
+            }
+        };
+
+        function setupMobileMenu() {
+            const menuIcon = document.getElementById('mobile-menu-icon-static');
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+
+            if (menuIcon && sidebar && backdrop) {
+                menuIcon.addEventListener('click', () => {
+                    const isOpen = sidebar.classList.contains('open');
+                    if (isOpen) {
+                        closeMobileMenu();
+                    } else {
+                        sidebar.classList.add('open');
+                        backdrop.classList.add('open');
+                        document.body.classList.add('menu-open');
+                        menuIcon.setAttribute('aria-expanded', 'true');
+                    }
+                });
+
+                backdrop.addEventListener('click', closeMobileMenu);
+            }
+        }
+
+        function closeMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            const menuIcon = document.getElementById('mobile-menu-icon-static');
+
+            if (sidebar) sidebar.classList.remove('open');
+            if (backdrop) backdrop.classList.remove('open');
+            if (document.body) document.body.classList.remove('menu-open');
+            if (menuIcon) menuIcon.setAttribute('aria-expanded', 'false');
+        }
+
+        window.closeMobileMenu = closeMobileMenu;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            setupMobileMenu();
+            await navigate('dashboard');
+            setTimeout(() => {
+                document.body.classList.add('app-booted');
+            }, 500);
+        });
+    </script>
 </body>
 </html>

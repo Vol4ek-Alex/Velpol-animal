@@ -415,16 +415,6 @@
 
         hideWelcomeScreen();
 
-        const menuFab = document.getElementById(
-            'menu-fab'
-        );
-
-        if (menuFab) {
-            menuFab.classList.add(
-                'menu-fab-hidden'
-            );
-        }
-
         const footer =
             document.getElementById(
                 'diets-floating-footer'
@@ -942,6 +932,64 @@
             );
         }
 
+        const menuFab =
+            document.getElementById(
+                'menu-fab'
+            );
+
+        if (menuFab) {
+            menuFab.addEventListener(
+                'click',
+                function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    window.toggleMenu();
+                }
+            );
+        }
+
+        document.addEventListener(
+            'click',
+            function (event) {
+                if (
+                    !sidebar.classList.contains(
+                        'open'
+                    )
+                ) {
+                    return;
+                }
+
+                if (
+                    sidebar.contains(
+                        event.target
+                    )
+                ) {
+                    return;
+                }
+
+                if (
+                    menuFab &&
+                    menuFab.contains(
+                        event.target
+                    )
+                ) {
+                    return;
+                }
+
+                if (
+                    menuButton &&
+                    menuButton.contains(
+                        event.target
+                    )
+                ) {
+                    return;
+                }
+
+                window.closeMenu();
+            }
+        );
+
         sidebar.addEventListener(
             'click',
             function (event) {
@@ -1135,7 +1183,7 @@
 
         container.innerHTML = `
             <div id="welcome-screen" class="welcome-screen">
-                <div class="welcome-card glass-panel">
+                <div class="welcome-card">
                     <div class="welcome-logo">🌾</div>
                     <h1 class="welcome-title">${dayPart}, ${window.escapeHtml(fullName)}!</h1>
                     <p class="welcome-sub">Добро пожаловать в «Животноводство» — учёт поголовья и рационы кормления.</p>

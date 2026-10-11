@@ -865,7 +865,7 @@
                 left: 0;
                 z-index: 1400;
                 display: flex;
-                width: min(300px, 88vw);
+                width: min(280px, 80vw);
                 min-width: 0;
                 height: 100dvh;
                 padding:
@@ -897,7 +897,7 @@
                 inset: 0;
                 z-index: 1300;
                 display: block;
-                background: rgba(0, 0, 0, 0.58);
+                background: rgba(0, 0, 0, 0.45);
                 opacity: 0;
                 pointer-events: none;
                 transition: opacity 180ms ease;
@@ -1183,7 +1183,6 @@
 
             closeMobileMenu();
             hideWelcome();
-            document.getElementById('menu-fab')?.classList.add('menu-fab-hidden');
 
             const content = document.getElementById('main-content');
             content.innerHTML = '<div style="text-align: center; padding: 60px 20px; color: var(--muted);">Загрузка...</div>';
@@ -1436,7 +1435,7 @@
             if (!content) return;
             content.innerHTML = `
                 <div id="welcome-screen" class="welcome-screen">
-                    <div class="welcome-card glass-panel">
+                    <div class="welcome-card">
                         <div class="welcome-logo">🚜</div>
                         <h1 class="welcome-title">${dayPart}, ${fullName}!</h1>
                         <p class="welcome-sub">Добро пожаловать в «Механизацию» — учёт техники и планирование работ.</p>

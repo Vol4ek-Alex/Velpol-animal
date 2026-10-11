@@ -460,8 +460,22 @@
 
                     @media (max-width: 700px) {
                         .reports-table {
-                            min-width: 420px !important;
-                            width: 420px !important;
+                            min-width: 560px !important;
+                            width: 560px !important;
+                            table-layout: auto !important;
+                        }
+
+                        .reports-table th,
+                        .reports-table td {
+                            overflow: visible;
+                            white-space: nowrap;
+                            text-overflow: clip;
+                        }
+
+                        .reports-tons-cell,
+                        .reports-cost-cell {
+                            text-align: right;
+                            font-size: 0.82rem;
                         }
                     }
 

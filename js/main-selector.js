@@ -177,7 +177,7 @@ async function handleRegister(email, password) {
         
         setTimeout(() => {
             document.getElementById('success-container').innerHTML = 
-                '<div class="success-message">📧 Письмо отправлено! Проверьте почту и подтвердите email. После подтверждения обратитесь к администратору для получения доступа.</div>';
+                '<div class="success-message">📧 Письмо отправлено! Обратитесь к администратору для получения доступа.</div>';
         }, 2000);
 
     } catch (error) {

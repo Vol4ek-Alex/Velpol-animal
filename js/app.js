@@ -824,21 +824,45 @@
         }
 
         try {
+            let user = null;
+            try {
+                if (window.AuthModule && window.AuthModule.session) {
+                    user = window.AuthModule.session.user;
+                }
+            } catch (e) { user = null; }
+
+            if (!user) {
+                try {
+                    const data = await db.auth.getUser();
+                    user = data && data.user && data.user.id ? data.user : null;
+                } catch (e) { user = null; }
+            }
+
+            let authorName = 'Неизвестный';
+            if (user) {
+                try {
+                    const { data: prof } = await db
+                        .from('user_profiles')
+                        .select('full_name')
+                        .eq('id', user.id)
+                        .maybeSingle();
+                    authorName = (prof && prof.full_name) || (user.user_metadata || {}).full_name || user.email || 'Неизвестный';
+                } catch (e) {
+                    authorName = (user.user_metadata || {}).full_name || user.email || 'Неизвестный';
+                }
+            } else {
+                try {
+                    const stored = JSON.parse(localStorage.getItem('velpol_user'));
+                    if (stored) authorName = stored.full_name || stored.email || 'Неизвестный';
+                } catch (e) { /* ignore */ }
+            }
+
             const response = await db
                 .from('suggestions')
                 .insert({
                     text: text,
-                    user_id:
-                        window.AuthModule &&
-                        window.AuthModule.session
-                            ? window.AuthModule.session.user.id
-                            : null,
-                    user_name:
-                        window.AuthModule &&
-                        window.AuthModule.profile
-                            ? window.AuthModule.profile.full_name ||
-                              'Неизвестный'
-                            : 'Неизвестный',
+                    user_id: user ? user.id : null,
+                    user_name: authorName,
                     page: window.state.activeModule
                 });
 

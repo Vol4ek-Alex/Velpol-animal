@@ -2,7 +2,8 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+        <meta name="theme-color" content="#0f172a">
     <title>Админ-панель - Великополье Control Panel</title>
     <link rel="stylesheet" href="../styles/main.css">
     <style>
@@ -298,6 +299,52 @@
             .suggestion-actions { width: 100%; }
 
             .suggestion-actions .btn { flex: 1 1 auto; }
+
+            body {
+                padding: 12px 10px calc(40px + env(safe-area-inset-bottom));
+                padding-top: calc(12px + env(safe-area-inset-top));
+                font-size: 14px;
+                -webkit-text-size-adjust: 100%;
+            }
+
+            .admin-topbar {
+                padding-top: 2px;
+            }
+
+            .admin-header h1 { font-size: 1.45rem; }
+
+            .admin-header { margin-bottom: 18px; }
+
+            .request-card:hover {
+                transform: none;
+                box-shadow: none;
+            }
+
+            .btn:hover { transform: none; }
+
+            .btn { min-height: 46px; font-size: 0.92rem; }
+
+            .suggestion-card { gap: 10px; }
+
+            .suggestion-body { flex: 1 1 100%; }
+
+            .suggestion-author { font-size: 0.78rem; padding: 4px 10px; }
+
+            .suggestion-text { font-size: 0.9rem; }
+
+            .users-section h2 { font-size: 1.15rem; }
+
+            .users-section .section-subtitle { font-size: 0.82rem; }
+
+            .admin-footer { margin-top: 32px; font-size: 0.7rem; }
+        }
+
+        @media (hover: none) {
+            .request-card:hover,
+            .btn:hover,
+            .access-toggle:hover {
+                transform: none;
+            }
         }
     </style>
 </head>

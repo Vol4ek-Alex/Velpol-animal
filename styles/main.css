@@ -439,24 +439,42 @@ body.has-admin .admin-dock:active {
 
 @media (max-width: 700px) {
     body {
-        padding: 16px 12px 40px;
+        padding: calc(16px + env(safe-area-inset-top)) 12px calc(40px + env(safe-area-inset-bottom));
         align-items: flex-start;
+        -webkit-text-size-adjust: 100%;
     }
 
-    .header h1 { font-size: 2rem; }
+    .header h1 { font-size: 1.55rem; }
+
+    .header p { font-size: 0.85rem; }
 
     #logout-container {
-        top: 12px;
+        top: calc(12px + env(safe-area-inset-top));
         right: 12px;
     }
 
     .module-card { padding: 16px 18px; }
+    .module-card:hover { transform: none; }
     .module-icon { font-size: 1.7rem; }
+
+    .login-form .form-input { min-height: 46px; font-size: 16px; }
+
+    .btn-primary { min-height: 48px; font-size: 1rem; }
+
+    .auth-tab { min-height: 42px; }
 
     /* На телефоне «Администрирование» — 4-я карточка, dock скрыт */
     body.has-admin .admin-dock { display: none; }
     body.has-admin #admin-module {
         display: flex;
         max-width: none;
+    }
+}
+
+@media (hover: none) {
+    .module-card:hover {
+        transform: none;
+        border-color: var(--line);
+        box-shadow: none;
     }
 }

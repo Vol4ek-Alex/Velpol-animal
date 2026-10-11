@@ -1,4 +1,4 @@
-﻿export async function init() {
+export async function init() {
     const content = document.getElementById('main-content');
     if (!content) return;
 
@@ -22,8 +22,8 @@
 
             <div class="glass-panel" style="padding: 20px; margin-bottom: 20px;">
                 <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
-                    <input type="text" id="vehicleSearchInput" style="width: 100%; min-height: 42px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--input-bg); color: #fff; font-size: 0.88rem;" placeholder="🔍 Поиск по модели, номеру, VIN, водителю или тегу...">
-                    <select id="sortSelect" onchange="window.handleSortChange(this.value)" style="width: 100%; min-height: 42px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--input-bg); color: #fff; font-size: 0.88rem; font-weight: 500;">
+                    <input type="text" id="vehicleSearchInput" class="modal-field" font-size: 0.88rem; placeholder="🔍 Поиск по модели, номеру, VIN, водителю или тегу...">
+                    <select id="sortSelect" onchange="window.handleSortChange(this.value)" class="modal-field" font-size: 0.88rem; font-weight: 500;>
                         <option value="name_asc">По названию (А–Я)</option>
                         <option value="name_desc">По названию (Я–А)</option>
                         <option value="hours_desc">По наработке (сначала max)</option>
@@ -49,145 +49,145 @@
 function buildModalsHtml() {
     return `
     <div id="vFormModal" class="modal-overlay-fleet" style="display: none;">
-        <div class="glass-panel" style="width: 100%; max-width: 520px; padding: 24px; max-height: calc(100dvh - 32px); overflow-y: auto; position: relative;">
-            <button onclick="window.closeVModal()" style="position: absolute; top: 20px; right: 20px; border: none; background: none; color: var(--muted); font-size: 1.4rem; cursor: pointer;">✕</button>
+        <div class="modal-box-fleet" style="max-width: 520px;">
+            <button onclick="window.closecloseVModal()" class="modal-close-x" aria-label="Закрыть">✕</button>
             <h3 id="vModalTitle" style="margin: 0 0 20px 0; padding-bottom: 16px; border-bottom: 1px solid var(--line); color: #fff; font-size: 1.2rem; font-weight: 800;">Карточка техники</h3>
             <form id="vForm" style="display: flex; flex-direction: column; gap: 16px; font-size: 0.88rem;">
                 <input type="hidden" id="vId">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
                     <div>
-                        <label style="display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Категория</label>
-                        <select id="vCategory" required style="width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-size: 0.88rem; font-weight: 500;"></select>
+                        <label class="modal-label">Категория</label>
+                        <select id="vCategory" required class="modal-field" font-size: 0.88rem; font-weight: 500;></select>
                     </div>
                     <div>
-                        <label style="display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Модель</label>
-                        <input type="text" id="vName" required style="width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-size: 0.88rem; font-weight: 500;" placeholder="МТЗ-3522">
-                    </div>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
-                    <div>
-                        <label style="display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Вод/Мех</label>
-                        <select id="vDriver" style="width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-size: 0.88rem; font-weight: 500;"></select>
-                    </div>
-                    <div>
-                        <label style="display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Наработка (м/ч)</label>
-                        <input type="number" id="vHours" required style="width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-size: 0.88rem; font-weight: 600;" placeholder="0">
+                        <label class="modal-label">Модель</label>
+                        <input type="text" id="vName" required class="modal-field" font-size: 0.88rem; font-weight: 500; placeholder="МТЗ-3522">
                     </div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
                     <div>
-                        <label style="display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Госномер</label>
-                        <input type="text" id="vPlate" style="width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; font-weight: 500;" placeholder="1234 AB-7">
+                        <label class="modal-label">Вод/Мех</label>
+                        <select id="vDriver" class="modal-field" font-size: 0.88rem; font-weight: 500;></select>
                     </div>
                     <div>
-                        <label style="display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Инв. №</label>
-                        <input type="text" id="vInv" style="width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; font-weight: 500;" placeholder="00125">
+                        <label class="modal-label">Наработка (м/ч)</label>
+                        <input type="number" id="vHours" required class="modal-field" font-size: 0.88rem; font-weight: 600; placeholder="0">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                    <div>
+                        <label class="modal-label">Госномер</label>
+                        <input type="text" id="vPlate" class="modal-field" font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; font-weight: 500; placeholder="1234 AB-7">
+                    </div>
+                    <div>
+                        <label class="modal-label">Инв. №</label>
+                        <input type="text" id="vInv" class="modal-field" font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; font-weight: 500; placeholder="00125">
                     </div>
                 </div>
                 <div>
-                    <label style="display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">VIN / Заводской номер</label>
-                    <input type="text" id="vVin" style="width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; font-weight: 500;" placeholder="Номер рамы">
+                    <label class="modal-label">VIN / Заводской номер</label>
+                    <input type="text" id="vVin" class="modal-field" font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; font-weight: 500; placeholder="Номер рамы">
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
                     <div>
-                        <label style="display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Техосмотр до</label>
-                        <input type="date" id="vToDate" style="width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-size: 0.88rem; font-weight: 500;">
+                        <label class="modal-label">Техосмотр до</label>
+                        <input type="date" id="vToDate" class="modal-field" font-size: 0.88rem; font-weight: 500;>
                     </div>
                     <div>
-                        <label style="display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Страховка до</label>
-                        <input type="date" id="vInsuranceDate" style="width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-size: 0.88rem; font-weight: 500;">
+                        <label class="modal-label">Страховка до</label>
+                        <input type="date" id="vInsuranceDate" class="modal-field" font-size: 0.88rem; font-weight: 500;>
                     </div>
                 </div>
                 <div>
-                    <label style="display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Теги статусов</label>
+                    <label class="modal-label">Теги статусов</label>
                     <div id="tagsCheckboxContainer" style="display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 11px; border: 1px solid var(--line); max-height: 140px; overflow-y: auto;"></div>
                 </div>
                 <div style="display: flex; gap: 12px; padding-top: 12px; border-top: 1px solid var(--line);">
-                    <button type="submit" class="glass-btn" style="flex: 1; background: rgba(52, 211, 153, 0.18); border-color: var(--green); color: var(--green); font-weight: 700;">Сохранить</button>
+                    <button type="submit" class="glass-btn modal-btn-primary" style="flex: 1;">Сохранить</button>
                 </div>
-                <button type="button" id="vDeleteBtn" class="glass-btn hidden" style="width: 100%; background: rgba(251, 113, 133, 0.15); border-color: var(--red); color: var(--red);">Удалить из базы</button>
+                <button type="button" id="vDeleteBtn" class="glass-btn modal-btn-danger hidden" style="width: 100%;">Удалить из базы</button>
             </form>
         </div>
     </div>
 
     <div id="driversManagementModal" class="modal-overlay-fleet" style="display: none;">
-        <div class="glass-panel" style="width: 100%; max-width: 440px; padding: 22px; max-height: calc(100dvh - 32px); overflow-y: auto; position: relative;">
-            <button onclick="window.closeDriversModal()" style="position: absolute; top: 20px; right: 20px; border: none; background: none; color: var(--muted); font-size: 1.4rem; cursor: pointer;">✕</button>
+        <div class="modal-box-fleet">
+            <button onclick="window.closecloseDriversModal()" class="modal-close-x" aria-label="Закрыть">✕</button>
             <h3 style="margin: 0 0 18px 0; padding-bottom: 14px; border-bottom: 1px solid var(--line); color: #fff; font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">👤 Водители и механизаторы</h3>
             <div style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto;" id="modalDriversList"></div>
             <div style="padding-top: 14px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 12px;">
-                <input type="text" id="newDriverNameInput" style="width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-size: 0.86rem; font-weight: 500;" placeholder="ФИО...">
-                <button onclick="window.addCustomDriver()" class="glass-btn" style="width: 100%; background: rgba(52, 211, 153, 0.18); border-color: var(--green); color: var(--green); font-weight: 700;">Добавить</button>
+                <input type="text" id="newDriverNameInput" class="modal-field" font-size: 0.86rem; font-weight: 500; placeholder="ФИО...">
+                <button onclick="window.addCustomDriver()" class="glass-btn modal-btn-primary" style="width: 100%;">Добавить</button>
             </div>
             <button onclick="window.closeDriversModal()" class="glass-btn" style="width: 100%;">Закрыть</button>
         </div>
     </div>
 
     <div id="tagsManagementModal" class="modal-overlay-fleet" style="display: none;">
-        <div class="glass-panel" style="width: 100%; max-width: 440px; padding: 22px; max-height: calc(100dvh - 32px); overflow-y: auto; position: relative;">
-            <button onclick="window.closeTagsModal()" style="position: absolute; top: 20px; right: 20px; border: none; background: none; color: var(--muted); font-size: 1.4rem; cursor: pointer;">✕</button>
+        <div class="modal-box-fleet">
+            <button onclick="window.closecloseTagsModal()" class="modal-close-x" aria-label="Закрыть">✕</button>
             <h3 style="margin: 0 0 18px 0; padding-bottom: 14px; border-bottom: 1px solid var(--line); color: #fff; font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">🏷️ Управление тегами</h3>
             <div style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto;" id="modalTagsList"></div>
             <div style="padding-top: 14px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 12px;">
-                <input type="text" id="newTagNameInput" style="width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-size: 0.86rem; font-weight: 500;" placeholder="Название статуса...">
+                <input type="text" id="newTagNameInput" class="modal-field" font-size: 0.86rem; font-weight: 500; placeholder="Название статуса...">
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <label style="color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase;">Цвет:</label>
                     <input type="color" id="newTagColorInput" value="#e2e8f0" style="width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--input-bg); cursor: pointer;">
                 </div>
-                <button onclick="window.addCustomTag()" class="glass-btn" style="width: 100%; background: rgba(52, 211, 153, 0.18); border-color: var(--green); color: var(--green); font-weight: 700;">Создать тег</button>
+                <button onclick="window.addCustomTag()" class="glass-btn modal-btn-primary" style="width: 100%;">Создать тег</button>
             </div>
             <button onclick="window.closeTagsModal()" class="glass-btn" style="width: 100%;">Закрыть</button>
         </div>
     </div>
 
     <div id="categoriesModal" class="modal-overlay-fleet" style="display: none;">
-        <div class="glass-panel" style="width: 100%; max-width: 440px; padding: 22px; max-height: calc(100dvh - 32px); overflow-y: auto; position: relative;">
-            <button onclick="window.closeCategoriesModal()" style="position: absolute; top: 20px; right: 20px; border: none; background: none; color: var(--muted); font-size: 1.4rem; cursor: pointer;">✕</button>
+        <div class="modal-box-fleet">
+            <button onclick="window.closecloseCategoriesModal()" class="modal-close-x" aria-label="Закрыть">✕</button>
             <h3 style="margin: 0 0 18px 0; padding-bottom: 14px; border-bottom: 1px solid var(--line); color: #fff; font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">📂 Категории</h3>
             <div style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto;" id="modalCategoriesList"></div>
             <div style="padding-top: 14px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 12px;">
-                <input type="text" id="newCatInput" style="width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-size: 0.86rem; font-weight: 500;" placeholder="Новая категория...">
-                <button onclick="window.addCustomCategory()" class="glass-btn" style="width: 100%; background: rgba(52, 211, 153, 0.18); border-color: var(--green); color: var(--green); font-weight: 700;">Добавить</button>
+                <input type="text" id="newCatInput" class="modal-field" font-size: 0.86rem; font-weight: 500; placeholder="Новая категория...">
+                <button onclick="window.addCustomCategory()" class="glass-btn modal-btn-primary" style="width: 100%;">Добавить</button>
             </div>
             <button onclick="window.closeCategoriesModal()" class="glass-btn" style="width: 100%;">Закрыть</button>
         </div>
     </div>
 
     <div id="tasksModal" class="modal-overlay-fleet" style="display: none;">
-        <div class="glass-panel" style="width: 100%; max-width: 440px; padding: 22px; max-height: calc(100dvh - 32px); overflow-y: auto; position: relative;">
-            <button onclick="window.closeTasksModal()" style="position: absolute; top: 20px; right: 20px; border: none; background: none; color: var(--muted); font-size: 1.4rem; cursor: pointer;">✕</button>
+        <div class="modal-box-fleet">
+            <button onclick="window.closecloseTasksModal()" class="modal-close-x" aria-label="Закрыть">✕</button>
             <h3 id="tasksModalTitle" style="margin: 0 0 4px 0; color: #fff; font-size: 1.05rem; font-weight: 800;">Задачи по технике</h3>
             <p id="tasksModalSubtitle" style="margin: 0 0 14px 0; color: var(--muted); font-size: 0.8rem;"></p>
             <input type="hidden" id="taskVehicleId">
             <input type="hidden" id="taskVehicleName">
             <div style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto;" id="vehicleTasksList"></div>
             <div style="padding-top: 14px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 12px;">
-                <textarea id="newTaskText" rows="2" style="width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-size: 0.86rem; font-weight: 500;" placeholder="Текст задачи..."></textarea>
-                <button onclick="window.addVehicleTask()" class="glass-btn" style="width: 100%; background: rgba(52, 211, 153, 0.18); border-color: var(--green); color: var(--green); font-weight: 700;">Добавить задачу</button>
+                <textarea id="newTaskText" rows="2" class="modal-field" font-size: 0.86rem; font-weight: 500; placeholder="Текст задачи..."></textarea>
+                <button onclick="window.addVehicleTask()" class="glass-btn modal-btn-primary" style="width: 100%;">Добавить задачу</button>
             </div>
             <button onclick="window.closeTasksModal()" class="glass-btn" style="width: 100%;">Закрыть</button>
         </div>
     </div>
 
     <div id="hoursModal" class="modal-overlay-fleet" style="display: none;">
-        <div class="glass-panel" style="width: 100%; max-width: 440px; padding: 22px; max-height: calc(100dvh - 32px); overflow-y: auto; position: relative;">
-            <button onclick="window.closeHoursModal()" style="position: absolute; top: 20px; right: 20px; border: none; background: none; color: var(--muted); font-size: 1.4rem; cursor: pointer;">✕</button>
+        <div class="modal-box-fleet">
+            <button onclick="window.closecloseHoursModal()" class="modal-close-x" aria-label="Закрыть">✕</button>
             <h3 style="margin: 0 0 18px 0; padding-bottom: 14px; border-bottom: 1px solid var(--line); color: #fff; font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">⏱️ Добавить наработку</h3>
             <div style="display: flex; flex-direction: column; gap: 16px;">
                 <div>
-                    <label style="display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Выберите технику</label>
-                    <select id="hoursVehicleSelect" style="width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-size: 0.86rem; font-weight: 500;">
+                    <label class="modal-label">Выберите технику</label>
+                    <select id="hoursVehicleSelect" class="modal-field" font-size: 0.86rem; font-weight: 500;>
                         <option value="">-- Загрузка --</option>
                     </select>
                 </div>
                 <div>
-                    <label style="display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Количество часов</label>
-                    <input type="number" id="hoursInput" min="0" step="0.5" style="width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-size: 0.86rem; font-weight: 500;" placeholder="Например, 8.5">
+                    <label class="modal-label">Количество часов</label>
+                    <input type="number" id="hoursInput" min="0" step="0.5" class="modal-field" font-size: 0.86rem; font-weight: 500; placeholder="Например, 8.5">
                 </div>
             </div>
             <div style="display: flex; gap: 12px; padding-top: 12px; border-top: 1px solid var(--line);">
                 <button onclick="window.closeHoursModal()" class="glass-btn" style="flex: 1;">Отмена</button>
-                <button onclick="window.submitHours()" class="glass-btn" style="flex: 1; background: rgba(52, 211, 153, 0.18); border-color: var(--green); color: var(--green); font-weight: 700;">Добавить</button>
+                <button onclick="window.submitHours()" class="glass-btn modal-btn-primary" style="flex: 1;">Добавить</button>
             </div>
         </div>
     </div>
@@ -214,14 +214,23 @@ function openModalOverlay(id) {
     const modal = document.getElementById(id);
     if (!modal) return;
     modal.style.display = 'flex';
+    /* Анимация появления: класс open
+       ставится после отображения flex. */
+    requestAnimationFrame(function () {
+        modal.classList.add('open');
+    });
     modal.onclick = (e) => {
-        if (e.target === modal) modal.style.display = 'none';
+        if (e.target === modal) closeModalOverlay(id);
     };
 }
 
 function closeModalOverlay(id) {
     const modal = document.getElementById(id);
-    if (modal) modal.style.display = 'none';
+    if (!modal) return;
+    modal.classList.remove('open');
+    setTimeout(function () {
+        modal.style.display = 'none';
+    }, 200);
 }
 
 // Определение единицы измерения в зависимости от категории

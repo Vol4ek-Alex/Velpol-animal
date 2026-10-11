@@ -188,6 +188,15 @@ async function loadUsers() {
                     ${checkbox('agronomy')}
                     ${checkbox('mechanization')}
                     ${checkbox('admin')}
+                    <button
+                        type="button"
+                        class="btn btn-reject"
+                        style="grid-column: 1 / -1;"
+                        onclick="handleRevokeVerification('${user.id}', '${escapeHtml(user.full_name || '')}')"
+                        ${user.id === currentUser.id ? 'disabled title="Нельзя снять верификацию с себя"' : ''}
+                    >
+                        ↩️ Снять верификацию
+                    </button>
                 </div>
             </div>
         `;
@@ -220,6 +229,25 @@ async function handleModuleAccess(userId, moduleName, hasAccess, input) {
         alert('Ошибка: ' + (err.message || 'не удалось изменить доступ'));
     } finally {
         input.disabled = false;
+    }
+}
+
+async function handleRevokeVerification(userId, fullName) {
+    if (!confirm('Снять верификацию с ' + (fullName || 'пользователя') + '?\n\nВсе доступы будут отозваны, пользователь вернётся в очередь верификации.')) return;
+
+    try {
+        const { error } = await db.rpc('admin_revoke_verification', {
+            p_user_id: userId
+        });
+
+        if (error) throw error;
+
+        alert('↩️ Верификация снята. Пользователь вернулся в очередь верификации.');
+        loadUsers();
+        loadRequests();
+    } catch (error) {
+        console.error('Revoke verification error:', error);
+        alert('Ошибка: ' + error.message);
     }
 }
 

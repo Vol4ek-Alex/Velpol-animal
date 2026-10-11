@@ -961,14 +961,6 @@
                 }
 
                 if (
-                    sidebar.contains(
-                        event.target
-                    )
-                ) {
-                    return;
-                }
-
-                if (
                     menuFab &&
                     menuFab.contains(
                         event.target
@@ -986,7 +978,19 @@
                     return;
                 }
 
-                window.closeMenu();
+                /* Тап по затемнению — закрыть;
+                   тап по остальному экрану не
+                   мешает меню (иначе меню
+                   мгновенно схлопывается). */
+                if (
+                    backdrop ===
+                        event.target ||
+                    backdrop.contains(
+                        event.target
+                    )
+                ) {
+                    window.closeMenu();
+                }
             }
         );
 
@@ -1114,6 +1118,7 @@
         }
 
         let name = '';
+        let login = '';
 
         try {
             const stored = JSON.parse(
@@ -1123,13 +1128,13 @@
             );
 
             if (stored) {
-                name =
+                login =
+                    stored.login ||
                     stored.full_name ||
-                    stored.email ||
                     '';
             }
         } catch (error) {
-            name = '';
+            login = '';
         }
 
         const profile =
@@ -1137,7 +1142,7 @@
             window.AuthModule.profile;
 
         if (profile && profile.full_name) {
-            name = profile.full_name;
+            login = profile.login || profile.full_name;
         } else {
             try {
                 if (
@@ -1148,25 +1153,24 @@
                     const profileResponse =
                         await window.db
                             .from('user_profiles')
-                            .select('full_name')
+                            .select('login, full_name')
                             .eq('id', window.AuthModule.user.id)
                             .maybeSingle();
 
-                    if (
-                        profileResponse.data &&
-                        profileResponse.data.full_name
-                    ) {
-                        name =
-                            profileResponse.data.full_name;
+                    if (profileResponse.data) {
+                        login =
+                            profileResponse.data.login ||
+                            profileResponse.data.full_name ||
+                            login;
                     }
                 }
             } catch (error) {
-                name = name || '';
+                login = login || '';
             }
         }
 
         const fullName =
-            String(name).trim() ||
+            String(login).trim() ||
             'гость';
 
         const hour =
@@ -1203,6 +1207,21 @@
 
         if (!welcome) {
             return;
+        }
+
+        /* Переключатель режима редактирования
+           не должен появляться на приветствии. */
+        const editorButton = document.getElementById(
+            'floating-editor-btn'
+        );
+
+        if (editorButton && !editorButton.dataset.forceShown) {
+            editorButton.style.display = 'none';
+        } else if (
+            editorButton &&
+            window.innerWidth <= 700
+        ) {
+            editorButton.style.display = 'flex';
         }
 
         welcome.classList.add('welcome-hide');
@@ -1286,6 +1305,11 @@
 
     async function startApplication() {
         setupMobileMenu();
+
+        /* При старте приложение всегда
+           показывает приветствие с закрытым
+           меню и видимой кнопкой «Меню». */
+        window.closeMenu();
 
         if (
             window.AuthModule &&

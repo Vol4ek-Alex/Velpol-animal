@@ -628,6 +628,13 @@
             pointer-events: none;
         }
 
+        /* На приветствии переключатель режима
+           редактирования скрыт полностью. */
+        body:has(.welcome-screen:not(.welcome-hide))
+            .floating-editor-btn {
+            display: none !important;
+        }
+
         .welcome-card {
             max-width: 460px;
             width: 100%;

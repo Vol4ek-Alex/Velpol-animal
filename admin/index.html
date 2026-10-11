@@ -314,18 +314,23 @@
         </div>
 
         <div class="admin-tabs" role="tablist">
-            <button type="button" class="admin-tab active" id="tab-requests" onclick="switchTab('requests')">📨 Заявки</button>
+            <button type="button" class="admin-tab active" id="tab-requests" onclick="switchTab('requests')">🛡️ Верификация</button>
             <button type="button" class="admin-tab" id="tab-users" onclick="switchTab('users')">👤 Доступы</button>
             <button type="button" class="admin-tab" id="tab-suggestions" onclick="switchTab('suggestions')">💡 Предложения<span class="tab-counter" id="suggestions-counter" hidden>0</span></button>
         </div>
 
         <div id="loading">
-            <p style="text-align: center; color: #cbd5e1;">Загрузка заявок...</p>
+            <p style="text-align: center; color: #cbd5e1;">Загрузка...</p>
         </div>
 
         <div id="no-requests" class="no-requests" style="display: none;">
-            <h2>📭 Нет заявок</h2>
-            <p>Все заявки обработаны или новых заявок пока нет</p>
+            <h2>🛡️ Некого верифицировать</h2>
+            <p>Новые зарегистрированные пользователи появятся здесь</p>
+        </div>
+
+        <div id="requests-section-header" class="users-section" style="display: block; margin-top: 0;">
+            <h2>🛡️ Верификация аккаунтов</h2>
+            <p class="section-subtitle">Подтвердите аккаунты зарегистрировавшихся пользователей или отклоните их</p>
         </div>
 
         <div id="requests-container" class="requests-grid"></div>

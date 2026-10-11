@@ -1066,12 +1066,35 @@
 
         if (profile && profile.full_name) {
             name = profile.full_name;
+        } else {
+            try {
+                if (
+                    window.db &&
+                    window.AuthModule &&
+                    window.AuthModule.user
+                ) {
+                    const profileResponse =
+                        await window.db
+                            .from('user_profiles')
+                            .select('full_name')
+                            .eq('id', window.AuthModule.user.id)
+                            .maybeSingle();
+
+                    if (
+                        profileResponse.data &&
+                        profileResponse.data.full_name
+                    ) {
+                        name =
+                            profileResponse.data.full_name;
+                    }
+                }
+            } catch (error) {
+                name = name || '';
+            }
         }
 
-        const firstName =
-            String(name)
-                .trim()
-                .split(/\s+/)[0] ||
+        const fullName =
+            String(name).trim() ||
             'гость';
 
         const hour =
@@ -1090,7 +1113,7 @@
             <div id="welcome-screen" class="welcome-screen">
                 <div class="welcome-card glass-panel">
                     <div class="welcome-logo">🌾</div>
-                    <h1 class="welcome-title">${dayPart}, ${window.escapeHtml(firstName)}!</h1>
+                    <h1 class="welcome-title">${dayPart}, ${window.escapeHtml(fullName)}!</h1>
                     <p class="welcome-sub">Добро пожаловать в «Животноводство» — учёт поголовья и рационы кормления.</p>
                     <div class="welcome-hint">
                         <span class="welcome-hint-icon">☰</span>

@@ -29,44 +29,57 @@ async function checkAdminAccess() {
 }
 
 async function loadRequests() {
-    const { data: requests, error } = await db
-        .from('pending_access_requests')
+    const { data: accounts, error } = await db
+        .from('account_verification')
         .select('*')
         .order('created_at', { ascending: false });
 
     if (error) {
-        console.error('Error loading requests:', error);
+        console.error('Error loading verification:', error);
+        const container = document.getElementById('requests-container');
+        document.getElementById('loading').style.display = 'none';
+        if (container) {
+            container.innerHTML = `
+                <div class="request-card">
+                    <p style="color:#fb7185;">Не удалось загрузить верификацию: ${escapeHtml(error.message)}</p>
+                </div>
+            `;
+        }
         return;
     }
 
     document.getElementById('loading').style.display = 'none';
 
-    if (!requests || requests.length === 0) {
+    const container = document.getElementById('requests-container');
+    if (!container) return;
+
+    if (!accounts || accounts.length === 0) {
+        container.innerHTML = '';
         document.getElementById('no-requests').style.display = 'block';
         return;
     }
 
-    const container = document.getElementById('requests-container');
-    container.innerHTML = requests.map(req => `
+    document.getElementById('no-requests').style.display = 'none';
+
+    container.innerHTML = accounts.map(acc => `
         <div class="request-card">
             <div class="request-header">
                 <div class="request-info">
-                    <h3>${req.user_name}</h3>
-                    <p>📧 ${req.user_email}</p>
-                    <p>📦 Модуль: <strong>${getModuleName(req.module_name)}</strong></p>
-                    <p>📅 ${new Date(req.created_at).toLocaleString('ru-RU')}</p>
+                    <h3>${escapeHtml(acc.full_name || 'Без имени')}</h3>
+                    ${acc.email ? `<p>📧 ${escapeHtml(acc.email)}</p>` : ''}
+                    <p>📅 Регистрация: ${new Date(acc.created_at).toLocaleString('ru-RU')}</p>
                 </div>
-                <div class="status-badge status-${req.status}">
-                    ${getStatusText(req.status)}
+                <div class="status-badge status-${acc.status}">
+                    ${getVerificationStatusText(acc.status)}
                 </div>
             </div>
-            ${req.status === 'pending' ? `
+            ${acc.status === 'pending' ? `
                 <div class="request-actions">
-                    <button class="btn btn-approve" onclick="handleApprove('${req.id}', '${req.user_id}', '${req.module_name}')">
-                        ✅ Одобрить
+                    <button class="btn btn-approve" onclick="handleVerify('${acc.user_id}')">
+                        ✅ Подтвердить аккаунт
                     </button>
-                    <button class="btn btn-reject" onclick="handleReject('${req.id}')">
-                        ❌ Отклонить
+                    <button class="btn btn-reject" onclick="handleRejectAccount('${acc.user_id}', '${escapeHtml(acc.full_name || '')}')">
+                        🗑 Удалить из базы
                     </button>
                 </div>
             ` : ''}
@@ -74,57 +87,49 @@ async function loadRequests() {
     `).join('');
 }
 
-async function handleApprove(requestId, userId, moduleName) {
-    if (!confirm('Одобрить заявку на доступ?')) return;
-
-    try {
-        const { error: updateError } = await db
-            .from('pending_access_requests')
-            .update({
-                status: 'approved',
-                processed_at: new Date().toISOString(),
-                processed_by: currentUser.id
-            })
-            .eq('id', requestId);
-
-        if (updateError) throw updateError;
-
-        const { error: accessError } = await db.rpc('admin_set_module_access', {
-            p_user_id: userId,
-            p_module_name: moduleName,
-            p_has_access: true
-        });
-
-        if (accessError) throw accessError;
-
-        alert('✅ Заявка одобрена!');
-        loadRequests();
-    } catch (error) {
-        console.error('Approve error:', error);
-        alert('Ошибка при одобрении: ' + error.message);
-    }
+function getVerificationStatusText(status) {
+    const texts = {
+        'pending': '⏳ Ожидает подтверждения',
+        'approved': '✅ Подтверждён',
+        'rejected': '❌ Отклонён'
+    };
+    return texts[status] || status;
 }
 
-async function handleReject(requestId) {
-    if (!confirm('Отклонить заявку?')) return;
+async function handleVerify(userId) {
+    if (!confirm('Подтвердить аккаунт?')) return;
 
     try {
-        const { error } = await db
-            .from('pending_access_requests')
-            .update({
-                status: 'rejected',
-                processed_at: new Date().toISOString(),
-                processed_by: currentUser.id
-            })
-            .eq('id', requestId);
+        const { error } = await db.rpc('admin_verify_account', {
+            p_user_id: userId
+        });
 
         if (error) throw error;
 
-        alert('❌ Заявка отклонена');
+        alert('✅ Аккаунт подтверждён!');
         loadRequests();
     } catch (error) {
-        console.error('Reject error:', error);
-        alert('Ошибка при отклонении: ' + error.message);
+        console.error('Verify error:', error);
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+async function handleRejectAccount(userId, fullName) {
+    if (!confirm('Удалить аккаунт ' + (fullName || 'пользователя') + ' из базы?\n\nДоступы и профиль будут удалены безвозвратно.')) return;
+
+    try {
+        const { error } = await db.rpc('admin_reject_account', {
+            p_user_id: userId
+        });
+
+        if (error) throw error;
+
+        alert('🗑 Аккаунт удалён из базы');
+        loadRequests();
+        loadUsers();
+    } catch (error) {
+        console.error('Reject account error:', error);
+        alert('Ошибка: ' + error.message);
     }
 }
 
@@ -322,7 +327,7 @@ function switchTab(tabName) {
         tab.classList.toggle('active', tab.id === `tab-${tabName}`);
     });
 
-    const requestsIds = ['loading', 'no-requests', 'requests-container'];
+    const requestsIds = ['loading', 'no-requests', 'requests-container', 'requests-section-header'];
     const usersSection = document.getElementById('users-section');
     const suggestionsSection = document.getElementById('suggestions-section');
 
@@ -350,7 +355,8 @@ function switchTab(tabName) {
                 element.style.display =
                     hasCards ? 'none' : 'block';
             } else {
-                element.style.display = 'grid';
+                element.style.display =
+                    id === 'requests-section-header' ? 'block' : 'grid';
             }
         });
     }
@@ -377,15 +383,6 @@ function getModuleName(name) {
         'admin': '⚙️ Администрирование'
     };
     return names[name] || name;
-}
-
-function getStatusText(status) {
-    const texts = {
-        'pending': '⏳ Ожидает',
-        'approved': '✅ Одобрено',
-        'rejected': '❌ Отклонено'
-    };
-    return texts[status] || status;
 }
 
 checkAdminAccess().then(hasAccess => {

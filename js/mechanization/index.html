@@ -504,33 +504,39 @@
             display: none;
         }
 
-        /* Плавающая кнопка меню */
+        /* Плавающая кнопка меню (только телефон) */
         .menu-fab {
-            position: fixed;
-            top: 14px;
-            left: 14px;
-            z-index: 1500;
-            display: inline-flex;
-            align-items: center;
-            gap: 9px;
-            min-height: 44px;
-            padding: 9px 16px 9px 12px;
-            border: 1px solid var(--line-bright);
-            border-radius: 999px;
-            background: var(--glass-strong);
-            color: var(--text);
-            cursor: pointer;
-            font-size: 0.82rem;
-            font-weight: 800;
-            letter-spacing: 0.02em;
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-            backdrop-filter: blur(18px) saturate(1.2);
-            -webkit-backdrop-filter: blur(18px) saturate(1.2);
-            transition:
-                transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
-                opacity 320ms ease,
-                box-shadow 220ms ease,
-                border-color 220ms ease;
+            display: none;
+        }
+
+        @media (max-width: 700px) {
+            .menu-fab {
+                position: fixed;
+                top: 14px;
+                left: 14px;
+                z-index: 1500;
+                display: inline-flex;
+                align-items: center;
+                gap: 9px;
+                min-height: 44px;
+                padding: 9px 16px 9px 12px;
+                border: 1px solid var(--line-bright);
+                border-radius: 999px;
+                background: var(--glass-strong);
+                color: var(--text);
+                cursor: pointer;
+                font-size: 0.82rem;
+                font-weight: 800;
+                letter-spacing: 0.02em;
+                box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+                backdrop-filter: blur(18px) saturate(1.2);
+                -webkit-backdrop-filter: blur(18px) saturate(1.2);
+                transition:
+                    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+                    opacity 320ms ease,
+                    box-shadow 220ms ease,
+                    border-color 220ms ease;
+            }
         }
 
         .menu-fab:hover {
@@ -846,11 +852,6 @@
 
             .mobile-header {
                 display: none;
-            }
-
-            .menu-fab {
-                top: calc(12px + env(safe-area-inset-top));
-                left: 12px;
             }
 
             #sidebar {
@@ -1365,11 +1366,22 @@
                 const { data } = await window._supabase.auth.getUser();
                 if (data && data.user) {
                     const meta = data.user.user_metadata || {};
-                    name = meta.full_name || data.user.email || name;
+                    name = meta.full_name || '';
+                    if (!name || name === data.user.email) {
+                        try {
+                            const { data: prof } = await window._supabase
+                                .from('user_profiles')
+                                .select('full_name')
+                                .eq('id', data.user.id)
+                                .maybeSingle();
+                            if (prof && prof.full_name) name = prof.full_name;
+                        } catch (e) { /* ignore */ }
+                    }
+                    if (!name) name = data.user.email || '';
                 }
             } catch (e) { /* ignore */ }
 
-            const firstName = String(name).trim().split(/\s+/)[0] || 'гость';
+            const fullName = String(name).trim() || 'гость';
             const hour = new Date().getHours();
             const dayPart = hour < 5 ? 'Доброй ночи' : hour < 12 ? 'Доброе утро' : hour < 18 ? 'Добрый день' : 'Добрый вечер';
 
@@ -1379,7 +1391,7 @@
                 <div id="welcome-screen" class="welcome-screen">
                     <div class="welcome-card glass-panel">
                         <div class="welcome-logo">🚜</div>
-                        <h1 class="welcome-title">${dayPart}, ${firstName}!</h1>
+                        <h1 class="welcome-title">${dayPart}, ${fullName}!</h1>
                         <p class="welcome-sub">Добро пожаловать в «Механизацию» — учёт техники и планирование работ.</p>
                         <div class="welcome-hint">
                             <span class="welcome-hint-icon">☰</span>

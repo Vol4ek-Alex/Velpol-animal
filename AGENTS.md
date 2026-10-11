@@ -25,8 +25,8 @@
 - suggestions (user_id, user_name, page, text, is_done) — предложения (FAB-кнопка), RLS: authenticated insert self, anon insert true
 
 ## RPC (security definer)
-- admin_verify_account(p_user_id) — status=approved + создаёт user_profiles из auth.users
-- admin_reject_account(p_user_id) — status=rejected + удаление module_access, user_permissions, user_profiles (auth.users из SQL удалить нельзя)
+- admin_verify_account(p_user_id) — status=approved + создаёт user_profiles (login=email, full_name из metadata) + module_access livestock/mechanization
+- admin_reject_account(p_user_id) — status=rejected + удаление module_access, user_permissions, user_profiles, account_verification (auth.users из SQL удалить нельзя)
 - admin_get_users_with_access() — список для вкладки Доступы
 
 ## Важные особенности

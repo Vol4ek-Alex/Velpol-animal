@@ -396,13 +396,33 @@
                 ).find(function (item) {
                     return (
                         item.dataset.module ===
-                        moduleName
+                            moduleName ||
+                        (
+                            item.getAttribute(
+                                'onclick'
+                            ) ||
+                            ''
+                        ).includes(
+                            moduleName
+                        )
                     );
                 });
 
             if (menuItem) {
                 menuItem.classList.add('active');
             }
+        }
+
+        hideWelcomeScreen();
+
+        const menuFab = document.getElementById(
+            'menu-fab'
+        );
+
+        if (menuFab) {
+            menuFab.classList.add(
+                'menu-fab-hidden'
+            );
         }
 
         const footer =
@@ -973,6 +993,9 @@
                 '.mobile-menu-icon'
             );
 
+        const menuFab =
+            document.getElementById('menu-fab');
+
         if (sidebar) {
             sidebar.classList.remove('open');
         }
@@ -991,6 +1014,107 @@
                 'false'
             );
         }
+
+        if (menuFab) {
+            menuFab.setAttribute(
+                'aria-expanded',
+                'false'
+            );
+        }
+    };
+
+    window.showWelcomeScreen = function () {
+        const container =
+            document.getElementById(
+                'main-content'
+            );
+
+        if (!container) {
+            return;
+        }
+
+        if (
+            document.getElementById(
+                'welcome-screen'
+            )
+        ) {
+            return;
+        }
+
+        let name = '';
+
+        try {
+            const stored = JSON.parse(
+                localStorage.getItem(
+                    'velpol_user'
+                ) || 'null'
+            );
+
+            if (stored) {
+                name =
+                    stored.full_name ||
+                    stored.email ||
+                    '';
+            }
+        } catch (error) {
+            name = '';
+        }
+
+        const profile =
+            window.AuthModule &&
+            window.AuthModule.profile;
+
+        if (profile && profile.full_name) {
+            name = profile.full_name;
+        }
+
+        const firstName =
+            String(name)
+                .trim()
+                .split(/\s+/)[0] ||
+            'гость';
+
+        const hour =
+            new Date().getHours();
+
+        const dayPart =
+            hour < 5
+                ? 'Доброй ночи'
+                : hour < 12
+                    ? 'Доброе утро'
+                    : hour < 18
+                        ? 'Добрый день'
+                        : 'Добрый вечер';
+
+        container.innerHTML = `
+            <div id="welcome-screen" class="welcome-screen">
+                <div class="welcome-card glass-panel">
+                    <div class="welcome-logo">🌾</div>
+                    <h1 class="welcome-title">${dayPart}, ${window.escapeHtml(firstName)}!</h1>
+                    <p class="welcome-sub">Добро пожаловать в «Животноводство» — учёт поголовья и рационы кормления.</p>
+                    <div class="welcome-hint">
+                        <span class="welcome-hint-icon">☰</span>
+                        <span>Нажмите <b>«Меню»</b>, чтобы начать</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    };
+
+    window.hideWelcomeScreen = function () {
+        const welcome = document.getElementById(
+            'welcome-screen'
+        );
+
+        if (!welcome) {
+            return;
+        }
+
+        welcome.classList.add('welcome-hide');
+
+        setTimeout(function () {
+            welcome.remove();
+        }, 450);
     };
 
     function addLogoutButton() {
@@ -1094,7 +1218,7 @@
                 'dashboard';
         }
 
-        window.renderCurrentModule();
+        window.showWelcomeScreen();
 
         if (
             window.AuthModule.profile &&

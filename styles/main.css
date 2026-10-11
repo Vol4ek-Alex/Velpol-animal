@@ -424,6 +424,19 @@ body.has-admin .admin-dock:active {
     color: var(--blue);
 }
 
+#logout-container .auth-tab {
+    border: 1px solid var(--line-bright);
+    background: rgba(14, 30, 51, 0.82);
+    backdrop-filter: blur(14px);
+    color: var(--text);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+#logout-container .auth-tab:hover {
+    border-color: var(--line-green);
+    color: var(--green);
+}
+
 @media (max-width: 700px) {
     body {
         padding: 16px 12px 40px;

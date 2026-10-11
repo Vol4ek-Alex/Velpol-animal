@@ -231,6 +231,8 @@ document.querySelectorAll('.module-card[data-module]').forEach(function (card) {
             document.body.setAttribute('data-hover-bg', 'farm');
         } else if (module === 'mechanization') {
             document.body.setAttribute('data-hover-bg', 'mech');
+        } else if (module === 'agronomy') {
+            document.body.setAttribute('data-hover-bg', 'agro');
         }
     });
 

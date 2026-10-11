@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'velpol-agro-v5';
+﻿const CACHE_NAME = 'velpol-agro-v6';
 
 const APP_FILES = [
     './',
@@ -11,6 +11,7 @@ const APP_FILES = [
     './assets/backgrounds/bg_mech_park.jpg',
     './assets/backgrounds/farm_card.jpg',
     './assets/backgrounds/mech-card.jpg',
+    './assets/backgrounds/bg_agro_card.jpg',
     './assets/icons/icon.svg',
     './assets/icons/icon-192.png',
     './assets/icons/icon-512.png',

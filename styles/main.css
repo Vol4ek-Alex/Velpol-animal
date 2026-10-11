@@ -80,8 +80,14 @@ body {
         url("../assets/backgrounds/mech-card.jpg") center center / cover no-repeat;
 }
 
+.bg-hover-layer[data-layer="agro"] {
+    background: linear-gradient(180deg, rgba(7, 17, 31, 0.35), rgba(4, 11, 22, 0.5)),
+        url("../assets/backgrounds/bg_agro_card.jpg") center center / cover no-repeat;
+}
+
 body[data-hover-bg="farm"] .bg-hover-layer[data-layer="farm"],
-body[data-hover-bg="mech"] .bg-hover-layer[data-layer="mech"] {
+body[data-hover-bg="mech"] .bg-hover-layer[data-layer="mech"],
+body[data-hover-bg="agro"] .bg-hover-layer[data-layer="agro"] {
     opacity: 1;
 }
 

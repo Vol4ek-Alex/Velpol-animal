@@ -4,36 +4,34 @@ export async function init() {
 
     content.innerHTML = `
         <div style="max-width: 1400px; margin: 0 auto;">
-            <div class="glass-panel" style="padding: 22px; margin-bottom: 20px;">
-                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
-                    <h2 style="margin: 0; color: #fff; font-size: 1.4rem; font-weight: 800; display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 1.6rem;">🚜</span> Управление автопарком
-                    </h2>
-                    <p style="margin: 0; color: var(--muted); font-size: 0.86rem; font-weight: 500;">Учет техники, закрепление водителей и механизаторов, контроль документов и ремонтов</p>
+            <div class="glass-panel fleet-toolbar">
+                <div class="fleet-toolbar-head">
+                    <h2><span class="fleet-toolbar-icon">🚜</span> Управление автопарком</h2>
+                    <p>Учет техники, закрепление водителей и механизаторов, контроль документов и ремонтов</p>
                 </div>
-                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                <div class="fleet-toolbar-actions">
                     <button onclick="window.openDriversModal()" class="glass-btn">👤 Вод/Мех</button>
                     <button onclick="window.openTagsModal()" class="glass-btn">🏷️ Теги</button>
                     <button onclick="window.openCategoriesModal()" class="glass-btn">📂 Категории</button>
-                    <button onclick="window.openHoursModal()" class="glass-btn" style="background: rgba(125, 211, 252, 0.15); border-color: var(--blue); color: var(--blue);">⏱️ Добавить часы</button>
-                    <button onclick="window.openVehicleModalForm()" class="glass-btn" style="background: rgba(52, 211, 153, 0.15); border-color: var(--green); color: var(--green);">➕ Карта</button>
+                    <button onclick="window.openHoursModal()" class="glass-btn fleet-btn-blue">⏱️ Добавить часы</button>
+                    <button onclick="window.openVehicleModalForm()" class="glass-btn modal-btn-primary">➕ Карта</button>
                 </div>
             </div>
 
-            <div class="glass-panel" style="padding: 20px; margin-bottom: 20px;">
-                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
-                    <input type="text" id="vehicleSearchInput" class="modal-field" font-size: 0.88rem; placeholder="🔍 Поиск по модели, номеру, VIN, водителю или тегу...">
-                    <select id="sortSelect" onchange="window.handleSortChange(this.value)" class="modal-field" font-size: 0.88rem; font-weight: 500;>
+            <div class="glass-panel fleet-search-panel">
+                <div class="fleet-search-fields">
+                    <input type="text" id="vehicleSearchInput" class="modal-field" placeholder="🔍 Поиск по модели, номеру, VIN, водителю или тегу...">
+                    <select id="sortSelect" onchange="window.handleSortChange(this.value)" class="modal-field">
                         <option value="name_asc">По названию (А–Я)</option>
                         <option value="name_desc">По названию (Я–А)</option>
                         <option value="hours_desc">По наработке (сначала max)</option>
                     </select>
                 </div>
-                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 14px; border-top: 1px solid var(--line);" id="fleetCategoriesBar"></div>
+                <div class="fleet-categories-bar" id="fleetCategoriesBar"></div>
             </div>
 
-            <div id="fleetGridContainer" style="display: flex; flex-direction: column; gap: 20px;">
-                <div style="text-align: center; color: var(--muted); padding: 40px 20px; font-size: 0.88rem;">Загрузка данных...</div>
+            <div id="fleetGridContainer" class="fleet-grid-container">
+                <div class="fleet-empty">Загрузка данных...</div>
             </div>
         </div>
     `;
@@ -395,15 +393,15 @@ function renderCategoriesBar() {
         <span style="font-size: 0.76rem; color: var(--subtle); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Категории:</span>
         <button onclick="window.filterCategory('all')" class="glass-btn" style="min-height: 32px; padding: 6px 12px; font-size: 0.74rem; ${isAllActive ? activeBtnStyle : ''}">Все</button>
         <button onclick="window.filterCategory('Без категории')" class="glass-btn" style="min-height: 32px; padding: 6px 12px; font-size: 0.74rem; ${isNoCatActive ? activeBtnStyle : ''}">Без категории</button>
-        <div style="position: relative; display: inline-block;" id="customCategoryDropdownContainer">
-            <button onclick="window.toggleCategoryDropdown(event)" class="glass-btn" style="min-height: 32px; padding: 6px 12px; font-size: 0.74rem; display: flex; align-items: center; gap: 4px; ${isOtherActive ? activeBtnStyle : ''}">
+        <div style="position: relative; display: inline-block;">
+            <button onclick="window.toggleCategoryDropdown(event)" class="glass-btn modal-btn-primary" style="min-height: 32px; padding: 6px 12px; font-size: 0.74rem; display: flex; align-items: center; gap: 4px; ${isOtherActive ? activeBtnStyle : ''}">
                 <span>${isOtherActive ? selectedCategory : `— Другие (${otherCats.length}) —`}</span>
                 <span style="font-size: 0.6rem; transition: transform 180ms ease; ${window._isCategoriesDropdownOpen ? 'transform: rotate(180deg);' : ''}">▼</span>
             </button>
             <div style="position: absolute; top: 100%; left: 0; margin-top: 4px; width: 220px; max-height: 240px; overflow-y: auto; background: var(--glass-strong); border: 1px solid var(--line-bright); border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); z-index: 50; padding: 4px; display: ${window._isCategoriesDropdownOpen ? 'block' : 'none'};" id="customCategoryDropdownMenu">
                 ${otherCats.map(c => `
-                    <button onclick="window.filterCategory('${c.replace(/'/g, "\\'")}')" class="glass-btn" style="width: 100%; text-align: left; min-height: 36px; padding: 8px 10px; font-size: 0.8rem; margin-bottom: 2px; ${selectedCategory === c ? activeBtnStyle : ''}">
-                        ${c}
+                    <button onclick="window.filterCategory('${c.replace(/'/g, "\\'")}')" class="glass-btn modal-btn-primary" style="width: 100%; text-align: left; min-height: 36px; padding: 8px 10px; font-size: 0.8rem; margin-bottom: 2px; ${selectedCategory === c ? activeBtnStyle : ''}">
+                            ${c}
                     </button>
                 `).join('')}
             </div>
@@ -479,23 +477,23 @@ function renderFleet() {
         if (catList.length === 0) return;
 
         html += `
-            <div>
-                <h3 style="margin: 0 0 10px 2px; font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--subtle);">${cat} — ${catList.length} ед.</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+            <div class="fleet-group">
+                <h3 class="fleet-group-title">${cat} — ${catList.length} ед.</h3>
+                <div class="fleet-grid">
                     ${catList.map(v => {
                         const now = new Date();
 
                         const formatDocStatus = (dateStr) => {
-                            if (!dateStr) return { text: '—', style: 'color: var(--subtle); font-weight: 700;' };
+                            if (!dateStr) return { text: '—', cls: 'is-muted' };
                             const diffDays = Math.ceil((new Date(dateStr) - now) / (1000 * 60 * 60 * 24));
                             const formattedDate = new Date(dateStr).toLocaleDateString('ru-RU');
                             if (diffDays <= 0) {
-                                return { text: `${formattedDate} (Просрочено)`, style: 'color: var(--red); background: rgba(251, 113, 133, 0.12); border: 1px solid rgba(251, 113, 133, 0.4); padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 0.7rem;' };
+                                return { text: `${formattedDate} (Просрочено)`, cls: 'is-overdue' };
                             }
                             if (diffDays <= 30) {
-                                return { text: `${formattedDate} (${diffDays} дн.)`, style: 'color: var(--amber); background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.4); padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 0.7rem;' };
+                                return { text: `${formattedDate} (${diffDays} дн.)`, cls: 'is-soon' };
                             }
-                            return { text: formattedDate, style: 'color: var(--muted); background: rgba(255,255,255,0.05); border: 1px solid var(--line); padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem;' };
+                            return { text: formattedDate, cls: 'is-ok' };
                         };
 
                         const toInfo = formatDocStatus(v.inspection_date);
@@ -513,57 +511,47 @@ function renderFleet() {
                         else if (vehicleTagsArray.includes('Гарантия')) cardBorderColor = 'rgba(125, 211, 252, 0.45)';
 
                         return `
-                            <div onclick="window.openVehicleModalForm(${safeVehicleJson})" class="glass-panel fleet-card" style="padding: 18px; position: relative; cursor: pointer; border-color: ${cardBorderColor}; display: flex; flex-direction: column; gap: 10px; transition: border-color 200ms ease, transform 200ms ease, box-shadow 200ms ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 16px 40px rgba(0,0,0,0.35)'" onmouseout="this.style.transform='none'; this.style.boxShadow=''">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                    <h4 style="margin: 0; font-weight: 800; color: #fff; font-size: 0.92rem; letter-spacing: -0.01em;">${v.model}</h4>
-                                    <button onclick="event.stopPropagation(); window.openVehicleModalForm(${safeVehicleJson})" style="border: none; background: none; color: var(--muted); cursor: pointer; font-size: 0.9rem; transition: color 150ms ease;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--muted)'" title="Редактировать">✏️</button>
+                            <div onclick="window.openVehicleModalForm(${safeVehicleJson})" class="glass-panel fleet-card" style="border-color: ${cardBorderColor};">
+                                <div class="fleet-card-head">
+                                    <h4>${v.model}</h4>
+                                    <button onclick="event.stopPropagation(); window.openVehicleModalForm(${safeVehicleJson})" class="fleet-card-edit" title="Редактировать">✏️</button>
                                 </div>
 
-                                <div style="font-size: 0.78rem; color: var(--muted); font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                                <div class="fleet-card-driver">
                                     <span>👤 ${role}:</span>
-                                    <span style="color: #fff; font-weight: 800;">${v.notes || 'Не закреплен'}</span>
+                                    <span class="fleet-card-driver-name">${v.notes || 'Не закреплен'}</span>
                                 </div>
 
-                                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                <div class="fleet-card-tags">
                                     ${vehicleTagsArray.map(t => {
                                         const knownTag = baseTags.find(bt => bt.name.toLowerCase() === t.toLowerCase());
                                         const badgeBg = knownTag ? knownTag.color : '#e2e8f0';
-                                        return `<span style="background-color: ${badgeBg}; border: 1px solid rgba(255,255,255,0.2); color: #0b1728; font-size: 0.65rem; font-weight: 800; padding: 2px 7px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">${t}</span>`;
+                                        return `<span class="fleet-tag" style="background-color: ${badgeBg};">${t}</span>`;
                                     }).join('')}
                                 </div>
 
-                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                    <div style="font-size: 0.84rem; font-family: 'JetBrains Mono', monospace; font-weight: 800; color: #fff; background: rgba(255,255,255,0.08); border: 1px solid var(--line-bright); display: inline-block; padding: 6px 12px; border-radius: 10px; letter-spacing: 0.05em;">
-                                        ${v.plate || 'БЕЗ ГОСНОМЕРА'}
-                                    </div>
-                                    ${v.inv_number ? `
-                                        <span style="font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; color: var(--subtle); background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 6px; border: 1px solid var(--line);">
-                                            Инв. №: ${v.inv_number}
-                                        </span>
-                                    ` : ''}
+                                <div class="fleet-card-ids">
+                                    <div class="fleet-plate">${v.plate || 'БЕЗ ГОСНОМЕРА'}</div>
+                                    ${v.inv_number ? `<span class="fleet-inv">Инв. №: ${v.inv_number}</span>` : ''}
                                 </div>
-                                ${v.vin_number ? `
-                                    <div style="font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--subtle); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${v.vin_number}">
-                                        VIN: ${v.vin_number}
-                                    </div>
-                                ` : ''}
+                                ${v.vin_number ? `<div class="fleet-vin" title="${v.vin_number}">VIN: ${v.vin_number}</div>` : ''}
 
-                                <div style="padding-top: 12px; margin-top: 2px; border-top: 1px solid var(--line); font-size: 0.76rem; display: flex; flex-direction: column; gap: 6px;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                                        <span style="color: var(--muted); font-weight: 700;">${label}:</span>
-                                        <span style="font-weight: 800; color: #fff;">${v.current_hours || 0} ${unit}</span>
+                                <div class="fleet-card-docs">
+                                    <div class="fleet-doc-row">
+                                        <span>${label}:</span>
+                                        <span class="fleet-doc-value">${v.current_hours || 0} ${unit}</span>
                                     </div>
-                                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                                        <span style="color: var(--muted); font-weight: 700;">Техосмотр:</span>
-                                        <span style="${toInfo.style}">${toInfo.text}</span>
+                                    <div class="fleet-doc-row">
+                                        <span>Техосмотр:</span>
+                                        <span class="fleet-doc-badge ${toInfo.cls}">${toInfo.text}</span>
                                     </div>
-                                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                                        <span style="color: var(--muted); font-weight: 700;">Страховка:</span>
-                                        <span style="${insInfo.style}">${insInfo.text}</span>
+                                    <div class="fleet-doc-row">
+                                        <span>Страховка:</span>
+                                        <span class="fleet-doc-badge ${insInfo.cls}">${insInfo.text}</span>
                                     </div>
                                 </div>
 
-                                <button onclick="event.stopPropagation(); window.openTasksModalForm(${v.id}, '${v.model.replace(/'/g, "\\'")}')" class="glass-btn" style="margin-top: 4px; width: 100%; font-size: 0.76rem; text-align: center; font-weight: 700; background: rgba(52, 211, 153, 0.12); border-color: rgba(52, 211, 153, 0.4); color: var(--green);">
+                                <button onclick="event.stopPropagation(); window.openTasksModalForm(${v.id}, '${v.model.replace(/'/g, "\\'")}')" class="glass-btn fleet-tasks-btn">
                                     📋 Задачи (${vTasks.length})
                                 </button>
                             </div>
@@ -574,7 +562,7 @@ function renderFleet() {
         `;
     });
 
-    container.innerHTML = html || `<div style="text-align: center; color: var(--muted); padding: 40px 20px; font-size: 0.84rem; font-weight: 700;">Техника не найдена</div>`;
+    container.innerHTML = html || `<div class="fleet-empty">Техника не найдена</div>`;
     window.scrollTo(window.scrollX, scrollTop);
 }
 
@@ -691,9 +679,9 @@ function updateDriversDOMList() {
     const list = document.getElementById('modalDriversList');
     if (!list) return;
     list.innerHTML = drivers.map(d => `
-        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; border: 1px solid var(--line); font-size: 0.82rem; font-weight: 700;">
-            <span style="color: #fff;">👤 ${d}</span>
-            <button onclick="window.deleteCustomDriver('${d.replace(/'/g, "\\'")}')" style="color: var(--red); cursor: pointer; font-weight: 600; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Удалить</button>
+        <div class="fleet-list-row">
+            <span class="fleet-list-name">👤 ${d}</span>
+            <button onclick="window.deleteCustomDriver('${d.replace(/'/g, "\\'")}')" class="fleet-list-delete">Удалить</button>
         </div>
     `).join('');
 }
@@ -728,12 +716,12 @@ function updateTagsDOMList() {
     const list = document.getElementById('modalTagsList');
     if (!list) return;
     list.innerHTML = baseTags.map(t => `
-        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; border: 1px solid var(--line); font-size: 0.82rem; font-weight: 700;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.4); background-color: ${t.color}; display: inline-block;"></span>
-                <span style="color: #fff;">${t.name}</span>
+        <div class="fleet-list-row">
+            <div class="fleet-list-tag">
+                <span class="fleet-list-dot" style="background-color: ${t.color};"></span>
+                <span class="fleet-list-name">${t.name}</span>
             </div>
-            <button onclick="window.deleteCustomTag(${t.id})" style="color: var(--red); cursor: pointer; font-weight: 600; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Удалить</button>
+            <button onclick="window.deleteCustomTag(${t.id})" class="fleet-list-delete">Удалить</button>
         </div>
     `).join('');
 }
@@ -773,9 +761,9 @@ function updateCategoriesDOMList() {
     const list = document.getElementById('modalCategoriesList');
     if (!list) return;
     list.innerHTML = categories.map(c => `
-        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; border: 1px solid var(--line); font-size: 0.82rem; font-weight: 700;">
-            <span style="color: #fff;">${c}</span>
-            ${c !== 'Без категории' ? `<button onclick="window.deleteCustomCategory('${c.replace(/'/g, "\\'")}')" style="color: var(--red); cursor: pointer; font-weight: 600; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Удалить</button>` : ''}
+        <div class="fleet-list-row">
+            <span class="fleet-list-name">${c}</span>
+            ${c !== 'Без категории' ? `<button onclick="window.deleteCustomCategory('${c.replace(/'/g, "\\'")}')" class="fleet-list-delete">Удалить</button>` : ''}
         </div>
     `).join('');
 }
@@ -819,13 +807,13 @@ function renderTasksListInsideModal() {
     if (!list) return;
     const vTasks = tasks.filter(t => t.vehicle_id === vId);
     if (vTasks.length === 0) {
-        list.innerHTML = `<div style="text-align: center; color: var(--muted); padding: 12px 0; font-size: 0.76rem; font-weight: 700;">Нет активных задач</div>`;
+        list.innerHTML = `<div class="fleet-tasks-empty">Нет активных задач</div>`;
         return;
     }
     list.innerHTML = vTasks.map(t => `
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.4); padding: 9px; border-radius: 10px; font-size: 0.78rem; font-weight: 700; color: var(--amber);">
-            <span style="word-break: break-word;">${t.text}</span>
-            <button onclick="window.completeTask(${t.id})" style="border: none; background: none; color: var(--green); font-weight: 800; cursor: pointer; white-space: nowrap;">Готово</button>
+        <div class="fleet-task-row">
+            <span>${t.text}</span>
+            <button onclick="window.completeTask(${t.id})" class="fleet-task-done">Готово</button>
         </div>
     `).join('');
 }

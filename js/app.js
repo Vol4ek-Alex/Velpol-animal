@@ -1209,20 +1209,11 @@
             return;
         }
 
-        /* Переключатель режима редактирования
-           не должен появляться на приветствии. */
-        const editorButton = document.getElementById(
-            'floating-editor-btn'
-        );
-
-        if (editorButton && !editorButton.dataset.forceShown) {
-            editorButton.style.display = 'none';
-        } else if (
-            editorButton &&
-            window.innerWidth <= 700
-        ) {
-            editorButton.style.display = 'flex';
-        }
+        /* На приветствии переключатель режима
+           редактирования скрывает CSS-правило
+           body:has(.welcome-screen) — после
+           удаления welcome-screen кнопка видна
+           как раньше, без inline-стилей. */
 
         welcome.classList.add('welcome-hide');
 
@@ -1310,6 +1301,7 @@
            показывает приветствие с закрытым
            меню и видимой кнопкой «Меню». */
         window.closeMenu();
+        window.hideWelcomeScreen();
 
         if (
             window.AuthModule &&

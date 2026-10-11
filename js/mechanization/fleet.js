@@ -38,9 +38,6 @@
             <div id="fleetGridContainer" style="display: flex; flex-direction: column; gap: 20px;">
                 <div style="text-align: center; color: var(--muted); padding: 40px 20px; font-size: 0.88rem;">Загрузка данных...</div>
             </div>
-        </div>
-    `;
-
 
             <!-- Модалка редактирования техники -->
             <div id="vFormModal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 10000; display: none; align-items: center; justify-content: center; padding: 16px;">
@@ -175,25 +172,26 @@
         <div class="glass-panel" style="width: 100%; max-width: 440px; padding: 22px; max-height: calc(100dvh - 32px); overflow-y: auto; position: relative;">
             <button onclick="window.closeHoursModal()" style="position: absolute; top: 20px; right: 20px; border: none; background: none; color: var(--muted); font-size: 1.4rem; cursor: pointer;">✕</button>
             <h3 style="margin: 0 0 18px 0; padding-bottom: 14px; border-bottom: 1px solid var(--line); color: #fff; font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">⏱️ Добавить наработку</h3>
-            <div class="space-y-4">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Выберите технику</label>
+                    <label style="display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Выберите технику</label>
                     <select id="hoursVehicleSelect" style="width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-size: 0.86rem; font-weight: 500;">
                         <option value="">-- Загрузка --</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Количество часов</label>
+                    <label style="display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Количество часов</label>
                     <input type="number" id="hoursInput" min="0" step="0.5" style="width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-size: 0.86rem; font-weight: 500;" placeholder="Например, 8.5">
                 </div>
             </div>
-            <div class="flex gap-3 pt-3 border-t border-gray-100">
-                <button onclick="window.closeHoursModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300 hover-lift">Отмена</button>
-                <button onclick="window.submitHours()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition shadow-md hover-lift">Добавить</button>
+            <div style="display: flex; gap: 12px; padding-top: 12px; border-top: 1px solid var(--line);">
+                <button onclick="window.closeHoursModal()" class="glass-btn" style="flex: 1;">Отмена</button>
+                <button onclick="window.submitHours()" class="glass-btn" style="flex: 1; background: rgba(52, 211, 153, 0.18); border-color: var(--green); color: var(--green); font-weight: 700;">Добавить</button>
             </div>
         </div>
     </div>
-`;
+        </div>
+    `;
 
 
     setupFleet();
@@ -916,5 +914,6 @@ async function submitHours() {
         alert('Ошибка: ' + err.message);
     }
 }
+
 
 

@@ -6,9 +6,11 @@
         groups: [],
         feeds: [],
         diets: [],
+        dailyUsage: [],
         selectedType: 'all',
         selectedFarm: 'Все',
         selectedMonth: '',
+        selectedDay: '',
         editMode: false,
         reportMonth: '',
 
@@ -170,7 +172,8 @@
                 movementsResponse,
                 groupsResponse,
                 feedsResponse,
-                dietsResponse
+                dietsResponse,
+                dailyResponse
             ] = await Promise.all([
                 db
                     .from('herd_movements')
@@ -191,7 +194,12 @@
 
                 db
                     .from('diets')
+                    .select('*'),
+
+                db
+                    .from('daily_feed_usage')
                     .select('*')
+                    .order('day')
             ]);
 
             if (movementsResponse.error) {
@@ -210,10 +218,15 @@
                 throw dietsResponse.error;
             }
 
+            if (dailyResponse.error) {
+                throw dailyResponse.error;
+            }
+
             this.movements = movementsResponse.data || [];
             this.groups = groupsResponse.data || [];
             this.feeds = feedsResponse.data || [];
             this.diets = dietsResponse.data || [];
+            this.dailyUsage = dailyResponse.data || [];
         },
 
         getMonthMovements(monthValue) {
@@ -232,23 +245,58 @@
             });
         },
 
-        calculateFeedUsage(monthValue) {
-            /*
-             * Для текущего месяца getReportDays
-             * возвращает количество дней по
-             * сегодняшний — сумма за все
-             * прошедшие дни, а не за полный месяц.
-             */
-            const days = this.getReportDays(
-                monthValue ||
-                this.reportMonth ||
-                this.selectedMonth
-            );
+        getDayKey(value) {
+            const date = new Date(value);
 
-            const usage = {};
+            if (Number.isNaN(date.getTime())) {
+                return null;
+            }
 
-            let totalKg = 0;
-            let totalCost = 0;
+            return [
+                date.getFullYear(),
+                String(
+                    date.getMonth() + 1
+                ).padStart(2, '0'),
+                String(
+                    date.getDate()
+                ).padStart(2, '0')
+            ].join('-');
+        },
+
+        getDailyEntry(dayKey) {
+            return (this.dailyUsage || []).find(item => {
+                return String(item.day) ===
+                    String(dayKey);
+            });
+        },
+
+        /*
+         * Траты за день: фактические данные из
+         * daily_feed_usage; если записи нет —
+         * расчёт по рационам за этот день
+         * (норма × поголовье группы × цена).
+         */
+        calculateDayUsage(dayValue) {
+            const dayKey = this.getDayKey(dayValue);
+
+            if (!dayKey) {
+                return { kg: 0, cost: 0, manual: false };
+            }
+
+            const entry = this.getDailyEntry(dayKey);
+
+            if (entry) {
+                return {
+                    kg: this.number(entry.kg),
+                    cost: this.number(entry.cost),
+                    manual: true
+                };
+            }
+
+            const date = new Date(dayValue);
+
+            let kg = 0;
+            let cost = 0;
 
             this.diets.forEach(diet => {
                 const group =
@@ -275,35 +323,13 @@
                     this.number(diet.norm_per_head) *
                     this.number(group.head_count);
 
-                const monthKg =
-                    dailyGroupKg * days;
+                kg += dailyGroupKg;
 
-                const price =
+                cost += dailyGroupKg *
                     this.number(feed.price_per_unit);
-
-                const key = String(feed.id);
-
-                if (!usage[key]) {
-                    usage[key] = {
-                        name: feed.name,
-                        unit: feed.unit || 'кг',
-                        kg: 0,
-                        cost: 0
-                    };
-                }
-
-                usage[key].kg += monthKg;
-                usage[key].cost += monthKg * price;
-
-                totalKg += monthKg;
-                totalCost += monthKg * price;
             });
 
-            return {
-                list: Object.values(usage),
-                totalKg,
-                totalCost
-            };
+            return { kg, cost, manual: false };
         },
 
         calculateHeadStats(monthValue) {
@@ -346,6 +372,96 @@
             });
 
             return stats;
+        },
+
+        /*
+         * Разбивка отчёта по дням месяца:
+         * движения поголовья и траты на корма
+         * за каждый день (факт из daily_feed_usage
+         * либо расчёт по рационам).
+         */
+        calculateDailyReport(monthValue) {
+            const { start, days } = this.getMonthBounds(
+                monthValue || this.reportMonth ||
+                this.selectedMonth
+            );
+
+            const report = [];
+
+            for (let index = 0; index < days; index++) {
+                const date = new Date(
+                    start.getFullYear(),
+                    start.getMonth(),
+                    start.getDate() + index
+                );
+
+                if (
+                    monthValue === this.currentMonthValue() &&
+                    date > new Date()
+                ) {
+                    break;
+                }
+
+                const dayKey = [
+                    date.getFullYear(),
+                    String(
+                        date.getMonth() + 1
+                    ).padStart(2, '0'),
+                    String(
+                        date.getDate()
+                    ).padStart(2, '0')
+                ].join('-');
+
+                let realization = 0;
+                let mortality = 0;
+
+                this.movements.forEach(item => {
+                    if (
+                        this.getDayKey(item.event_date) !==
+                        dayKey
+                    ) {
+                        return;
+                    }
+
+                    const heads = this.number(
+                        item.quantity ?? item.heads
+                    );
+
+                    if (
+                        item.movement_type ===
+                        'realization'
+                    ) {
+                        realization += heads;
+                    } else if (
+                        item.movement_type ===
+                            'mortality' ||
+                        item.movement_type === 'death'
+                    ) {
+                        mortality += heads;
+                    }
+                });
+
+                const usage =
+                    this.calculateDayUsage(dayKey);
+
+                report.push({
+                    dayKey,
+                    label: date.toLocaleDateString(
+                        'ru-RU',
+                        {
+                            day: '2-digit',
+                            month: '2-digit'
+                        }
+                    ),
+                    realization,
+                    mortality,
+                    kg: usage.kg,
+                    cost: usage.cost,
+                    manual: usage.manual
+                });
+            }
+
+            return report;
         },
 
         getFarms() {
@@ -456,57 +572,69 @@
         },
 
         renderSummaryTiles() {
-            const usage =
-                this.calculateFeedUsage();
-
             const stats =
                 this.calculateHeadStats();
 
-            const heads = value => {
-                return value > 0
-                    ? `${value} гол.`
-                    : 'Н/Д';
+            /*
+             * Траты на корма: сумма по дням
+             * отчётного периода (факт из
+             * daily_feed_usage, иначе расчёт
+             * по рационам за каждый день) —
+             * теперь не «Н/Д» при нулях рационов,
+             * а корректная сумма с подсказкой.
+             */
+            const daily =
+                this.calculateDailyReport();
+
+            let totalKg = 0;
+            let totalCost = 0;
+            let manualDays = 0;
+
+            daily.forEach(item => {
+                totalKg += item.kg;
+                totalCost += item.cost;
+
+                if (item.manual) {
+                    manualDays += 1;
+                }
+            });
+
+            const formatMoney = value => {
+                return value.toLocaleString(
+                    'ru-RU',
+                    { maximumFractionDigits: 2 }
+                );
             };
 
             const tiles = [
                 {
-                    icon: '💸',
-                    label: 'Траты на корма',
-                    value: usage.totalCost > 0
-                        ? `${usage.totalCost.toLocaleString(
-                            'ru-RU',
-                            { maximumFractionDigits: 2 }
-                        )} BYN`
-                        : 'Н/Д',
-                    sub: usage.totalKg > 0
-                        ? `${Math.round(
-                            usage.totalKg
-                        ).toLocaleString('ru-RU')} кг кормов`
-                        : 'нет данных',
-                    accent: 'amber'
+                    icon: '💰',
+                    label: 'Реализовано за период',
+                    value: stats.realization > 0
+                        ? `${stats.realization} гол.`
+                        : '0 гол.',
+                    sub: 'реализация за месяц',
+                    accent: 'green'
                 },
                 {
-                    icon: '🐄',
-                    label: 'Поголовье',
-                    value: heads(
-                        stats.mortality +
-                        stats.realization +
-                        stats.slaughter
-                    ) === 'Н/Д'
-                        ? 'Н/Д'
-                        : `−${stats.mortality +
-                            stats.realization +
-                            stats.slaughter} гол.`,
-                    sub: [
-                        stats.mortality
-                            ? `падёж ${stats.mortality}`
-                            : '',
-                        stats.realization
-                            ? `реализация ${stats.realization}`
-                            : ''
-                    ].filter(Boolean).join(' · ') ||
-                        'движения за период',
-                    accent: 'blue'
+                    icon: '⚠️',
+                    label: 'Падёж за период',
+                    value: stats.mortality > 0
+                        ? `${stats.mortality} гол.`
+                        : '0 гол.',
+                    sub: 'падёж за месяц',
+                    accent: 'red'
+                },
+                {
+                    icon: '💸',
+                    label: 'Траты на корма',
+                    value: totalCost > 0
+                        ? `${formatMoney(totalCost)} BYN`
+                        : '0 BYN',
+                    sub: totalKg > 0
+                        ? `${Math.round(totalKg).toLocaleString('ru-RU')} кг · по дням месяца`
+                        : 'нет данных по дням',
+                    accent: 'amber'
                 }
             ];
 
@@ -539,51 +667,104 @@
             `).join('');
         },
 
-        renderFeedUsageRows() {
-            const usage =
-                this.calculateFeedUsage();
-
-            if (!usage.list.length) {
+        renderDailyReportRows(report) {
+            if (!report.length) {
                 return `
                     <div class="history-usage-empty">
-                        Рационы не заданы — расчёт невозможен
+                        Нет данных за выбранный месяц
                     </div>
                 `;
             }
 
+            const editable =
+                this.editMode && this.canUndo();
+
+            const formatMoney = value => {
+                return value.toLocaleString(
+                    'ru-RU',
+                    { maximumFractionDigits: 2 }
+                );
+            };
+
             return `
-                <table class="glass-table history-usage-table">
+                <table class="glass-table history-usage-table history-daily-table">
                     <thead>
                         <tr>
-                            <th>Корм</th>
-                            <th>Расход</th>
-                            <th>Стоимость</th>
+                            <th>Дата</th>
+                            <th>Реализация</th>
+                            <th>Падёж</th>
+                            <th>Корма, кг</th>
+                            <th>Траты, BYN</th>
+                            ${editable
+                                ? '<th></th>'
+                                : ''
+                            }
                         </tr>
                     </thead>
 
                     <tbody>
-                        ${usage.list.map(item => `
-                            <tr>
-                                <td>${this.escape(item.name)}</td>
-                                <td>
-                                    ${Math.round(
-                                        item.kg
-                                    ).toLocaleString('ru-RU')}
-                                    ${this.escape(item.unit)}
-                                </td>
-                                <td class="history-usage-cost">
-                                    ${
-                                        item.cost > 0
-                                            ? item.cost.toLocaleString(
-                                                'ru-RU',
-                                                {
-                                                    maximumFractionDigits: 2
-                                                }
-                                            )
-                                            : 'Н/Д'
-                                    }
-                                    BYN
-                                </td>
+                        ${report.map(item => `
+                            <tr
+                                class="${
+                                    item.dayKey ===
+                                    this.selectedDay
+                                        ? 'is-selected'
+                                        : ''
+                                }"
+                                data-day-key="${this.escape(
+                                    item.dayKey
+                                )}"
+                            >
+                                <td>${this.escape(
+                                    item.label
+                                )}</td>
+                                <td>${
+                                    item.realization ||
+                                    '—'
+                                }</td>
+                                <td>${
+                                    item.mortality ||
+                                    '—'
+                                }</td>
+                                <td>${
+                                    item.kg > 0
+                                        ? Math.round(
+                                            item.kg
+                                        ).toLocaleString(
+                                            'ru-RU'
+                                        )
+                                        : '—'
+                                }${
+                                    item.manual
+                                        ? ' ✎'
+                                        : ''
+                                }</td>
+                                <td class="history-usage-cost">${
+                                    item.cost > 0
+                                        ? formatMoney(
+                                            item.cost
+                                        )
+                                        : '—'
+                                }</td>
+                                ${editable
+                                    ? `
+                                        <td>
+                                            <button
+                                                type="button"
+                                                class="
+                                                    glass-btn
+                                                    history-day-edit-button
+                                                "
+                                                data-day-key="${this.escape(
+                                                    item.dayKey
+                                                )}"
+                                            >
+                                                ✎
+                                            </button>
+                                        </td>
+                                    `
+                                    : ''
+                                }
                             </tr>
                         `).join('')}
                     </tbody>
@@ -920,6 +1101,16 @@
                         font-size: .8rem;
                     }
 
+                    .history-daily-table tr.is-selected td {
+                        background: rgba(52, 211, 153, .08);
+                    }
+
+                    .history-day-edit-button {
+                        min-height: 30px;
+                        padding: 4px 10px;
+                        font-size: .72rem;
+                    }
+
                     .history-filters {
                         display: grid;
                         grid-template-columns:
@@ -1245,8 +1436,8 @@
                             </h1>
 
                             <p class="history-description">
-                                Итоги месяца: корма, падёж,
-                                реализация, поголовье
+                                Отчёт по дням: реализация,
+                                падёж, траты на корма
                             </p>
                         </div>
 
@@ -1340,7 +1531,7 @@
                                             history-usage-title
                                         "
                                     >
-                                        🌾 Траты на корма —
+                                        📅 Отчёт по дням —
                                         ${this.escape(
                                             this.formatMonthLabel(
                                                 monthValue
@@ -1348,7 +1539,11 @@
                                         )}
                                     </h2>
 
-                                    ${this.renderFeedUsageRows()}
+                                    ${this.renderDailyReportRows(
+                                        this.calculateDailyReport(
+                                            monthValue
+                                        )
+                                    )}
                                 </section>
                             `
                             : `
@@ -1360,8 +1555,9 @@
                                 >
                                     Выберите месяц и нажмите
                                     «Сформировать отчёт»,
-                                    чтобы увидеть траты на корма
-                                    и движение поголовья.
+                                    чтобы увидеть разбивку
+                                    по дням: реализация,
+                                    падёж и траты на корма.
                                 </div>
                             `
                     }
@@ -1427,8 +1623,9 @@
                                 >
                                     Режим редактирования:
                                     нажмите ✕ на операции,
-                                    чтобы удалить её и
-                                    восстановить поголовье.
+                                    чтобы удалить её; кнопка ✎
+                                    в таблице отчёта — правка
+                                    трат кормов за день.
                                 </p>
                             `
                             : ''
@@ -1677,6 +1874,234 @@
                 .querySelector('.history-message-close')
                 .addEventListener('click', () => {
                     overlay.remove();
+                });
+        },
+
+        /*
+         * Редактирование трат за конкретный день:
+         * сохраняет факт в daily_feed_usage.
+         * Пустые значения удаляют запись —
+         * траты снова считаются по рационам.
+         */
+        async editDayUsage(dayKey) {
+            const entry = this.getDailyEntry(dayKey);
+            const calculated =
+                this.calculateDayUsage(dayKey);
+
+            const overlay =
+                document.createElement('div');
+
+            overlay.className = 'modal-overlay open';
+
+            overlay.innerHTML = `
+                <div class="modal-box">
+                    <h3 style="margin:0;color:#fff;">
+                        Траты за
+                        ${this.escape(
+                            new Date(
+                                dayKey
+                            ).toLocaleDateString('ru-RU')
+                        )}
+                    </h3>
+
+                    <p class="history-modal-text">
+                        Факт расхода кормов за день.
+                        Расчёт по рационам:
+                        ${Math.round(
+                            calculated.kg
+                        ).toLocaleString('ru-RU')} кг ·
+                        ${calculated.cost.toLocaleString(
+                            'ru-RU',
+                            { maximumFractionDigits: 2 }
+                        )} BYN.
+                        Оставьте поле пустым, чтобы
+                        использовать расчётное значение.
+                    </p>
+
+                    <label style="
+                        display:block;
+                        margin-top:14px;
+                        color:var(--muted);
+                        font-size:.78rem;
+                        font-weight:600;
+                    ">
+                        Корма, кг
+                    </label>
+
+                    <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        class="modal-input history-day-kg"
+                        style="margin-top:6px"
+                        placeholder="Расчёт: ${Math.round(
+                            calculated.kg
+                        )}"
+                    >
+
+                    <label style="
+                        display:block;
+                        margin-top:12px;
+                        color:var(--muted);
+                        font-size:.78rem;
+                        font-weight:600;
+                    ">
+                        Траты, BYN
+                    </label>
+
+                    <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        class="modal-input history-day-cost"
+                        style="margin-top:6px"
+                        placeholder="Расчёт: ${
+                            calculated.cost.toFixed(2)
+                        }"
+                    >
+
+                    <div class="history-modal-error"></div>
+
+                    <div style="
+                        display:flex;
+                        justify-content:flex-end;
+                        gap:8px;
+                        margin-top:15px;
+                    ">
+                        <button
+                            type="button"
+                            class="glass-btn history-day-cancel"
+                        >
+                            Отмена
+                        </button>
+
+                        <button
+                            type="button"
+                            class="glass-btn history-day-save"
+                            style="
+                                border-color:var(--green-dark);
+                                color:var(--green);
+                            "
+                        >
+                            Сохранить
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            if (entry) {
+                overlay.querySelector(
+                    '.history-day-kg'
+                ).value = this.number(entry.kg);
+
+                overlay.querySelector(
+                    '.history-day-cost'
+                ).value = this.number(entry.cost);
+            }
+
+            document.body.appendChild(overlay);
+
+            const close = () => overlay.remove();
+
+            overlay
+                .querySelector('.history-day-cancel')
+                .addEventListener('click', close);
+
+            overlay
+                .querySelector('.history-day-save')
+                .addEventListener('click', async () => {
+                    const kgInput = overlay.querySelector(
+                        '.history-day-kg'
+                    );
+
+                    const costInput =
+                        overlay.querySelector(
+                            '.history-day-cost'
+                        );
+
+                    const errorNode =
+                        overlay.querySelector(
+                            '.history-modal-error'
+                        );
+
+                    const kgRaw = String(
+                        kgInput.value
+                    ).trim();
+
+                    const costRaw = String(
+                        costInput.value
+                    ).trim();
+
+                    if (!kgRaw && !costRaw && !entry) {
+                        close();
+                        return;
+                    }
+
+                    try {
+                        if (!kgRaw && !costRaw) {
+                            // Поля очищены — удаляем
+                            // факт, расчёт вернётся.
+                            const response = await db
+                                .from('daily_feed_usage')
+                                .delete()
+                                .eq('day', dayKey);
+
+                            if (response.error) {
+                                throw response.error;
+                            }
+                        } else {
+                            const kg = kgRaw === ''
+                                ? calculated.kg
+                                : Number(kgRaw);
+
+                            const cost = costRaw === ''
+                                ? calculated.cost
+                                : Number(costRaw);
+
+                            if (
+                                !Number.isFinite(kg) ||
+                                !Number.isFinite(cost) ||
+                                kg < 0 ||
+                                cost < 0
+                            ) {
+                                throw new Error(
+                                    'Введите корректные неотрицательные значения.'
+                                );
+                            }
+
+                            const response = await db
+                                .from('daily_feed_usage')
+                                .upsert(
+                                    {
+                                        day: dayKey,
+                                        kg: kg,
+                                        cost: cost
+                                    },
+                                    {
+                                        onConflict: 'day'
+                                    }
+                                );
+
+                            if (response.error) {
+                                throw response.error;
+                            }
+                        }
+
+                        close();
+
+                        await this.loadData();
+
+                        await this.showMessageModal(
+                            'Сохранено',
+                            'Траты за день обновлены.'
+                        );
+
+                        await this.render();
+                    } catch (error) {
+                        errorNode.textContent =
+                            error.message ||
+                            'Не удалось сохранить.';
+                    }
                 });
         },
 
@@ -2053,6 +2478,19 @@
                         'click',
                         () => this.deleteMovement(
                             button.dataset.movementId
+                        )
+                    );
+                });
+
+            container
+                .querySelectorAll(
+                    '.history-day-edit-button'
+                )
+                .forEach(button => {
+                    button.addEventListener(
+                        'click',
+                        () => this.editDayUsage(
+                            button.dataset.dayKey
                         )
                     );
                 });

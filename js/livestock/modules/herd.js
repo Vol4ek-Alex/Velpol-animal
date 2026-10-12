@@ -36,10 +36,25 @@
         },
 
         async loadData() {
+            const now = new Date();
+
+            const previousMonthStart = new Date(
+                now.getFullYear(),
+                now.getMonth() - 1,
+                1
+            );
+
+            const previousMonthEnd = new Date(
+                now.getFullYear(),
+                now.getMonth(),
+                1
+            );
+
             const [
                 groupsResponse,
                 categoriesResponse,
-                distributionsResponse
+                distributionsResponse,
+                movementsResponse
             ] = await Promise.all([
                 db
                     .from('farms_and_groups')
@@ -63,7 +78,28 @@
                             id,
                             name
                         )
-                    `)
+                    `),
+
+                db
+                    .from('herd_movements')
+                    .select('group_id, movement_type, quantity')
+                    .gte(
+                        'event_date',
+                        previousMonthStart
+                        .toISOString()
+                        .slice(0, 10)
+                    )
+                    .lt(
+                        'event_date',
+                        previousMonthEnd
+                        .toISOString()
+                        .slice(0, 10)
+                    )
+                    .in('movement_type', [
+                        'realization',
+                        'mortality',
+                        'death'
+                    ])
             ]);
 
             if (groupsResponse.error) {
@@ -76,6 +112,10 @@
 
             if (distributionsResponse.error) {
                 throw distributionsResponse.error;
+            }
+
+            if (movementsResponse.error) {
+                throw movementsResponse.error;
             }
 
             this.groups = groupsResponse.data || [];
@@ -95,6 +135,32 @@
                         'Без категории'
                 });
             });
+
+            // Потери поголовья за прошлый месяц:
+            // реализация + падёж, в разбивке
+            // по группам — для фильтров.
+            this.previousMonthLosses = {};
+
+            (movementsResponse.data || []).forEach(row => {
+                const key = String(row.group_id);
+
+                if (!this.previousMonthLosses[key]) {
+                    this.previousMonthLosses[key] = 0;
+                }
+
+                this.previousMonthLosses[key] +=
+                    this.number(row.quantity);
+            });
+        },
+
+        previousMonthLossesFor(groups) {
+            return groups.reduce((sum, group) => {
+                return sum + this.number(
+                    (this.previousMonthLosses || {})[
+                        String(group.id)
+                    ]
+                );
+            }, 0);
         },
 
         filterFarm(groups) {
@@ -184,23 +250,44 @@
                 }))
             ];
 
-            return items.map(item => `
+            // Кнопка «Все категории» + выпадающий
+            // список для выбора конкретной категории.
+            return `
                 <button
                     type="button"
                     class="
                         herd-category-filter-button
                         ${
                             String(this.activeCategoryId) ===
-                            String(item.id)
+                            'all'
                                 ? 'active'
                                 : ''
                         }
                     "
-                    data-category-id="${this.escape(item.id)}"
+                    data-category-id="all"
                 >
-                    ${this.escape(item.name)}
+                    Все категории
                 </button>
-            `).join('');
+
+                <select
+                    class="herd-category-select"
+                    aria-label="Выбор категории"
+                >
+                    ${items.map(item => `
+                        <option
+                            value="${this.escape(item.id)}"
+                            ${
+                                String(this.activeCategoryId) ===
+                                String(item.id)
+                                    ? 'selected'
+                                    : ''
+                            }
+                        >
+                            ${this.escape(item.name)}
+                        </option>
+                    `).join('')}
+                </select>
+            `;
         },
 
         categoryTotals(groups) {
@@ -515,6 +602,22 @@
                         color: #fff;
                     }
 
+                    .herd-category-select {
+                        flex: 1 1 200px;
+                        min-width: 0;
+                        min-height: 34px;
+                        padding: 6px 10px;
+                        border: 1px solid
+                            rgba(255,255,255,.16);
+                        border-radius: 10px;
+                        background: rgba(3,10,20,.7);
+                        color: #fff;
+                        color-scheme: dark;
+                        font: inherit;
+                        font-size: .78rem;
+                        font-weight: 600;
+                    }
+
                     .herd-stats {
                         display: grid;
                         grid-template-columns:
@@ -785,18 +888,20 @@
 
                         <div class="glass-panel herd-stat">
                             <span class="herd-stat-label">
-                                Прошлый месяц
+                                Реализация + падёж
                             </span>
 
                             <strong class="herd-stat-value">
-                                ${stats.previous.toLocaleString(
+                                ${this.previousMonthLossesFor(
+                                    visibleGroups
+                                ).toLocaleString(
                                     'ru-RU'
                                 )}
                                 <span>гол.</span>
                             </strong>
 
                             <span class="herd-stat-label">
-                                По выбранному фильтру
+                                За прошлый месяц
                             </span>
                         </div>
 
@@ -1206,6 +1311,24 @@
                         }
                     );
                 });
+
+            const categorySelect =
+                container.querySelector(
+                    '.herd-category-select'
+                );
+
+            if (categorySelect) {
+                categorySelect.addEventListener(
+                    'change',
+                    () => {
+                        this.activeCategoryId =
+                            categorySelect.value ||
+                            'all';
+
+                        this.render();
+                    }
+                );
+            }
 
             const manageButton =
                 container.querySelector(

@@ -1723,6 +1723,75 @@
             white-space: nowrap;
         }
     </style>
+
+    <style>
+        /* Плавающая кнопка режима редактирования
+           — как в Животноводстве. */
+        .floating-editor-btn {
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            z-index: 998;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 44px;
+            padding: 10px 18px;
+            border: 1px solid
+                rgba(255, 255, 255, 0.28);
+            border-top-color:
+                rgba(255, 255, 255, 0.45);
+            border-radius: 999px;
+            background:
+                linear-gradient(
+                    150deg,
+                    rgba(255, 255, 255, 0.16),
+                    rgba(255, 255, 255, 0.04) 45%,
+                    rgba(255, 255, 255, 0.01)
+                ),
+                rgba(15, 31, 52, 0.55);
+            color: var(--text);
+            box-shadow:
+                0 14px 34px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0
+                rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(18px) saturate(150%);
+            -webkit-backdrop-filter:
+                blur(18px) saturate(150%);
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 700;
+            transition:
+                opacity 220ms ease,
+                transform 220ms ease,
+                background-color 180ms ease,
+                border-color 180ms ease;
+        }
+
+        .floating-editor-btn:hover {
+            border-color:
+                rgba(255, 255, 255, 0.4);
+        }
+
+        .floating-editor-btn.active {
+            border-color: rgba(251, 191, 36, 0.78);
+            background: linear-gradient(135deg, #fbbf24, #d97706);
+            color: #1c1607;
+        }
+
+        .floating-editor-btn.editor-hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(16px) scale(.9);
+        }
+
+        @media (max-width: 900px) {
+            .floating-editor-btn {
+                right: 16px;
+                bottom: 16px;
+            }
+        }
+    </style>
 </head>
 
 <body data-module-active="mechanization" data-bg="stat">
@@ -1765,6 +1834,15 @@
     </button>
 
     <div id="sidebar-backdrop" aria-hidden="true"></div>
+
+    <button
+        id="floating-editor-btn"
+        class="floating-editor-btn editor-hidden"
+        type="button"
+    >
+        <span id="editor-btn-icon">🔒</span>
+        <span id="editor-btn-text">Просмотр</span>
+    </button>
 
     <div class="app-layout">
         <nav id="sidebar" class="glass-panel" aria-label="Главное меню">
@@ -1946,6 +2024,11 @@
         window.navigate = async function(moduleId, menuItem) {
             if (currentModule === moduleId) { closeMobileMenu(); return; }
 
+            // В режиме редактирования кнопка видна
+            // только в «Автопарке» — там находятся
+            // все операции записи.
+            updateEditorButtonVisibility(moduleId);
+
             currentModule = moduleId;
             switchBg(moduleId);
 
@@ -1979,6 +2062,69 @@
                 w.classList.add('welcome-hide');
                 setTimeout(() => w.remove(), 450);
             }
+        }
+
+        /* ===== Режим редактирования (аналог Животноводства) ===== */
+        function updateEditorButtonVisibility(moduleId) {
+            const button =
+                document.getElementById('floating-editor-btn');
+
+            if (!button) return;
+
+            const show =
+                moduleId === 'fleet' &&
+                window._mechIsAdmin === true;
+
+            button.classList.toggle('editor-hidden', !show);
+        }
+
+        function setupMechEditMode() {
+            const button =
+                document.getElementById('floating-editor-btn');
+
+            if (!button) return;
+
+            button.addEventListener('click', () => {
+                window._mechEditMode =
+                    !window._mechEditMode;
+
+                button.classList.toggle(
+                    'active',
+                    window._mechEditMode
+                );
+
+                const icon =
+                    document.getElementById('editor-btn-icon');
+
+                const text =
+                    document.getElementById('editor-btn-text');
+
+                if (icon) {
+                    icon.textContent =
+                        window._mechEditMode ? '✏️' : '🔒';
+                }
+
+                if (text) {
+                    text.textContent =
+                        window._mechEditMode
+                            ? 'Редактирование ВКЛ'
+                            : 'Просмотр';
+                }
+
+                document.body.classList.toggle(
+                    'edit-mode-active',
+                    window._mechEditMode
+                );
+
+                if (
+                    typeof window._mechOnEditModeChange ===
+                    'function'
+                ) {
+                    window._mechOnEditModeChange(
+                        window._mechEditMode
+                    );
+                }
+            });
         }
 
         function setupMobileMenu() {
@@ -2183,6 +2329,12 @@
 
                 window._mechUser = user;
                 window._mechIsAdmin = isAdmin;
+
+                // Режим редактирования: только
+                // администратор (RLS механизации
+                // разрешает запись только админам).
+                window._mechEditMode = false;
+                setupMechEditMode();
                 return true;
             } catch (e) {
                 console.error('Access check error:', e);

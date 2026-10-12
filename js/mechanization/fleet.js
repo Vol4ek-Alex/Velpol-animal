@@ -301,6 +301,46 @@ function debounceFn(fn, wait) {
     };
 }
 
+/*
+ * Режим редактирования: по умолчанию «Просмотр» —
+ * кнопки записи скрыты; включается плавающей
+ * кнопкой (только для админа).
+ */
+if (typeof window._mechEditMode === 'undefined') {
+    window._mechEditMode = false;
+}
+
+window._mechOnEditModeChange = function () {
+    renderFleet();
+};
+
+function canEditFleet() {
+    return window._mechIsAdmin === true &&
+        window._mechEditMode === true;
+}
+
+function setEditControlsVisibility() {
+    const editable = canEditFleet();
+
+    const toolbarActions = document.querySelector(
+        '.fleet-toolbar-actions'
+    );
+
+    if (toolbarActions) {
+        toolbarActions.style.display = editable
+            ? ''
+            : 'none';
+    }
+
+    document.querySelectorAll('.fleet-card-edit').forEach(node => {
+        node.style.display = editable ? '' : 'none';
+    });
+
+    document.querySelectorAll('.fleet-tasks-btn').forEach(node => {
+        node.style.display = editable ? '' : 'none';
+    });
+}
+
 async function setupFleet() {
     // Поиск
     const searchInput = document.getElementById('vehicleSearchInput');
@@ -327,7 +367,18 @@ async function setupFleet() {
     if (delBtn) delBtn.onclick = handleDeleteVehicle;
 
     // Глобальные функции для доступа из HTML
-    window.openVehicleModalForm = (v = null) => openVehicleModal(v);
+    window.openVehicleModalForm = (v = null) => {
+        if (!canEditFleet()) {
+            if (typeof window.showSimpleMessage === 'function') {
+                window.showSimpleMessage(
+                    'Просмотр',
+                    'Включите режим редактирования (кнопка ✏️ внизу справа), чтобы изменять данные.'
+                );
+            }
+            return;
+        }
+        openVehicleModal(v);
+    };
     window.closeVModal = () => closeModalOverlay('vFormModal');
     window.openCategoriesModal = () => renderCategoriesModalList();
     window.openTagsModal = () => renderTagsModalList();
@@ -340,7 +391,18 @@ async function setupFleet() {
         currentSort = val;
         renderFleet();
     };
-    window.openHoursModal = openHoursModal;
+    window.openHoursModal = () => {
+        if (!canEditFleet()) {
+            if (typeof window.showSimpleMessage === 'function') {
+                window.showSimpleMessage(
+                    'Просмотр',
+                    'Включите режим редактирования (кнопка ✏️ внизу справа), чтобы добавлять наработку.'
+                );
+            }
+            return;
+        }
+        openHoursModal();
+    };
     window.closeHoursModal = closeHoursModal;
     window.submitHours = submitHours;
     window.addCustomDriver = addCustomDriver;
@@ -355,6 +417,8 @@ async function setupFleet() {
 
     // Первая загрузка данных
     await loadAllData(true);
+
+    setEditControlsVisibility();
 
     // Автообновление каждые 10 секунд,
     // только когда вкладка активна.
@@ -618,6 +682,7 @@ function renderFleet() {
     });
 
     container.innerHTML = html || `<div class="fleet-empty">Техника не найдена</div>`;
+    setEditControlsVisibility();
     window.scrollTo(window.scrollX, scrollTop);
 }
 

@@ -27,6 +27,8 @@
     >
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../../js/offline-sync.js"></script>
+    <script src="../../js/splash.js"></script>
 
     <style>
         :root {
@@ -219,6 +221,70 @@
             font-weight: 800;
         }
 
+        /* Заголовок модалки автопарка — как h3
+           в .modal-box Животноводства. */
+        .fleet-modal-title {
+            margin: 0 0 18px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--line);
+            color: #fff;
+            font-size: 1.05rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Моноширинные поля (госномер, VIN) —
+           как .fleet-plate / .fleet-vin. */
+        .fleet-field-mono {
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 0.02em;
+        }
+
+        /* Селектор тегов в форме техники. */
+        .fleet-tags-picker {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 12px;
+            background: var(--input-bg);
+            border-radius: 11px;
+            border: 1px solid var(--line);
+            max-height: 140px;
+            overflow-y: auto;
+        }
+
+        .fleet-tags-picker label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 8px;
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: #0b1728;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .fleet-tags-picker input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            accent-color: #10b981;
+            cursor: pointer;
+        }
+
+        .fleet-color-input {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            background: var(--input-bg);
+            cursor: pointer;
+        }
+
         .modal-close-x {
             position: absolute;
             top: 18px;
@@ -336,10 +402,42 @@
                     transparent 44%),
                 rgba(15, 31, 52, 0.97);
             box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+            cursor: pointer;
             transition:
                 border-color 200ms ease,
                 transform 200ms ease,
                 box-shadow 200ms ease;
+        }
+
+        /* Статусные карточки — акцентная полоса слева,
+           как .menu-item.active::before в Животноводстве. */
+        .fleet-card.is-broken {
+            border-color: rgba(251, 113, 133, 0.45);
+        }
+
+        .fleet-card.is-warranty {
+            border-color: rgba(125, 211, 252, 0.45);
+        }
+
+        .fleet-card.is-broken::before,
+        .fleet-card.is-warranty::before {
+            position: absolute;
+            top: 14%;
+            bottom: 14%;
+            left: 0;
+            width: 3px;
+            border-radius: 0 4px 4px 0;
+            content: "";
+        }
+
+        .fleet-card.is-broken::before {
+            background: var(--red);
+            box-shadow: 0 0 12px var(--red);
+        }
+
+        .fleet-card.is-warranty::before {
+            background: var(--blue);
+            box-shadow: 0 0 12px var(--blue);
         }
 
         .fleet-card:hover {
@@ -1384,6 +1482,13 @@
                 width: 100%;
                 min-height: 100dvh;
                 padding: 0 10px;
+                /*
+                 * z-index: auto — иначе .app-layout (z-index: 1)
+                 * создаёт контекст наложения, внутри которого
+                 * сайдбар (1400) проигрывает backdrop (1300),
+                 * и тёмный оверлей блокирует пункты меню.
+                 */
+                z-index: auto;
             }
 
             .mobile-header {
@@ -1452,7 +1557,10 @@
             #main-content {
                 width: 100%;
                 min-width: 0;
-                padding: 12px 0 150px;
+                /* Верхний отступ = высота FAB-кнопки меню
+                   + запас, чтобы кнопка не перекрывала
+                   заголовки и карточки. */
+                padding: 72px 0 150px;
             }
 
             .glass-panel:hover,
@@ -1472,6 +1580,147 @@
                 animation: none !important;
                 transition: none !important;
             }
+        }
+
+        /* Всплывающее уведомление офлайн-синхронизации */
+        .offline-sync-toast {
+            position: fixed;
+            bottom: calc(72px + env(safe-area-inset-bottom));
+            left: 50%;
+            z-index: 12000;
+            max-width: min(420px, calc(100vw - 32px));
+            padding: 12px 20px;
+            border: 1px solid var(--line-green);
+            border-radius: 999px;
+            background: var(--glass-strong);
+            color: var(--green);
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-align: center;
+            box-shadow: 0 14px 34px rgba(0, 0, 0, 0.42);
+            transform: translate(-50%, 12px);
+            opacity: 0;
+            pointer-events: none;
+            transition:
+                opacity 280ms ease,
+                transform 280ms ease;
+        }
+
+        .offline-sync-toast.visible {
+            transform: translate(-50%, 0);
+            opacity: 1;
+        }
+
+        /* ===== Splash screen (мобильные) ===== */
+        #velpol-splash {
+            position: fixed;
+            inset: 0;
+            z-index: 20000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #091728;
+            transition: opacity 420ms ease, transform 420ms ease;
+        }
+
+        #velpol-splash.splash-hide {
+            opacity: 0;
+            transform: scale(1.02);
+            pointer-events: none;
+        }
+
+        .splash-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            text-align: center;
+        }
+
+        .splash-logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 72px;
+            height: 72px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 22px;
+            background: linear-gradient(135deg, #34d399, #047857);
+            box-shadow: 0 12px 32px rgba(16, 185, 129, 0.32);
+            font-size: 2.1rem;
+            animation: splash-bounce 2.4s ease-in-out infinite;
+        }
+
+        @keyframes splash-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .splash-title {
+            color: #f5f7fb;
+            font-family: 'Exo 2', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+        }
+
+        .splash-spinner {
+            width: 26px;
+            height: 26px;
+            margin-top: 6px;
+            border: 3px solid rgba(52, 211, 153, 0.25);
+            border-top-color: #34d399;
+            border-radius: 50%;
+            animation: splash-spin 800ms linear infinite;
+        }
+
+        @keyframes splash-spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .splash-status {
+            color: #a8b6c9;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* Уведомление об обновлении */
+        .splash-update-bar {
+            position: fixed;
+            top: calc(12px + env(safe-area-inset-top));
+            left: 50%;
+            z-index: 19000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            max-width: calc(100vw - 24px);
+            padding: 10px 14px;
+            border: 1px solid rgba(52, 211, 153, 0.48);
+            border-radius: 14px;
+            background: rgba(14, 30, 51, 0.97);
+            color: #f5f7fb;
+            font-size: 0.8rem;
+            font-weight: 700;
+            box-shadow: 0 14px 34px rgba(0, 0, 0, 0.42);
+            transform: translate(-50%, -120%);
+            transition: transform 320ms ease;
+        }
+
+        .splash-update-bar.visible {
+            transform: translate(-50%, 0);
+        }
+
+        .splash-update-btn {
+            min-height: 34px;
+            padding: 6px 14px;
+            border: none;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #34d399, #047857);
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.78rem;
+            font-weight: 800;
+            white-space: nowrap;
         }
     </style>
 </head>

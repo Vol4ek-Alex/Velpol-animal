@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'velpol-agro-v11';
+﻿const CACHE_NAME = 'velpol-agro-v12';
 
 const APP_FILES = [
     './',
@@ -17,6 +17,8 @@ const APP_FILES = [
     './assets/icons/icon-512.png',
     './styles/main.css',
     './js/config.js',
+    './js/offline-sync.js',
+    './js/splash.js',
     './js/app.js',
     './js/main-selector.js',
     './js/livestock/index.html',
@@ -56,6 +58,12 @@ self.addEventListener('activate', event => {
             self.clients.claim()
         ])
     );
+});
+
+self.addEventListener('message', event => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
 
 self.addEventListener('fetch', event => {

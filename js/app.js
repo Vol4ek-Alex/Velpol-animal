@@ -1147,7 +1147,27 @@
             /* В приветствии показываем видимое
                имя, а не технический логин. */
             login = profile.full_name || profile.login;
-        } else {
+        }
+
+        if (!String(login).trim()) {
+            /* Полное имя может быть в metadata
+               учётной записи (заполняется при
+               регистрации). */
+            try {
+                const meta =
+                    window.AuthModule &&
+                    window.AuthModule.user &&
+                    window.AuthModule.user.user_metadata;
+
+                if (meta) {
+                    login = meta.full_name || meta.login || login;
+                }
+            } catch (error) {
+                login = login || '';
+            }
+        }
+
+        if (!String(login).trim()) {
             try {
                 if (
                     window.db &&

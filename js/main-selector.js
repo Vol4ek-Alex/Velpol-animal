@@ -218,9 +218,7 @@ if ('serviceWorker' in navigator) {
             .then(reg => console.log('SW registered:', reg))
             .catch(err => console.log('SW registration failed:', err));
     });
-}
-
-// Запускаем проверку при загрузке
+}// Запускаем проверку при загрузке
 checkAuth();
 
 // Плавная смена фона при наведении на карточки отраслей

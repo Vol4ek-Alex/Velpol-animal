@@ -44,63 +44,68 @@ export async function init() {
     setupFleet();
 }
 
+/*
+ * Редизайн модалок в дизайн-системе Животноводства:
+ * та же структура .modal-box (h3 + border-bottom, поля .modal-field,
+ * кнопки .glass-btn, отступы 22px) — inline-стили сведены к раскладке.
+ */
 function buildModalsHtml() {
     return `
     <div id="vFormModal" class="modal-overlay-fleet" style="display: none;">
         <div class="modal-box-fleet" style="max-width: 520px;">
-            <button onclick="window.closecloseVModal()" class="modal-close-x" aria-label="Закрыть">✕</button>
-            <h3 id="vModalTitle" style="margin: 0 0 20px 0; padding-bottom: 16px; border-bottom: 1px solid var(--line); color: #fff; font-size: 1.2rem; font-weight: 800;">Карточка техники</h3>
+            <button onclick="window.closeVModal()" class="modal-close-x" aria-label="Закрыть">✕</button>
+            <h3 id="vModalTitle" class="fleet-modal-title">Карточка техники</h3>
             <form id="vForm" style="display: flex; flex-direction: column; gap: 16px; font-size: 0.88rem;">
                 <input type="hidden" id="vId">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
                     <div>
                         <label class="modal-label">Категория</label>
-                        <select id="vCategory" required class="modal-field" font-size: 0.88rem; font-weight: 500;></select>
+                        <select id="vCategory" required class="modal-field"></select>
                     </div>
                     <div>
                         <label class="modal-label">Модель</label>
-                        <input type="text" id="vName" required class="modal-field" font-size: 0.88rem; font-weight: 500; placeholder="МТЗ-3522">
+                        <input type="text" id="vName" required class="modal-field" placeholder="МТЗ-3522">
                     </div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
                     <div>
                         <label class="modal-label">Вод/Мех</label>
-                        <select id="vDriver" class="modal-field" font-size: 0.88rem; font-weight: 500;></select>
+                        <select id="vDriver" class="modal-field"></select>
                     </div>
                     <div>
                         <label class="modal-label">Наработка (м/ч)</label>
-                        <input type="number" id="vHours" required class="modal-field" font-size: 0.88rem; font-weight: 600; placeholder="0">
+                        <input type="number" id="vHours" required class="modal-field" placeholder="0">
                     </div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
                     <div>
                         <label class="modal-label">Госномер</label>
-                        <input type="text" id="vPlate" class="modal-field" font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; font-weight: 500; placeholder="1234 AB-7">
+                        <input type="text" id="vPlate" class="modal-field fleet-field-mono" placeholder="1234 AB-7">
                     </div>
                     <div>
                         <label class="modal-label">Инв. №</label>
-                        <input type="text" id="vInv" class="modal-field" font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; font-weight: 500; placeholder="00125">
+                        <input type="text" id="vInv" class="modal-field fleet-field-mono" placeholder="00125">
                     </div>
                 </div>
                 <div>
                     <label class="modal-label">VIN / Заводской номер</label>
-                    <input type="text" id="vVin" class="modal-field" font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; font-weight: 500; placeholder="Номер рамы">
+                    <input type="text" id="vVin" class="modal-field fleet-field-mono" placeholder="Номер рамы">
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
                     <div>
                         <label class="modal-label">Техосмотр до</label>
-                        <input type="date" id="vToDate" class="modal-field" font-size: 0.88rem; font-weight: 500;>
+                        <input type="date" id="vToDate" class="modal-field">
                     </div>
                     <div>
                         <label class="modal-label">Страховка до</label>
-                        <input type="date" id="vInsuranceDate" class="modal-field" font-size: 0.88rem; font-weight: 500;>
+                        <input type="date" id="vInsuranceDate" class="modal-field">
                     </div>
                 </div>
                 <div>
                     <label class="modal-label">Теги статусов</label>
-                    <div id="tagsCheckboxContainer" style="display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 11px; border: 1px solid var(--line); max-height: 140px; overflow-y: auto;"></div>
+                    <div id="tagsCheckboxContainer" class="fleet-tags-picker"></div>
                 </div>
-                <div style="display: flex; gap: 12px; padding-top: 12px; border-top: 1px solid var(--line);">
+                <div class="fleet-modal-footer">
                     <button type="submit" class="glass-btn modal-btn-primary" style="flex: 1;">Сохранить</button>
                 </div>
                 <button type="button" id="vDeleteBtn" class="glass-btn modal-btn-danger hidden" style="width: 100%;">Удалить из базы</button>
@@ -110,80 +115,80 @@ function buildModalsHtml() {
 
     <div id="driversManagementModal" class="modal-overlay-fleet" style="display: none;">
         <div class="modal-box-fleet">
-            <button onclick="window.closecloseDriversModal()" class="modal-close-x" aria-label="Закрыть">✕</button>
-            <h3 style="margin: 0 0 18px 0; padding-bottom: 14px; border-bottom: 1px solid var(--line); color: #fff; font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">👤 Водители и механизаторы</h3>
+            <button onclick="window.closeDriversModal()" class="modal-close-x" aria-label="Закрыть">✕</button>
+            <h3 class="fleet-modal-title">👤 Водители и механизаторы</h3>
             <div style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto;" id="modalDriversList"></div>
-            <div style="padding-top: 14px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 12px;">
-                <input type="text" id="newDriverNameInput" class="modal-field" font-size: 0.86rem; font-weight: 500; placeholder="ФИО...">
+            <div class="fleet-modal-footer" style="border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 12px;">
+                <input type="text" id="newDriverNameInput" class="modal-field" placeholder="ФИО...">
                 <button onclick="window.addCustomDriver()" class="glass-btn modal-btn-primary" style="width: 100%;">Добавить</button>
+                <button onclick="window.closeDriversModal()" class="glass-btn" style="width: 100%;">Закрыть</button>
             </div>
-            <button onclick="window.closeDriversModal()" class="glass-btn" style="width: 100%;">Закрыть</button>
         </div>
     </div>
 
     <div id="tagsManagementModal" class="modal-overlay-fleet" style="display: none;">
         <div class="modal-box-fleet">
-            <button onclick="window.closecloseTagsModal()" class="modal-close-x" aria-label="Закрыть">✕</button>
-            <h3 style="margin: 0 0 18px 0; padding-bottom: 14px; border-bottom: 1px solid var(--line); color: #fff; font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">🏷️ Управление тегами</h3>
+            <button onclick="window.closeTagsModal()" class="modal-close-x" aria-label="Закрыть">✕</button>
+            <h3 class="fleet-modal-title">🏷️ Управление тегами</h3>
             <div style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto;" id="modalTagsList"></div>
-            <div style="padding-top: 14px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 12px;">
-                <input type="text" id="newTagNameInput" class="modal-field" font-size: 0.86rem; font-weight: 500; placeholder="Название статуса...">
+            <div class="fleet-modal-footer" style="border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 12px;">
+                <input type="text" id="newTagNameInput" class="modal-field" placeholder="Название статуса...">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <label style="color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase;">Цвет:</label>
-                    <input type="color" id="newTagColorInput" value="#e2e8f0" style="width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--input-bg); cursor: pointer;">
+                    <label class="modal-label" style="margin: 0;">Цвет:</label>
+                    <input type="color" id="newTagColorInput" value="#e2e8f0" class="fleet-color-input">
                 </div>
                 <button onclick="window.addCustomTag()" class="glass-btn modal-btn-primary" style="width: 100%;">Создать тег</button>
+                <button onclick="window.closeTagsModal()" class="glass-btn" style="width: 100%;">Закрыть</button>
             </div>
-            <button onclick="window.closeTagsModal()" class="glass-btn" style="width: 100%;">Закрыть</button>
         </div>
     </div>
 
     <div id="categoriesModal" class="modal-overlay-fleet" style="display: none;">
         <div class="modal-box-fleet">
-            <button onclick="window.closecloseCategoriesModal()" class="modal-close-x" aria-label="Закрыть">✕</button>
-            <h3 style="margin: 0 0 18px 0; padding-bottom: 14px; border-bottom: 1px solid var(--line); color: #fff; font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">📂 Категории</h3>
+            <button onclick="window.closeCategoriesModal()" class="modal-close-x" aria-label="Закрыть">✕</button>
+            <h3 class="fleet-modal-title">📂 Категории</h3>
             <div style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto;" id="modalCategoriesList"></div>
-            <div style="padding-top: 14px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 12px;">
-                <input type="text" id="newCatInput" class="modal-field" font-size: 0.86rem; font-weight: 500; placeholder="Новая категория...">
+            <div class="fleet-modal-footer" style="border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 12px;">
+                <input type="text" id="newCatInput" class="modal-field" placeholder="Новая категория...">
                 <button onclick="window.addCustomCategory()" class="glass-btn modal-btn-primary" style="width: 100%;">Добавить</button>
+                <button onclick="window.closeCategoriesModal()" class="glass-btn" style="width: 100%;">Закрыть</button>
             </div>
-            <button onclick="window.closeCategoriesModal()" class="glass-btn" style="width: 100%;">Закрыть</button>
         </div>
     </div>
 
     <div id="tasksModal" class="modal-overlay-fleet" style="display: none;">
         <div class="modal-box-fleet">
-            <button onclick="window.closecloseTasksModal()" class="modal-close-x" aria-label="Закрыть">✕</button>
-            <h3 id="tasksModalTitle" style="margin: 0 0 4px 0; color: #fff; font-size: 1.05rem; font-weight: 800;">Задачи по технике</h3>
+            <button onclick="window.closeTasksModal()" class="modal-close-x" aria-label="Закрыть">✕</button>
+            <h3 id="tasksModalTitle" class="fleet-modal-title" style="margin-bottom: 4px;">Задачи по технике</h3>
             <p id="tasksModalSubtitle" style="margin: 0 0 14px 0; color: var(--muted); font-size: 0.8rem;"></p>
             <input type="hidden" id="taskVehicleId">
             <input type="hidden" id="taskVehicleName">
             <div style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto;" id="vehicleTasksList"></div>
-            <div style="padding-top: 14px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 12px;">
-                <textarea id="newTaskText" rows="2" class="modal-field" font-size: 0.86rem; font-weight: 500; placeholder="Текст задачи..."></textarea>
+            <div class="fleet-modal-footer" style="border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 12px;">
+                <textarea id="newTaskText" rows="2" class="modal-field" placeholder="Текст задачи..."></textarea>
                 <button onclick="window.addVehicleTask()" class="glass-btn modal-btn-primary" style="width: 100%;">Добавить задачу</button>
+                <button onclick="window.closeTasksModal()" class="glass-btn" style="width: 100%;">Закрыть</button>
             </div>
-            <button onclick="window.closeTasksModal()" class="glass-btn" style="width: 100%;">Закрыть</button>
         </div>
     </div>
 
     <div id="hoursModal" class="modal-overlay-fleet" style="display: none;">
         <div class="modal-box-fleet">
-            <button onclick="window.closecloseHoursModal()" class="modal-close-x" aria-label="Закрыть">✕</button>
-            <h3 style="margin: 0 0 18px 0; padding-bottom: 14px; border-bottom: 1px solid var(--line); color: #fff; font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">⏱️ Добавить наработку</h3>
+            <button onclick="window.closeHoursModal()" class="modal-close-x" aria-label="Закрыть">✕</button>
+            <h3 class="fleet-modal-title">⏱️ Добавить наработку</h3>
             <div style="display: flex; flex-direction: column; gap: 16px;">
                 <div>
                     <label class="modal-label">Выберите технику</label>
-                    <select id="hoursVehicleSelect" class="modal-field" font-size: 0.86rem; font-weight: 500;>
+                    <select id="hoursVehicleSelect" class="modal-field">
                         <option value="">-- Загрузка --</option>
                     </select>
                 </div>
                 <div>
                     <label class="modal-label">Количество часов</label>
-                    <input type="number" id="hoursInput" min="0" step="0.5" class="modal-field" font-size: 0.86rem; font-weight: 500; placeholder="Например, 8.5">
+                    <input type="number" id="hoursInput" min="0" step="0.5" class="modal-field" placeholder="Например, 8.5">
                 </div>
             </div>
-            <div style="display: flex; gap: 12px; padding-top: 12px; border-top: 1px solid var(--line);">
+            <div class="fleet-modal-footer" style="border-top: 1px solid var(--line); padding-top: 12px; display: flex; gap: 12px;">
                 <button onclick="window.closeHoursModal()" class="glass-btn" style="flex: 1;">Отмена</button>
                 <button onclick="window.submitHours()" class="glass-btn modal-btn-primary" style="flex: 1;">Добавить</button>
             </div>
@@ -253,15 +258,58 @@ function getDriverRole(type) {
     return 'Механизатор';
 }
 
+// ===== Офлайн-обёртки записей =====
+// При отсутствии сети операция сохраняется
+// в локальную очередь и отправляется после
+// восстановления соединения (js/offline-sync.js).
+function offlineSave(op) {
+    if (window.OfflineSync && window.OfflineSync.saveOffline(op)) {
+        return true;
+    }
+    return false;
+}
+
+async function fleetInsert(table, payload) {
+    if (offlineSave({ type: 'insert', table, payload })) return { offline: true };
+    const { error } = await window._supabase.from(table).insert(payload);
+    if (error) throw error;
+    return {};
+}
+
+async function fleetUpdate(table, payload, match) {
+    if (offlineSave({ type: 'update', table, payload, match })) return { offline: true };
+    const { error } = await window._supabase.from(table).update(payload).match(match);
+    if (error) throw error;
+    return {};
+}
+
+async function fleetDelete(table, match) {
+    if (offlineSave({ type: 'delete', table, match })) return { offline: true };
+    const { error } = await window._supabase.from(table).delete().match(match);
+    if (error) throw error;
+    return {};
+}
+
 // ===== Инициализация модуля =====
+// Debounce поиска: рендер не запускается
+// на каждый символ ввода.
+function debounceFn(fn, wait) {
+    let t = null;
+    return function (...args) {
+        clearTimeout(t);
+        t = setTimeout(() => fn.apply(this, args), wait);
+    };
+}
+
 async function setupFleet() {
     // Поиск
     const searchInput = document.getElementById('vehicleSearchInput');
     if (searchInput) {
         searchInput.value = searchQuery;
+        const debouncedRender = debounceFn(() => renderFleet(), 220);
         searchInput.oninput = (e) => {
             searchQuery = e.target.value.toLowerCase();
-            renderFleet();
+            debouncedRender();
         };
     }
 
@@ -308,9 +356,14 @@ async function setupFleet() {
     // Первая загрузка данных
     await loadAllData(true);
 
-    // Автообновление каждые 10 секунд
+    // Автообновление каждые 10 секунд,
+    // только когда вкладка активна.
     if (refreshIntervalId) clearInterval(refreshIntervalId);
-    refreshIntervalId = setInterval(() => loadAllData(false), 10000);
+    refreshIntervalId = setInterval(() => {
+        if (document.visibilityState !== 'visible') return;
+        if (!navigator.onLine) return;
+        loadAllData(false);
+    }, 10000);
 }
 
 // ===== Загрузка данных из Supabase =====
@@ -472,13 +525,15 @@ function renderFleet() {
     let html = "";
     const uniqueTypesInFiltered = [...new Set(filtered.map(v => v.type || "Без категории"))];
 
+    const esc = window.escapeHtml || (s => String(s ?? ''));
+
     uniqueTypesInFiltered.forEach(cat => {
         const catList = filtered.filter(v => (v.type || "Без категории").toLowerCase() === cat.toLowerCase());
         if (catList.length === 0) return;
 
         html += `
             <div class="fleet-group">
-                <h3 class="fleet-group-title">${cat} — ${catList.length} ед.</h3>
+                <h3 class="fleet-group-title">${esc(cat)} — ${catList.length} ед.</h3>
                 <div class="fleet-grid">
                     ${catList.map(v => {
                         const now = new Date();
@@ -505,36 +560,36 @@ function renderFleet() {
                         const label = unit === 'км' ? 'Пробег' : 'Наработка';
                         const role = getDriverRole(v.type);
 
-                        // Цветовая схема карточки по статусу
-                        let cardBorderColor = 'var(--line)';
-                        if (vehicleTagsArray.includes('Неисправен')) cardBorderColor = 'rgba(251, 113, 133, 0.45)';
-                        else if (vehicleTagsArray.includes('Гарантия')) cardBorderColor = 'rgba(125, 211, 252, 0.45)';
+                        // Цветовая схема карточки по статусу (как бейджи статусов в Животноводстве)
+                        let cardStatusClass = '';
+                        if (vehicleTagsArray.includes('Неисправен')) cardStatusClass = 'is-broken';
+                        else if (vehicleTagsArray.includes('Гарантия')) cardStatusClass = 'is-warranty';
 
                         return `
-                            <div onclick="window.openVehicleModalForm(${safeVehicleJson})" class="glass-panel fleet-card" style="border-color: ${cardBorderColor};">
+                            <div onclick="window.openVehicleModalForm(${safeVehicleJson})" class="glass-panel fleet-card ${cardStatusClass}">
                                 <div class="fleet-card-head">
-                                    <h4>${v.model}</h4>
+                                    <h4>${esc(v.model)}</h4>
                                     <button onclick="event.stopPropagation(); window.openVehicleModalForm(${safeVehicleJson})" class="fleet-card-edit" title="Редактировать">✏️</button>
                                 </div>
 
                                 <div class="fleet-card-driver">
                                     <span>👤 ${role}:</span>
-                                    <span class="fleet-card-driver-name">${v.notes || 'Не закреплен'}</span>
+                                    <span class="fleet-card-driver-name">${esc(v.notes || 'Не закреплен')}</span>
                                 </div>
 
                                 <div class="fleet-card-tags">
                                     ${vehicleTagsArray.map(t => {
                                         const knownTag = baseTags.find(bt => bt.name.toLowerCase() === t.toLowerCase());
                                         const badgeBg = knownTag ? knownTag.color : '#e2e8f0';
-                                        return `<span class="fleet-tag" style="background-color: ${badgeBg};">${t}</span>`;
+                                        return `<span class="fleet-tag" style="background-color: ${badgeBg};">${esc(t)}</span>`;
                                     }).join('')}
                                 </div>
 
                                 <div class="fleet-card-ids">
-                                    <div class="fleet-plate">${v.plate || 'БЕЗ ГОСНОМЕРА'}</div>
-                                    ${v.inv_number ? `<span class="fleet-inv">Инв. №: ${v.inv_number}</span>` : ''}
+                                    <div class="fleet-plate">${esc(v.plate || 'БЕЗ ГОСНОМЕРА')}</div>
+                                    ${v.inv_number ? `<span class="fleet-inv">Инв. №: ${esc(v.inv_number)}</span>` : ''}
                                 </div>
-                                ${v.vin_number ? `<div class="fleet-vin" title="${v.vin_number}">VIN: ${v.vin_number}</div>` : ''}
+                                ${v.vin_number ? `<div class="fleet-vin" title="${esc(v.vin_number)}">VIN: ${esc(v.vin_number)}</div>` : ''}
 
                                 <div class="fleet-card-docs">
                                     <div class="fleet-doc-row">
@@ -543,11 +598,11 @@ function renderFleet() {
                                     </div>
                                     <div class="fleet-doc-row">
                                         <span>Техосмотр:</span>
-                                        <span class="fleet-doc-badge ${toInfo.cls}">${toInfo.text}</span>
+                                        <span class="fleet-doc-badge ${toInfo.cls}">${esc(toInfo.text)}</span>
                                     </div>
                                     <div class="fleet-doc-row">
                                         <span>Страховка:</span>
-                                        <span class="fleet-doc-badge ${insInfo.cls}">${insInfo.text}</span>
+                                        <span class="fleet-doc-badge ${insInfo.cls}">${esc(insInfo.text)}</span>
                                     </div>
                                 </div>
 
@@ -647,13 +702,20 @@ async function handleFormSubmit() {
     };
 
     try {
+        let result;
         if (id) {
-            await window._supabase.from('vehicles').update(payload).eq('id', id);
+            result = await fleetUpdate('vehicles', payload, { id: id });
         } else {
-            await window._supabase.from('vehicles').insert([payload]);
+            result = await fleetInsert('vehicles', [payload]);
         }
         window.closeVModal();
-        await loadAllData(true);
+        if (result.offline) {
+            if (window.OfflineSync) {
+                window.OfflineSync.showToast('Нет сети — изменения сохранены локально');
+            }
+        } else {
+            await loadAllData(true);
+        }
     } catch (e) { alert(e.message); }
 }
 
@@ -662,9 +724,15 @@ async function handleDeleteVehicle() {
     if (!id || !window._supabase) return;
     if (confirm("Вы точно хотите удалить технику?")) {
         try {
-            await window._supabase.from('vehicles').delete().eq('id', id);
+            const result = await fleetDelete('vehicles', { id: id });
             window.closeVModal();
-            await loadAllData(true);
+            if (result.offline) {
+                if (window.OfflineSync) {
+                    window.OfflineSync.showToast('Нет сети — удаление сохранено локально');
+                }
+            } else {
+                await loadAllData(true);
+            }
         } catch (e) { alert(e.message); }
     }
 }
@@ -678,9 +746,10 @@ function renderDriversModalList() {
 function updateDriversDOMList() {
     const list = document.getElementById('modalDriversList');
     if (!list) return;
+    const esc = window.escapeHtml || (s => String(s ?? ''));
     list.innerHTML = drivers.map(d => `
         <div class="fleet-list-row">
-            <span class="fleet-list-name">👤 ${d}</span>
+            <span class="fleet-list-name">👤 ${esc(d)}</span>
             <button onclick="window.deleteCustomDriver('${d.replace(/'/g, "\\'")}')" class="fleet-list-delete">Удалить</button>
         </div>
     `).join('');
@@ -688,19 +757,18 @@ function updateDriversDOMList() {
 
 async function addCustomDriver() {
     const input = document.getElementById('newDriverNameInput');
-    if (!window._supabase || !input || !input.value.trim()) return;
+    if (!input || !input.value.trim()) return;
     try {
-        await window._supabase.from('fleet_drivers').insert([{ name: input.value.trim() }]);
+        await fleetInsert('fleet_drivers', [{ name: input.value.trim() }]);
         input.value = "";
         await loadAllData(false);
     } catch (e) { console.error(e); }
 }
 
 async function deleteCustomDriver(driverName) {
-    if (!window._supabase) return;
     if (confirm(`Удалить вод/мех-а "${driverName}" из базы данных?`)) {
         try {
-            await window._supabase.from('fleet_drivers').delete().eq('name', driverName);
+            await fleetDelete('fleet_drivers', { name: driverName });
             await loadAllData(false);
         } catch (e) { console.error(e); }
     }
@@ -715,11 +783,12 @@ function renderTagsModalList() {
 function updateTagsDOMList() {
     const list = document.getElementById('modalTagsList');
     if (!list) return;
+    const esc = window.escapeHtml || (s => String(s ?? ''));
     list.innerHTML = baseTags.map(t => `
         <div class="fleet-list-row">
             <div class="fleet-list-tag">
                 <span class="fleet-list-dot" style="background-color: ${t.color};"></span>
-                <span class="fleet-list-name">${t.name}</span>
+                <span class="fleet-list-name">${esc(t.name)}</span>
             </div>
             <button onclick="window.deleteCustomTag(${t.id})" class="fleet-list-delete">Удалить</button>
         </div>
@@ -729,9 +798,9 @@ function updateTagsDOMList() {
 async function addCustomTag() {
     const nameInput = document.getElementById('newTagNameInput');
     const colorInput = document.getElementById('newTagColorInput');
-    if (!window._supabase || !nameInput || !nameInput.value.trim()) return;
+    if (!nameInput || !nameInput.value.trim()) return;
     try {
-        await window._supabase.from('fleet_tags').insert([{
+        await fleetInsert('fleet_tags', [{
             name: nameInput.value.trim(),
             color: colorInput.value
         }]);
@@ -741,11 +810,10 @@ async function addCustomTag() {
 }
 
 async function deleteCustomTag(tagId) {
-    if (!window._supabase) return;
     const target = baseTags.find(t => t.id === tagId);
     if (target && confirm(`Удалить тег "${target.name}" из базы данных?`)) {
         try {
-            await window._supabase.from('fleet_tags').delete().eq('id', tagId);
+            await fleetDelete('fleet_tags', { id: tagId });
             await loadAllData(false);
         } catch (e) { console.error(e); }
     }
@@ -760,9 +828,10 @@ function renderCategoriesModalList() {
 function updateCategoriesDOMList() {
     const list = document.getElementById('modalCategoriesList');
     if (!list) return;
+    const esc = window.escapeHtml || (s => String(s ?? ''));
     list.innerHTML = categories.map(c => `
         <div class="fleet-list-row">
-            <span class="fleet-list-name">${c}</span>
+            <span class="fleet-list-name">${esc(c)}</span>
             ${c !== 'Без категории' ? `<button onclick="window.deleteCustomCategory('${c.replace(/'/g, "\\'")}')" class="fleet-list-delete">Удалить</button>` : ''}
         </div>
     `).join('');
@@ -770,20 +839,19 @@ function updateCategoriesDOMList() {
 
 async function addCustomCategory() {
     const input = document.getElementById('newCatInput');
-    if (!window._supabase || !input || !input.value.trim()) return;
+    if (!input || !input.value.trim()) return;
     try {
-        await window._supabase.from('fleet_categories').insert([{ name: input.value.trim() }]);
+        await fleetInsert('fleet_categories', [{ name: input.value.trim() }]);
         input.value = "";
         await loadAllData(false);
     } catch (e) { console.error(e); }
 }
 
 async function deleteCustomCategory(catName) {
-    if (!window._supabase) return;
     if (confirm(`Удалить категорию "${catName}"? Все машины из неё будут переведены в "Без категории".`)) {
         try {
-            await window._supabase.from('vehicles').update({ type: 'Без категории' }).eq('type', catName);
-            await window._supabase.from('fleet_categories').delete().eq('name', catName);
+            await fleetUpdate('vehicles', { type: 'Без категории' }, { type: catName });
+            await fleetDelete('fleet_categories', { name: catName });
             await loadAllData(false);
         } catch(err) { console.error("Ошибка удаления категории:", err); }
     }
@@ -812,7 +880,7 @@ function renderTasksListInsideModal() {
     }
     list.innerHTML = vTasks.map(t => `
         <div class="fleet-task-row">
-            <span>${t.text}</span>
+            <span>${window.escapeHtml ? window.escapeHtml(t.text) : t.text}</span>
             <button onclick="window.completeTask(${t.id})" class="fleet-task-done">Готово</button>
         </div>
     `).join('');
@@ -822,9 +890,9 @@ async function addVehicleTask() {
     const vId = document.getElementById('taskVehicleId').value;
     const vName = document.getElementById('taskVehicleName').value;
     const textInput = document.getElementById('newTaskText');
-    if (!textInput || !textInput.value.trim() || !window._supabase) return;
+    if (!textInput || !textInput.value.trim()) return;
     try {
-        await window._supabase.from('vehicle_tasks').insert([{ vehicle_id: parseInt(vId), vehicle_name: vName, text: textInput.value.trim(), is_completed: false }]);
+        await fleetInsert('vehicle_tasks', [{ vehicle_id: parseInt(vId), vehicle_name: vName, text: textInput.value.trim(), is_completed: false }]);
         textInput.value = "";
         await loadAllData(true);
         renderTasksListInsideModal();
@@ -832,9 +900,8 @@ async function addVehicleTask() {
 }
 
 async function completeTask(taskId) {
-    if (!window._supabase) return;
     try {
-        await window._supabase.from('vehicle_tasks').update({ is_completed: true }).eq('id', taskId);
+        await fleetUpdate('vehicle_tasks', { is_completed: true }, { id: taskId });
         await loadAllData(true);
         const modal = document.getElementById('tasksModal');
         if (modal && modal.style.display === 'flex') renderTasksListInsideModal();
@@ -869,8 +936,20 @@ async function submitHours() {
     const hours = parseFloat(input.value);
     if (!vehicleId) { alert('Выберите технику'); return; }
     if (isNaN(hours) || hours <= 0) { alert('Введите положительное число часов'); return; }
-    if (!window._supabase) return;
     try {
+        if (offlineSave({ type: 'hours', table: 'vehicles', match: { id: vehicleId }, hours: hours })) {
+            /* Офлайн: прибавляем часы к локальной копии,
+               синхронизация пересчитает сумму на сервере. */
+            const v = vehicles.find(x => String(x.id) === String(vehicleId));
+            if (v) v.current_hours = (v.current_hours || 0) + hours;
+            closeHoursModal();
+            renderFleet();
+            if (window.OfflineSync) {
+                window.OfflineSync.showToast('Нет сети — наработка сохранена локально');
+            }
+            return;
+        }
+
         const { data, error } = await window._supabase
             .from('vehicles')
             .select('current_hours')

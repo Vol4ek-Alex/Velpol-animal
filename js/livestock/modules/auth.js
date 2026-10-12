@@ -26,11 +26,32 @@
             return Boolean(this.access && this.access.admin === true);
         },
 
-        hasPermission() {
+        hasPermission(permission) {
             // Упрощённая модель прав: админ может всё,
             // остальные пользователи с доступом к модулю
             // могут только просматривать данные.
-            return this.isAdmin();
+            if (this.isAdmin()) {
+                return true;
+            }
+
+            if (typeof permission !== 'string') {
+                return false;
+            }
+
+            // Редактирование и финансовая история
+            // операций остаются только у админа.
+            if (
+                permission.indexOf('can_edit') === 0 ||
+                permission === 'can_view_history' ||
+                permission === 'can_manage_users'
+            ) {
+                return false;
+            }
+
+            // Просмотр разделов животноводства
+            // разрешён всем, у кого есть доступ
+            // к отрасли (module_access.livestock).
+            return this.canAccessModule('livestock');
         },
 
         canAccessModule(moduleName) {

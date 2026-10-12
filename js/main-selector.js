@@ -9,6 +9,7 @@ async function checkAuth() {
         currentUser = data.session.user;
         document.getElementById('login-section').style.display = 'none';
         document.getElementById('modules-section').style.display = 'grid';
+        document.getElementById('modules-footer').style.display = 'flex';
         document.getElementById('logout-container').style.display = 'block';
 
         // Проверка прав администратора
@@ -16,6 +17,7 @@ async function checkAuth() {
     } else {
         document.getElementById('login-section').style.display = 'block';
         document.getElementById('modules-section').style.display = 'none';
+        document.getElementById('modules-footer').style.display = 'none';
         document.getElementById('logout-container').style.display = 'none';
         document.body.classList.remove('has-admin');
     }}

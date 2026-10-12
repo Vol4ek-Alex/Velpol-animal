@@ -268,19 +268,12 @@
             return true;
         }
 
-        const permission =
-            getModulePermission(moduleName);
-
-        if (!permission) {
-            return false;
-        }
-
-        return Boolean(
-            typeof window.AuthModule.hasPermission ===
-            'function' &&
-            window.AuthModule.hasPermission(
-                permission
-            )
+        // Упрощённая модель: у обычных
+        // пользователей с доступом к отрасли
+        // есть просмотр всех разделов
+        // животноводства (без редактирования).
+        return window.AuthModule.canAccessModule(
+            'livestock'
         );
     }
 

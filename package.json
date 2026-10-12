@@ -1,6 +1,6 @@
 {
   "name": "velikopolye-control-panel",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Многомодульная система управления: Животноводство, Агрономия, Механизация",
   "main": "index.html",
   "scripts": {

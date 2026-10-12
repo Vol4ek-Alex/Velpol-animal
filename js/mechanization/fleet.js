@@ -500,59 +500,49 @@ function renderCategoriesBar() {
     if (!bar) return;
 
     const isAllActive = selectedCategory === 'all';
-    const isNoCatActive = selectedCategory.toLowerCase() === 'без категории';
-    const isOtherActive = !isAllActive && !isNoCatActive;
+    const allCats = categories.filter(c => c !== 'Без категории');
 
-    const otherCats = categories.filter(c => c !== 'Без категории');
-    const activeBtnStyle = 'background: rgba(52, 211, 153, 0.22); border-color: var(--green); color: var(--green); font-weight: 800;';
-
+    // Кнопка «Все» + по одной кнопке на каждую категорию
     let html = `
-        <span style="font-size: 0.76rem; color: var(--subtle); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Категории:</span>
-        <button onclick="window.filterCategory('all')" class="glass-btn" style="min-height: 32px; padding: 6px 12px; font-size: 0.74rem; ${isAllActive ? activeBtnStyle : ''}">Все</button>
-        <button onclick="window.filterCategory('Без категории')" class="glass-btn" style="min-height: 32px; padding: 6px 12px; font-size: 0.74rem; ${isNoCatActive ? activeBtnStyle : ''}">Без категории</button>
-        <div style="position: relative; display: inline-block;">
-            <button onclick="window.toggleCategoryDropdown(event)" class="glass-btn modal-btn-primary" style="min-height: 32px; padding: 6px 12px; font-size: 0.74rem; display: flex; align-items: center; gap: 4px; ${isOtherActive ? activeBtnStyle : ''}">
-                <span>${isOtherActive ? selectedCategory : `— Другие (${otherCats.length}) —`}</span>
-                <span style="font-size: 0.6rem; transition: transform 180ms ease; ${window._isCategoriesDropdownOpen ? 'transform: rotate(180deg);' : ''}">▼</span>
-            </button>
-            <div style="position: absolute; top: 100%; left: 0; margin-top: 4px; width: 220px; max-height: 240px; overflow-y: auto; background: var(--glass-strong); border: 1px solid var(--line-bright); border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); z-index: 50; padding: 4px; display: ${window._isCategoriesDropdownOpen ? 'block' : 'none'};" id="customCategoryDropdownMenu">
-                ${otherCats.map(c => `
-                    <button onclick="window.filterCategory('${c.replace(/'/g, "\\'")}')" class="glass-btn modal-btn-primary" style="width: 100%; text-align: left; min-height: 36px; padding: 8px 10px; font-size: 0.8rem; margin-bottom: 2px; ${selectedCategory === c ? activeBtnStyle : ''}">
-                            ${c}
-                    </button>
-                `).join('')}
-            </div>
-        </div>
+        <button onclick="window.filterCategory('all')" class="fleet-cat-btn ${isAllActive ? 'fleet-cat-btn--active' : ''}">
+            <span class="fleet-cat-btn__icon">🚜</span>
+            <span>Все</span>
+            <span class="fleet-cat-btn__count">${vehicles.length}</span>
+        </button>
+        ${allCats.map(c => {
+            const isActive = selectedCategory === c;
+            const count = vehicles.filter(v => (v.type || 'Без категории') === c).length;
+            return `
+                <button onclick="window.filterCategory('${c.replace(/'/g, "\\'")}')" class="fleet-cat-btn ${isActive ? 'fleet-cat-btn--active' : ''}">
+                    <span>${c}</span>
+                    <span class="fleet-cat-btn__count">${count}</span>
+                </button>
+            `;
+        }).join('')}
+        ${(() => {
+            const noCatCount = vehicles.filter(v => !v.type || v.type === 'Без категории').length;
+            if (noCatCount === 0) return '';
+            const isActive = selectedCategory.toLowerCase() === 'без категории';
+            return `
+                <button onclick="window.filterCategory('Без категории')" class="fleet-cat-btn ${isActive ? 'fleet-cat-btn--active' : ''}">
+                    <span>Без категории</span>
+                    <span class="fleet-cat-btn__count">${noCatCount}</span>
+                </button>
+            `;
+        })()}
     `;
 
     bar.innerHTML = html;
 
-    window.toggleCategoryDropdown = (e) => {
-        e.stopPropagation();
-        window._isCategoriesDropdownOpen = !window._isCategoriesDropdownOpen;
-        renderCategoriesBar();
-    };
-
     window.filterCategory = (cat) => {
         if (!cat) return;
         selectedCategory = cat;
-        window._isCategoriesDropdownOpen = false;
         renderCategoriesBar();
         renderFleet();
     };
 }
 
-// Закрытие дропдауна по клику вне его
-if (!window._categoryDropdownClickSetup) {
-    document.addEventListener('click', () => {
-        if (window._isCategoriesDropdownOpen) {
-            window._isCategoriesDropdownOpen = false;
-            const menu = document.getElementById('customCategoryDropdownMenu');
-            if (menu) menu.style.display = 'none';
-        }
-    });
-    window._categoryDropdownClickSetup = true;
-}
+// (дропдаун категорий удалён — заменён горизонтальным скроллом кнопок)
 
 // ===== Рендеринг карточек =====
 function renderFleet() {
@@ -597,22 +587,25 @@ function renderFleet() {
 
         html += `
             <div class="fleet-group">
-                <h3 class="fleet-group-title">${esc(cat)} — ${catList.length} ед.</h3>
+                <div class="fleet-group-header">
+                    <h3 class="fleet-group-title">${esc(cat)}</h3>
+                    <span class="fleet-group-count">${catList.length} ед.</span>
+                </div>
                 <div class="fleet-grid">
                     ${catList.map(v => {
                         const now = new Date();
 
                         const formatDocStatus = (dateStr) => {
-                            if (!dateStr) return { text: '—', cls: 'is-muted' };
+                            if (!dateStr) return { text: '—', cls: 'is-muted', urgent: false };
                             const diffDays = Math.ceil((new Date(dateStr) - now) / (1000 * 60 * 60 * 24));
                             const formattedDate = new Date(dateStr).toLocaleDateString('ru-RU');
                             if (diffDays <= 0) {
-                                return { text: `${formattedDate} (Просрочено)`, cls: 'is-overdue' };
+                                return { text: `${formattedDate}`, sub: 'Просрочено', cls: 'is-overdue', urgent: true };
                             }
                             if (diffDays <= 30) {
-                                return { text: `${formattedDate} (${diffDays} дн.)`, cls: 'is-soon' };
+                                return { text: `${formattedDate}`, sub: `${diffDays} дн.`, cls: 'is-soon', urgent: true };
                             }
-                            return { text: formattedDate, cls: 'is-ok' };
+                            return { text: formattedDate, sub: null, cls: 'is-ok', urgent: false };
                         };
 
                         const toInfo = formatDocStatus(v.inspection_date);
@@ -624,54 +617,90 @@ function renderFleet() {
                         const label = unit === 'км' ? 'Пробег' : 'Наработка';
                         const role = getDriverRole(v.type);
 
-                        // Цветовая схема карточки по статусу (как бейджи статусов в Животноводстве)
+                        // Статус карточки
                         let cardStatusClass = '';
-                        if (vehicleTagsArray.includes('Неисправен')) cardStatusClass = 'is-broken';
-                        else if (vehicleTagsArray.includes('Гарантия')) cardStatusClass = 'is-warranty';
+                        const isBroken = vehicleTagsArray.some(t => t.toLowerCase() === 'неисправен');
+                        const isWarranty = vehicleTagsArray.some(t => t.toLowerCase() === 'гарантия');
+                        if (isBroken) cardStatusClass = 'is-broken';
+                        else if (isWarranty) cardStatusClass = 'is-warranty';
+
+                        // Иконка статуса
+                        const statusIcon = isBroken ? '🔴' : isWarranty ? '🔵' : '🟢';
+                        const statusLabel = isBroken ? 'Неисправен' : isWarranty ? 'Гарантия' : 'В работе';
+
+                        // Наработка — форматирование с разрядами
+                        const hoursFormatted = (v.current_hours || 0).toLocaleString('ru-RU');
+
+                        // Теги без статусных (они уже в шапке)
+                        const statusTagNames = ['неисправен', 'гарантия'];
+                        const extraTags = vehicleTagsArray.filter(t => !statusTagNames.includes(t.toLowerCase()));
 
                         return `
-                            <div onclick="window.openVehicleModalForm(${safeVehicleJson})" class="glass-panel fleet-card ${cardStatusClass}">
-                                <div class="fleet-card-head">
-                                    <h4>${esc(v.model)}</h4>
-                                    <button onclick="event.stopPropagation(); window.openVehicleModalForm(${safeVehicleJson})" class="fleet-card-edit" title="Редактировать">✏️</button>
-                                </div>
+                            <div onclick="window.openVehicleModalForm(${safeVehicleJson})" class="fleet-card-v2 ${cardStatusClass}">
 
-                                <div class="fleet-card-driver">
-                                    <span>👤 ${role}:</span>
-                                    <span class="fleet-card-driver-name">${esc(v.notes || 'Не закреплен')}</span>
-                                </div>
-
-                                <div class="fleet-card-tags">
-                                    ${vehicleTagsArray.map(t => {
-                                        const knownTag = baseTags.find(bt => bt.name.toLowerCase() === t.toLowerCase());
-                                        const badgeBg = knownTag ? knownTag.color : '#e2e8f0';
-                                        return `<span class="fleet-tag" style="background-color: ${badgeBg};">${esc(t)}</span>`;
-                                    }).join('')}
-                                </div>
-
-                                <div class="fleet-card-ids">
-                                    <div class="fleet-plate">${esc(v.plate || 'БЕЗ ГОСНОМЕРА')}</div>
-                                    ${v.inv_number ? `<span class="fleet-inv">Инв. №: ${esc(v.inv_number)}</span>` : ''}
-                                </div>
-                                ${v.vin_number ? `<div class="fleet-vin" title="${esc(v.vin_number)}">VIN: ${esc(v.vin_number)}</div>` : ''}
-
-                                <div class="fleet-card-docs">
-                                    <div class="fleet-doc-row">
-                                        <span>${label}:</span>
-                                        <span class="fleet-doc-value">${v.current_hours || 0} ${unit}</span>
+                                <!-- Шапка карточки -->
+                                <div class="fv2-header">
+                                    <div class="fv2-header-left">
+                                        <div class="fv2-status-dot ${isBroken ? 'fv2-dot-red' : isWarranty ? 'fv2-dot-blue' : 'fv2-dot-green'}"></div>
+                                        <span class="fv2-status-label">${statusLabel}</span>
                                     </div>
-                                    <div class="fleet-doc-row">
-                                        <span>Техосмотр:</span>
-                                        <span class="fleet-doc-badge ${toInfo.cls}">${esc(toInfo.text)}</span>
-                                    </div>
-                                    <div class="fleet-doc-row">
-                                        <span>Страховка:</span>
-                                        <span class="fleet-doc-badge ${insInfo.cls}">${esc(insInfo.text)}</span>
+                                    <div class="fv2-header-right">
+                                        ${extraTags.map(t => {
+                                            const knownTag = baseTags.find(bt => bt.name.toLowerCase() === t.toLowerCase());
+                                            const badgeBg = knownTag ? knownTag.color : '#e2e8f0';
+                                            return `<span class="fleet-tag" style="background-color:${badgeBg};">${esc(t)}</span>`;
+                                        }).join('')}
+                                        <button onclick="event.stopPropagation(); window.openVehicleModalForm(${safeVehicleJson})" class="fv2-edit-btn fleet-card-edit" title="Редактировать">✏️</button>
                                     </div>
                                 </div>
 
-                                <button onclick="event.stopPropagation(); window.openTasksModalForm(${v.id}, '${v.model.replace(/'/g, "\\'")}')" class="glass-btn fleet-tasks-btn">
-                                    📋 Задачи (${vTasks.length})
+                                <!-- Название техники -->
+                                <div class="fv2-model">${esc(v.model)}</div>
+
+                                <!-- Госномер + инв. номер -->
+                                <div class="fv2-ids">
+                                    <div class="fleet-plate">${esc(v.plate || 'БЕЗ НОМЕРА')}</div>
+                                    ${v.inv_number ? `<span class="fleet-inv">№ ${esc(v.inv_number)}</span>` : ''}
+                                </div>
+
+                                ${v.vin_number ? `<div class="fv2-vin">VIN: ${esc(v.vin_number)}</div>` : ''}
+
+                                <!-- Водитель/механизатор -->
+                                <div class="fv2-driver">
+                                    <span class="fv2-driver-role">👤 ${role}</span>
+                                    <span class="fv2-driver-name">${esc(v.notes || '— не закреплён —')}</span>
+                                </div>
+
+                                <!-- Разделитель -->
+                                <div class="fv2-divider"></div>
+
+                                <!-- Метрики -->
+                                <div class="fv2-metrics">
+                                    <div class="fv2-metric">
+                                        <span class="fv2-metric-label">${label}</span>
+                                        <span class="fv2-metric-value">${hoursFormatted} <span class="fv2-metric-unit">${unit}</span></span>
+                                    </div>
+                                    <div class="fv2-metric">
+                                        <span class="fv2-metric-label">Техосмотр</span>
+                                        <span class="fv2-doc-val ${toInfo.cls}">
+                                            ${esc(toInfo.text)}
+                                            ${toInfo.sub ? `<span class="fv2-doc-sub">${esc(toInfo.sub)}</span>` : ''}
+                                        </span>
+                                    </div>
+                                    <div class="fv2-metric">
+                                        <span class="fv2-metric-label">Страховка</span>
+                                        <span class="fv2-doc-val ${insInfo.cls}">
+                                            ${esc(insInfo.text)}
+                                            ${insInfo.sub ? `<span class="fv2-doc-sub">${esc(insInfo.sub)}</span>` : ''}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Кнопка задач -->
+                                <button onclick="event.stopPropagation(); window.openTasksModalForm(${v.id}, '${v.model.replace(/'/g, "\\'")}')" class="fv2-tasks-btn fleet-tasks-btn ${vTasks.length > 0 ? 'fv2-tasks-btn--has' : ''}">
+                                    <span class="fv2-tasks-icon">📋</span>
+                                    <span>Задачи</span>
+                                    ${vTasks.length > 0 ? `<span class="fv2-tasks-badge">${vTasks.length}</span>` : ''}
                                 </button>
                             </div>
                         `;

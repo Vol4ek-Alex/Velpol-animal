@@ -1,11 +1,11 @@
 -- ============================================================================
--- ВОССТАНОВЛЕНИЕ ФУНКЦИЙ И СТРУКТУРЫ БД
--- Великополье Control Panel (модуль "Животноводство" + пользователи/сообщения)
--- Запускать целиком в Supabase SQL Editor.
+-- ВОССТННОВЛЕНИЕ ФУНКЦИЙ И СТРУКТУРЫ БД
+-- Великополье Control Panel (модуль "Животноводѝтво" + пользователи/ѝообщениѝ)
+-- Запуѝкать целиком в Supabase SQL Editor.
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
--- 1. НЕДОСТАЮЩИЕ КОЛОНКИ
+-- 1. НЕДОСТНЮЩИЕ КОЛОНКИ
 -- ----------------------------------------------------------------------------
 
 alter table public.farms_and_groups
@@ -21,7 +21,7 @@ alter table public.diets
     add column if not exists norm_per_head numeric not null default 0,
     add column if not exists feed_id uuid references public.feeds(id) on delete cascade;
 
--- имя корма хранится в feeds (diets.name больше не обязательно)
+-- имѝ корма хранитѝѝ в feeds (diets.name больше не обѝзательно)
 alter table public.diets
     alter column name drop not null;
 
@@ -45,7 +45,7 @@ alter table public.herd_movements
     alter column quantity set not null;
 
 -- ----------------------------------------------------------------------------
--- 2. НЕДОСТАЮЩИЕ ТАБЛИЦЫ (пользователи, права, присутствие, сообщения)
+-- 2. НЕДОСТНЮЩИЕ ТНБЛИЦЫ (пользователи, права, приѝутѝтвие, ѝообщениѝ)
 -- ----------------------------------------------------------------------------
 
 create table if not exists public.user_profiles (
@@ -106,7 +106,7 @@ alter table public.user_presence enable row level security;
 alter table public.admin_messages enable row level security;
 
 -- ----------------------------------------------------------------------------
--- 3. ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ПРОВЕРКИ АДМИНА
+-- 3. ВСПОМОГНТЕЛЬННЯ ФУНКЦИЯ ПРОВЕРКИ НДМИНН
 -- ----------------------------------------------------------------------------
 
 create or replace function public.is_current_admin()
@@ -237,7 +237,7 @@ as $$
 $$;
 
 -- ----------------------------------------------------------------------------
--- 6. АДМИН-ФУНКЦИИ (пользователи, права, блокировка)
+-- 6. НДМИН-ФУНКЦИИ (пользователи, права, блокировка)
 -- ----------------------------------------------------------------------------
 
 create or replace function public.admin_get_users()
@@ -249,7 +249,7 @@ set search_path = public
 as $$
 begin
     if not is_current_admin() then
-        raise exception 'Только администратор может получать список пользователей.';
+        raise exception 'Только админиѝтратор может получать ѝпиѝок пользователей.';
     end if;
 
     return coalesce(
@@ -292,7 +292,7 @@ declare
     v_value boolean;
 begin
     if not is_current_admin() then
-        raise exception 'Только администратор может изменять разрешения.';
+        raise exception 'Только админиѝтратор может изменѝть разрешениѝ.';
     end if;
 
     update public.user_permissions
@@ -329,7 +329,7 @@ set search_path = public
 as $$
 begin
     if not is_current_admin() then
-        raise exception 'Только администратор может блокировать пользователей.';
+        raise exception 'Только админиѝтратор может блокировать пользователей.';
     end if;
 
     update public.user_profiles
@@ -393,7 +393,7 @@ declare
     v_id uuid;
 begin
     if not is_current_admin() then
-        raise exception 'Только администратор может отправлять сообщения.';
+        raise exception 'Только админиѝтратор может отправлѝть ѝообщениѝ.';
     end if;
 
     insert into public.admin_messages (
@@ -404,7 +404,7 @@ begin
         auth.uid(),
         coalesce(
             (select full_name from public.user_profiles where id = auth.uid()),
-            'Администратор'
+            'Ндминиѝтратор'
         ),
         p_recipient_id, p_title, p_message,
         p_is_fullscreen, p_requires_acknowledgement, p_expires_at
@@ -486,7 +486,7 @@ begin
     set head_count = p_new_count,
         prev_head_count = v_old_count,
         last_change_amount = p_new_count - v_old_count,
-        last_change_reason = 'Изменение поголовья',
+        last_change_reason = 'Изменение поголовьѝ',
         last_change_at = now(),
         updated_at = now()
     where id = p_group_id;
@@ -517,7 +517,7 @@ declare
 begin
     if p_movement_type not in ('arrival', 'departure', 'slaughter', 'death',
                                'realization', 'mortality', 'transfer') then
-        raise exception 'Недопустимый тип операции: %', p_movement_type;
+        raise exception 'Недопуѝтимый тип операции: %', p_movement_type;
     end if;
 
     v_type := p_movement_type;
@@ -527,12 +527,12 @@ begin
     where id = p_source_group_id;
 
     if v_source.id is null then
-        raise exception 'Исходная группа не найдена.';
+        raise exception 'Иѝходнаѝ группа не найдена.';
     end if;
 
     if v_type in ('realization', 'mortality', 'departure', 'slaughter', 'death') then
         if v_source.head_count < p_quantity then
-            raise exception 'Недостаточно поголовья в группе (% < %).',
+            raise exception 'Недоѝтаточно поголовьѝ в группе (% < %).',
                 v_source.head_count, p_quantity;
         end if;
     end if;
@@ -543,7 +543,7 @@ begin
         where id = p_destination_group_id;
 
         if v_destination.id is null then
-            raise exception 'Группа назначения не найдена.';
+            raise exception 'Группа назначениѝ не найдена.';
         end if;
     else
         v_destination := null;
@@ -555,7 +555,7 @@ begin
         where id = p_destination_category_id;
 
         if v_category.id is null then
-            raise exception 'Категория назначения не найдена.';
+            raise exception 'Категориѝ назначениѝ не найдена.';
         end if;
     else
         v_category := null;
@@ -647,7 +647,7 @@ declare
     v_movement record;
 begin
     if p_pin is null or length(trim(p_pin)) < 4 then
-        raise exception 'Введите PIN (минимум 4 символа).';
+        raise exception 'Введите PIN (минимум 4 ѝимвола).';
     end if;
 
     select * into v_movement
@@ -657,7 +657,7 @@ begin
     for update;
 
     if v_movement.id is null then
-        raise exception 'История операций пуста.';
+        raise exception 'Иѝториѝ операций пуѝта.';
     end if;
 
     if v_movement.movement_type in ('realization', 'mortality', 'transfer') then
@@ -685,7 +685,7 @@ end;
 $$;
 
 -- ----------------------------------------------------------------------------
--- 9. УНИКАЛЬНЫЙ КОНСТРАЙНТ ДЛЯ UPSERT КАТЕГОРИЙ НАЗНАЧЕНИЯ
+-- 9. УНИКНЛЬНЫЙ КОНСТРНЙНТ ДЛЯ UPSERT КНТЕГОРИЙ ННЗННЧЕНИЯ
 -- ----------------------------------------------------------------------------
 
 alter table public.group_category_heads
@@ -739,6 +739,31 @@ begin
 end;
 $$;
 
+create or replace function public.admin_get_user_access(
+    p_user_id uuid
+)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+begin
+    if not is_current_admin() then
+        raise exception '������ ������������� ����� �������� ������� ������������.';
+    end if;
+
+    return coalesce(
+        (
+            select jsonb_agg(m.module_name order by m.module_name)
+            from public.module_access m
+            where m.user_id = p_user_id and m.has_access = true
+        ),
+        '[]'::jsonb
+    );
+end;
+$$;
+
 create or replace function public.admin_set_module_access(
     p_user_id uuid,
     p_module_name text,
@@ -754,7 +779,12 @@ begin
         raise exception '������ ������������� ����� ��������� ��������.';
     end if;
 
-    if p_module_name not in ('livestock', 'agronomy', 'mechanization', 'admin') then
+    if p_module_name not in (
+        'livestock', 'livestock_edit',
+        'agronomy',
+        'mechanization', 'mechanization_edit',
+        'admin'
+    ) then
         raise exception '����������� ������: %', p_module_name;
     end if;
 
@@ -772,15 +802,16 @@ end;
 $$;
 
 grant execute on function public.admin_get_users_with_access() to authenticated;
+grant execute on function public.admin_get_user_access(uuid) to authenticated;
 grant execute on function public.admin_set_module_access(uuid, text, boolean) to authenticated;
 
 -- ============================================================
--- ПРЕДЛОЖЕНИЯ ПОЛЬЗОВАТЕЛЕЙ (suggestions)
+-- ПРЕДЛОЖЕНИЯ ПОЛЬЗОВНТЕЛЕЙ (suggestions)
 -- ============================================================
 create table if not exists public.suggestions (
     id uuid primary key default gen_random_uuid(),
     user_id uuid references auth.users(id) on delete set null,
-    user_name text not null default 'Неизвестный',
+    user_name text not null default 'Неизвеѝтный',
     page text,
     text text not null check (char_length(text) between 3 and 1000),
     is_done boolean not null default false,

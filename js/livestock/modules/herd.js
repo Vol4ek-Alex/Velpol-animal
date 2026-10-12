@@ -242,7 +242,7 @@
             const items = [
                 {
                     id: 'all',
-                    name: 'Все категории'
+                    name: 'Выбор категории'
                 },
                 ...this.categories.map(category => ({
                     id: category.id,
@@ -272,6 +272,7 @@
                 <select
                     class="herd-category-select"
                     aria-label="Выбор категории"
+                    title="Выбор категории"
                 >
                     ${items.map(item => `
                         <option
@@ -579,14 +580,14 @@
 
                     .herd-category-filter-button {
                         flex: 0 0 auto;
-                        min-height: 34px;
-                        padding: 7px 11px;
+                        min-height: 44px;
+                        padding: 7px 13px;
                         border: 1px solid transparent;
                         border-radius: 10px;
                         background: transparent;
                         color: var(--muted);
                         cursor: pointer;
-                        font-size: .75rem;
+                        font-size: .82rem;
                         font-weight: 600;
                         white-space: nowrap;
                     }
@@ -603,10 +604,10 @@
                     }
 
                     .herd-category-select {
-                        flex: 1 1 200px;
+                        flex: 0 0 auto;
                         min-width: 0;
-                        min-height: 34px;
-                        padding: 6px 10px;
+                        min-height: 44px;
+                        padding: 6px 13px;
                         border: 1px solid
                             rgba(255,255,255,.16);
                         border-radius: 10px;
@@ -614,7 +615,7 @@
                         color: #fff;
                         color-scheme: dark;
                         font: inherit;
-                        font-size: .78rem;
+                        font-size: .82rem;
                         font-weight: 600;
                     }
 

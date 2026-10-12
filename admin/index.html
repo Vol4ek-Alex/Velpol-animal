@@ -103,6 +103,75 @@
         .access-toggle input:checked {
             transform: scale(1.12);
         }
+        .access-toggle input:disabled {
+            cursor: not-allowed;
+        }
+        .access-toggle.access-admin {
+            border-color: rgba(148, 163, 184, .55);
+            background: rgba(30, 41, 59, .55);
+        }
+        .access-toggle.access-admin:has(input:checked) {
+            border-color: rgba(244, 63, 94, .7);
+            background: rgba(244, 63, 94, .16);
+            color: #fda4af;
+        }
+
+        .access-select-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            border: 1px solid rgba(71, 85, 105, .5);
+            border-radius: 999px;
+            background: rgba(15, 23, 42, .55);
+            color: #e2e8f0;
+            cursor: pointer;
+            user-select: none;
+            transition: border-color 180ms ease, background-color 180ms ease;
+        }
+        .access-select-wrapper:hover {
+            border-color: rgba(52, 211, 153, .5);
+        }
+        .access-select-label {
+            font-size: .84rem;
+            white-space: nowrap;
+        }
+        .access-select {
+            min-height: 26px;
+            padding: 2px 8px;
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 8px;
+            background: rgba(3,10,20,.7);
+            color: #fff;
+            color-scheme: dark;
+            font: inherit;
+            font-size: .82rem;
+            cursor: pointer;
+        }
+        .access-select:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+        .users-search-panel {
+            max-width: 420px;
+            margin: 0 auto 20px;
+            padding: 0 12px;
+        }
+        .users-search-input {
+            width: 100%;
+            min-height: 44px;
+            padding: 10px 16px;
+            border: 1px solid rgba(71, 85, 105, .55);
+            border-radius: 12px;
+            background: rgba(15, 23, 42, .6);
+            color: #fff;
+            font: inherit;
+            font-size: .9rem;
+        }
+        .users-search-input:focus {
+            outline: none;
+            border-color: rgba(52, 211, 153, .6);
+        }
         .user-card.is-blocked { opacity: 0.55; }
 
         .admin-tabs {
@@ -292,7 +361,12 @@
                 justify-content: space-between;
             }
 
-            .access-toggle { flex: 1 1 45%; font-size: .8rem; padding: 8px 11px; }
+            .access-toggle, .access-select-wrapper {
+                flex: 1 1 100%;
+                justify-content: space-between;
+                font-size: .8rem;
+                padding: 8px 11px;
+            }
 
             .access-toggle input { width: 17px; height: 17px; }
 
@@ -335,6 +409,11 @@
             .users-section h2 { font-size: 1.15rem; }
 
             .users-section .section-subtitle { font-size: 0.82rem; }
+
+            .users-search-panel {
+                max-width: 100%;
+                padding: 0;
+            }
 
             .admin-footer { margin-top: 32px; font-size: 0.7rem; }
         }
@@ -384,7 +463,18 @@
 
         <div id="users-section" class="users-section" style="display: none;">
             <h2>👤 Доступ к отраслям</h2>
-            <p class="section-subtitle">Отметьте отрасли, к которым пользователь имеет доступ</p>
+            <p class="section-subtitle">Настройте уровень доступа для каждого пользователя</p>
+
+            <div class="users-search-panel">
+                <input
+                    type="text"
+                    id="users-search"
+                    class="users-search-input"
+                    placeholder="🔍 Поиск по имени, логину или email"
+                    oninput="handleUsersSearch(this.value)"
+                >
+            </div>
+
             <div id="users-container" class="requests-grid"></div>
         </div>
 

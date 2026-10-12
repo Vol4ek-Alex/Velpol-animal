@@ -841,6 +841,15 @@
                 item.reason ||
                 '';
 
+            const canEditMovement =
+                this.editMode &&
+                this.canUndo() &&
+                [
+                    'mortality',
+                    'death',
+                    'realization'
+                ].includes(item.movement_type);
+
             return `
                 <article class="history-item">
                     ${
@@ -855,6 +864,23 @@
                                     aria-label="Удалить операцию"
                                 >
                                     ✕
+                                </button>
+                            `
+                            : ''
+                    }
+
+                    ${
+                        canEditMovement
+                            ? `
+                                <button
+                                    type="button"
+                                    class="
+                                        history-item-edit
+                                    "
+                                    data-movement-id="${item.id}"
+                                    aria-label="Редактировать операцию"
+                                >
+                                    ✏️
                                 </button>
                             `
                             : ''
@@ -1361,6 +1387,34 @@
                         transform: scale(1.08);
                     }
 
+                    .history-item-edit {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        flex: 0 0 28px;
+                        width: 28px;
+                        height: 28px;
+                        padding: 0;
+                        border: 1px solid
+                            rgba(251, 191, 36, .5);
+                        border-radius: 9px;
+                        background:
+                            rgba(251, 191, 36, .14);
+                        color: var(--amber);
+                        cursor: pointer;
+                        font-size: .75rem;
+                        line-height: 1;
+                        transition:
+                            background-color 150ms ease,
+                            transform 150ms ease;
+                    }
+
+                    .history-item-edit:hover {
+                        background:
+                            rgba(251, 191, 36, .3);
+                        transform: scale(1.08);
+                    }
+
                     .history-modal-text {
                         margin: 10px 0 0;
                         color: var(--muted);
@@ -1625,7 +1679,10 @@
                                     нажмите ✕ на операции,
                                     чтобы удалить её; кнопка ✎
                                     в таблице отчёта — правка
-                                    трат кормов за день.
+                                    трат кормов за день. Кнопка ✏️
+                                    на карточке операции — правка
+                                    количества голов в записи
+                                    падежа или реализации.
                                 </p>
                             `
                             : ''
@@ -2109,7 +2166,7 @@
             if (!this.canUndo()) {
                 await this.showMessageModal(
                     'Нет доступа',
-                    'Редактировать историю может только администратор или пользователь с соответствующим разрешением.'
+                    'Редактировать историю может только администратор.'
                 );
 
                 return;
@@ -2147,17 +2204,242 @@
             await this.render();
         },
 
-        async deleteMovement(id) {
-            const item = this.movements.find(
-                entry => String(entry.id) === String(id)
+    async editMovementModal(id) {
+        const item = this.movements.find(
+            entry => String(entry.id) === String(id)
+        );
+
+        if (!item) {
+            return;
+        }
+
+        if (
+            ![
+                'mortality',
+                'death',
+                'realization'
+            ].includes(item.movement_type)
+        ) {
+            await this.showMessageModal(
+                'Нельзя редактировать',
+                'Редактирование количества доступно только для записей падежа и реализации.'
             );
 
-            if (!item) {
-                return;
-            }
+            return;
+        }
 
-            const confirmed =
-                await this.confirmDeleteModal(item);
+        const pin = await this.requestPinModal();
+
+        if (pin === null) {
+            return;
+        }
+
+        if (pin !== '2174') {
+            await this.showMessageModal(
+                'Неверный PIN-код',
+                'Доступ к редактированию запрещён.'
+            );
+
+            return;
+        }
+
+        const overlay =
+            document.createElement('div');
+
+        overlay.className = 'modal-overlay open';
+
+        overlay.innerHTML = `
+            <div class="modal-box">
+                <h3 style="margin:0;color:#fff;">
+                    ${this.escape(
+                        this.getTypeLabel(
+                            item.movement_type
+                        )
+                    )} от
+                    ${this.escape(
+                        this.formatDate(item.event_date)
+                    )}
+                </h3>
+
+                <p class="history-modal-text">
+                    Укажите новое количество голов.
+                    Старое значение:
+                    ${Number(item.quantity) || 0} гол.
+                </p>
+
+                <label style="
+                    display:block;
+                    margin-top:14px;
+                    color:var(--muted);
+                    font-size:.78rem;
+                    font-weight:600;
+                ">
+                    Количество, гол.
+                </label>
+
+                <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    class="modal-input history-edit-qty"
+                    style="margin-top:6px"
+                    value="${Number(item.quantity) || 0}"
+                >
+
+                <div class="history-modal-error"></div>
+
+                <div style="
+                    display:flex;
+                    justify-content:flex-end;
+                    gap:8px;
+                    margin-top:15px;
+                ">
+                    <button
+                        type="button"
+                        class="glass-btn history-edit-cancel"
+                    >
+                        Отмена
+                    </button>
+
+                    <button
+                        type="button"
+                        class="glass-btn history-edit-save"
+                        style="
+                            border-color:var(--green-dark);
+                            color:var(--green);
+                        "
+                    >
+                        Сохранить
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        const qtyInput =
+            overlay.querySelector('.history-edit-qty');
+
+        const errorNode =
+            overlay.querySelector('.history-modal-error');
+
+        setTimeout(() => qtyInput.focus(), 50);
+
+        overlay
+            .querySelector('.history-edit-cancel')
+            .addEventListener('click', () => overlay.remove());
+
+        overlay
+            .querySelector('.history-edit-save')
+            .addEventListener('click', async () => {
+                const newQty = this.number(
+                    qtyInput.value
+                );
+
+                if (newQty < 0) {
+                    errorNode.textContent =
+                        'Количество не может быть отрицательным.';
+                    return;
+                }
+
+                try {
+                    await this.updateMovementQuantity(
+                        item,
+                        newQty
+                    );
+
+                    overlay.remove();
+
+                    await this.showMessageModal(
+                        'Сохранено',
+                        'Запись обновлена, поголовье скорректировано.'
+                    );
+
+                    await this.render();
+                } catch (error) {
+                    errorNode.textContent =
+                        error.message ||
+                        'Не удалось сохранить изменения.';
+                }
+            });
+    },
+
+    async updateMovementQuantity(item, newQty) {
+        const oldQty = this.number(
+            item.quantity ?? item.heads
+        );
+
+        const delta = newQty - oldQty;
+
+        const sourceGroupId =
+            item.group_id || item.source_group_id;
+
+        if (!sourceGroupId) {
+            throw new Error(
+                'Не удалось определить группу операции.'
+            );
+        }
+
+        const groupResponse = await db
+            .from('farms_and_groups')
+            .select('id, head_count')
+            .eq('id', sourceGroupId)
+            .maybeSingle();
+
+        if (groupResponse.error) {
+            throw groupResponse.error;
+        }
+
+        const group = groupResponse.data;
+
+        if (!group) {
+            throw new Error(
+                'Группа операции не найдена.'
+            );
+        }
+
+        // При выбытии (mortality/death/realization) уменьшение
+        // поголовья = delta положительный. Если новое
+        // количество меньше старого — возвращаем головы.
+        const nextHeads = Math.max(
+            0,
+            this.number(group.head_count) - delta
+        );
+
+        const updateResponse = await db
+            .from('farms_and_groups')
+            .update({ head_count: nextHeads })
+            .eq('id', group.id)
+            .select('id');
+
+        if (updateResponse.error) {
+            throw updateResponse.error;
+        }
+
+        const movementResponse = await db
+            .from('herd_movements')
+            .update({ quantity: newQty })
+            .eq('id', item.id)
+            .select('id');
+
+        if (movementResponse.error) {
+            throw movementResponse.error;
+        }
+
+        await this.loadData();
+    },
+
+    async deleteMovement(id) {
+        const item = this.movements.find(
+            entry => String(entry.id) === String(id)
+        );
+
+        if (!item) {
+            return;
+        }
+
+        const confirmed =
+            await this.confirmDeleteModal(item);
 
             if (!confirmed) {
                 return;
@@ -2491,6 +2773,19 @@
                         'click',
                         () => this.editDayUsage(
                             button.dataset.dayKey
+                        )
+                    );
+                });
+
+            container
+                .querySelectorAll(
+                    '.history-item-edit'
+                )
+                .forEach(button => {
+                    button.addEventListener(
+                        'click',
+                        () => this.editMovementModal(
+                            button.dataset.movementId
                         )
                     );
                 });

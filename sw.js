@@ -1,4 +1,5 @@
-﻿const CACHE_NAME = 'velpol-agro-v14';
+﻿const CACHE_NAME = 'velpol-agro-v15';
+const APP_VERSION = '1.1.3';
 
 const APP_FILES = [
     './',
@@ -34,13 +35,17 @@ const APP_FILES = [
     './js/agronomy/index.html',
     './js/mechanization/index.html',
     './js/mechanization/dashboard.js',
-    './js/mechanization/fleet.js'
+    './js/mechanization/fleet.js',
+    './admin/index.html',
+    './admin/admin-script.js'
 ];
 
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then(cache => cache.addAll(APP_FILES))
+            .then(cache => {
+                return cache.addAll(APP_FILES);
+            })
             .then(() => self.skipWaiting())
     );
 });
@@ -73,38 +78,48 @@ self.addEventListener('fetch', event => {
     if (request.method !== 'GET') return;
     if (url.origin !== self.location.origin) return;
 
-    if (request.mode === 'navigate') {
-        event.respondWith(
-            fetch(request, { cache: 'no-store' })
-                .then(response => {
-                    if (response && response.ok) {
-                        const copy = response.clone();
-                        caches.open(CACHE_NAME)
-                            .then(cache => cache.put('./index.html', copy))
-                            .catch(err => console.warn('Cache error:', err));
-                    }
-                    return response;
-                })
-                .catch(async () => {
-                    return await caches.match(request) || 
-                           await caches.match('./index.html') || 
-                           Response.error();
-                })
-        );
-        return;
-    }
+    const isNavigate = request.mode === 'navigate';
+    const cachedFallback = async () => {
+        const cache = await caches.open(CACHE_NAME);
+
+        if (isNavigate) {
+            const match =
+                await cache.match(request) ||
+                await cache.match('./index.html') ||
+                await cache.match('./');
+
+            if (match) return match;
+        }
+
+        const match = await cache.match(request);
+        if (match) return match;
+
+        return Response.error();
+    };
 
     event.respondWith(
-        fetch(request, { cache: 'no-store' })
+        fetch(request)
             .then(response => {
-                if (response && response.ok) {
+                // Обновляем кэш только для успешных
+                // локальных GET-ответов.
+                if (
+                    response &&
+                    response.ok &&
+                    response.status !== 206
+                ) {
                     const copy = response.clone();
                     caches.open(CACHE_NAME)
-                        .then(cache => cache.put(request, copy))
+                        .then(cache => {
+                            const cacheKey = isNavigate
+                                ? './index.html'
+                                : request;
+                            return cache.put(cacheKey, copy);
+                        })
                         .catch(err => console.warn('Cache error:', err));
                 }
+
                 return response;
             })
-            .catch(async () => await caches.match(request) || Response.error())
+            .catch(cachedFallback)
     );
 });

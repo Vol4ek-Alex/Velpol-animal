@@ -27,9 +27,7 @@
         },
 
         hasPermission(permission) {
-            // Упрощённая модель прав: админ может всё,
-            // остальные пользователи с доступом к модулю
-            // могут только просматривать данные.
+            // Администратор может всё.
             if (this.isAdmin()) {
                 return true;
             }
@@ -38,10 +36,25 @@
                 return false;
             }
 
-            // Редактирование и финансовая история
-            // операций остаются только у админа.
+            // Права на редактирование поголовья/рационов —
+            // только при наличии флага livestock_edit.
+            if (permission.indexOf('can_edit') === 0) {
+                return this.canAccessModule('livestock_edit');
+            }
+
+            // Управление перемещениями и группами —
+            // также под livestock_edit.
             if (
-                permission.indexOf('can_edit') === 0 ||
+                permission === 'can_manage_movements' ||
+                permission === 'can_manage_groups' ||
+                permission === 'can_manage_categories'
+            ) {
+                return this.canAccessModule('livestock_edit');
+            }
+
+            // Финансовая история операций остаётся
+            // только у администратора.
+            if (
                 permission === 'can_view_history' ||
                 permission === 'can_manage_users'
             ) {

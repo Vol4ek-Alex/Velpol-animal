@@ -132,6 +132,9 @@ async function handleRejectAccount(userId, fullName) {
     }
 }
 
+let usersSearchQuery = '';
+let usersData = [];
+
 async function loadUsers() {
     const { data: users, error } = await db.rpc('admin_get_users_with_access');
 
@@ -146,7 +149,8 @@ async function loadUsers() {
 
     const container = document.getElementById('users-container');
 
-    if (error) {        console.error('Error loading users:', error);
+    if (error) {
+        console.error('Error loading users:', error);
         container.innerHTML = `
             <div class="request-card">
                 <p style="color:#fb7185;">Не удалось загрузить пользователей: ${error.message}</p>
@@ -156,26 +160,77 @@ async function loadUsers() {
         return;
     }
 
-    if (!users || users.length === 0) {
-        container.innerHTML = `
-            <div class="request-card no-requests">
-                <h2>📭 Пользователей нет</h2>
-                <p>Профили появятся после первого входа пользователей в систему</p>
-            </div>
-        `;
+    usersData = users || [];
+    renderUsers();
+}
+
+function renderUsers() {
+    const container = document.getElementById('users-container');
+
+    const query = usersSearchQuery.trim().toLowerCase();
+    const users = usersData.filter(user => {
+        if (!query) return true;
+
+        const fullName = String(user.full_name || '').toLowerCase();
+        const login = String(user.login || '').toLowerCase();
+        const email = String(user.email || '').toLowerCase();
+
+        return (
+            fullName.includes(query) ||
+            login.includes(query) ||
+            email.includes(query)
+        );
+    });
+
+    if (users.length === 0) {
+        if (!usersData.length) {
+            container.innerHTML = `
+                <div class="request-card no-requests">
+                    <h2>📭 Пользователей нет</h2>
+                    <p>Профили появятся после первого входа пользователей в систему</p>
+                </div>
+            `;
+        } else {
+            container.innerHTML = `
+                <div class="request-card no-requests">
+                    <h2>🔍 Ничего не найдено</h2>
+                    <p>По запросу «${escapeHtml(query)}» нет совпадений</p>
+                </div>
+            `;
+        }
         return;
     }
 
     container.innerHTML = users.map(user => {
         const access = user.access || [];
-        const checkbox = (moduleName) => `
-            <label class="access-toggle">
-                <input type="checkbox"
-                    ${access.includes(moduleName) ? 'checked' : ''}
-                    onchange="handleModuleAccess('${user.id}', '${moduleName}', this.checked, this)">
-                ${getModuleName(moduleName)}
+
+        // Гранулярные уровни доступа
+        const level = {
+            livestock: access.includes('livestock')
+                ? (access.includes('livestock_edit') ? 'edit' : 'view')
+                : 'none',
+            mechanization: access.includes('mechanization')
+                ? (access.includes('mechanization_edit') ? 'edit' : 'view')
+                : 'none',
+            agronomy: access.includes('agronomy') ? 'view' : 'none',
+            admin: access.includes('admin')
+        };
+
+        const moduleSelect = (moduleName, options) => `
+            <label class="access-select-wrapper">
+                <span class="access-select-label">${getModuleName(moduleName)}</span>
+                <select class="access-select"
+                    onchange="handleModuleLevel('${user.id}', '${moduleName}', this.value, this)"
+                    ${user.id === currentUser.id && moduleName === 'admin' ? 'disabled title="Нельзя изменить свои права администратора"' : ''}>
+                    ${options.map(opt => `
+                        <option value="${opt.value}" ${level[moduleName] === opt.value ? 'selected' : ''}>
+                            ${opt.label}
+                        </option>
+                    `).join('')}
+                </select>
             </label>
         `;
+
         return `
             <div class="request-card user-card ${user.is_blocked ? 'is-blocked' : ''}">
                 <div class="user-info">
@@ -184,10 +239,33 @@ async function loadUsers() {
                     <p>Роль: ${escapeHtml(user.role || 'user')}${user.id === currentUser.id ? ' · это вы' : ''}</p>
                 </div>
                 <div class="user-access">
-                    ${checkbox('livestock')}
-                    ${checkbox('agronomy')}
-                    ${checkbox('mechanization')}
-                    ${checkbox('admin')}
+                    <label class="access-toggle access-admin">
+                        <input type="checkbox"
+                            ${level.admin ? 'checked' : ''}
+                            onchange="handleAdminAccess('${user.id}', this.checked, this)"
+                            ${user.id === currentUser.id ? 'disabled title="Нельзя снять с себя права администратора"' : ''}>
+                        ⚙️ Администрирование
+                    </label>
+
+                    ${moduleSelect('livestock', [
+                        { value: 'none', label: '❌ Нет доступа' },
+                        { value: 'view', label: '🐄 Животноводство · просмотр' },
+                        { value: 'edit', label: '🐄 Животноводство · редактирование' }
+                    ])}
+
+                    ${moduleSelect('mechanization', [
+                        { value: 'none', label: '❌ Нет доступа' },
+                        { value: 'view', label: '🚜 Механизация · просмотр' },
+                        { value: 'edit', label: '🚜 Механизация · редактирование' }
+                    ])}
+
+                    <label class="access-toggle">
+                        <input type="checkbox"
+                            ${level.agronomy === 'view' ? 'checked' : ''}
+                            onchange="handleModuleAccess('${user.id}', 'agronomy', this.checked, this)">
+                        🌾 Агрономия
+                    </label>
+
                     <button
                         type="button"
                         class="btn btn-reject"
@@ -203,6 +281,11 @@ async function loadUsers() {
     }).join('');
 }
 
+function handleUsersSearch(query) {
+    usersSearchQuery = query;
+    renderUsers();
+}
+
 function escapeHtml(value) {
     return String(value ?? '')
         .replace(/&/g, '&amp;')
@@ -210,6 +293,56 @@ function escapeHtml(value) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+}
+
+async function handleAdminAccess(userId, hasAccess, input) {
+    input.disabled = true;
+
+    try {
+        const { error } = await db.rpc('admin_set_module_access', {
+            p_user_id: userId,
+            p_module_name: 'admin',
+            p_has_access: hasAccess
+        });
+
+        if (error) throw error;
+
+        // При выдаче админ-прав автоматически разрешаем
+        // редактирование остальных модулей; при снятии —
+        // оставляем текущие отраслевые доступы.
+        await refreshUserAccess(userId);
+    } catch (err) {
+        console.error('Admin access error:', err);
+        input.checked = !hasAccess;
+        alert('Ошибка: ' + (err.message || 'не удалось изменить доступ'));
+    } finally {
+        input.disabled = false;
+    }
+}
+
+async function handleModuleLevel(userId, moduleName, level, select) {
+    select.disabled = true;
+
+    try {
+        await db.rpc('admin_set_module_access', {
+            p_user_id: userId,
+            p_module_name: moduleName,
+            p_has_access: level !== 'none'
+        });
+
+        await db.rpc('admin_set_module_access', {
+            p_user_id: userId,
+            p_module_name: moduleName + '_edit',
+            p_has_access: level === 'edit'
+        });
+
+        await refreshUserAccess(userId);
+    } catch (err) {
+        console.error('Module level error:', err);
+        alert('Ошибка: ' + (err.message || 'не удалось изменить доступ'));
+    } finally {
+        select.disabled = false;
+    }
 }
 
 async function handleModuleAccess(userId, moduleName, hasAccess, input) {
@@ -223,6 +356,8 @@ async function handleModuleAccess(userId, moduleName, hasAccess, input) {
         });
 
         if (error) throw error;
+
+        await refreshUserAccess(userId);
     } catch (err) {
         console.error('Module access error:', err);
         input.checked = !hasAccess;
@@ -232,23 +367,52 @@ async function handleModuleAccess(userId, moduleName, hasAccess, input) {
     }
 }
 
+async function refreshUserAccess(userId) {
+    const { data, error } = await db.rpc('admin_get_user_access', {
+        p_user_id: userId
+    });
+
+    if (error) {
+        console.error('Refresh access error:', error);
+        return;
+    }
+
+    const index = usersData.findIndex(u => u.id === userId);
+    if (index !== -1) {
+        usersData[index].access = data || [];
+        renderUsers();
+    }
+}
+
 async function handleRevokeVerification(userId, fullName) {
     if (!confirm('Снять верификацию с ' + (fullName || 'пользователя') + '?\n\nВсе доступы будут отозваны, пользователь вернётся в очередь верификации.')) return;
 
     try {
-        const { error } = await db.rpc('admin_revoke_verification', {
+        const { error } = await db.rpc('admin_reject_account', {
             p_user_id: userId
         });
 
         if (error) throw error;
 
-        alert('↩️ Верификация снята. Пользователь вернулся в очередь верификации.');
-        loadUsers();
+        alert('🗑 Аккаунт удалён из базы');
         loadRequests();
+        loadUsers();
     } catch (error) {
-        console.error('Revoke verification error:', error);
+        console.error('Reject account error:', error);
         alert('Ошибка: ' + error.message);
     }
+}
+
+function getModuleName(name) {
+    const names = {
+        'livestock': '🐄 Животноводство',
+        'livestock_edit': '🐄 Животноводство · редактирование',
+        'agronomy': '🌾 Агрономия',
+        'mechanization': '🚜 Механизация',
+        'mechanization_edit': '🚜 Механизация · редактирование',
+        'admin': '⚙️ Администрирование'
+    };
+    return names[name] || name;
 }
 
 async function loadSuggestions() {
@@ -256,6 +420,7 @@ async function loadSuggestions() {
         .from('suggestions')
         .select('*')
         .order('created_at', { ascending: false });
+
 
     const section = document.getElementById('suggestions-section');
     const container = document.getElementById('suggestions-container');
@@ -400,16 +565,6 @@ function switchTab(tabName) {
 async function handleLogout() {
     await db.auth.signOut();
     window.location.href = '../index.html';
-}
-
-function getModuleName(name) {
-    const names = {
-        'livestock': '🐄 Животноводство',
-        'agronomy': '🌾 Агрономия',
-        'mechanization': '🚜 Механизация',
-        'admin': '⚙️ Администрирование'
-    };
-    return names[name] || name;
 }
 
 checkAdminAccess().then(hasAccess => {

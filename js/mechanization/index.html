@@ -2073,7 +2073,7 @@
 
             const show =
                 moduleId === 'fleet' &&
-                window._mechIsAdmin === true;
+                window._mechEditMode === true;
 
             button.classList.toggle('editor-hidden', !show);
         }
@@ -2319,6 +2319,7 @@
                 const list = access || [];
                 const isAdmin = list.some(a => a.module_name === 'admin');
                 const hasMech = isAdmin || list.some(a => a.module_name === 'mechanization');
+                const canEditMech = isAdmin || list.some(a => a.module_name === 'mechanization_edit');
 
                 if (!hasMech) {
                     alert('У вас нет доступа к модулю «Механизация». Обратитесь к администратору.');
@@ -2330,10 +2331,9 @@
                 window._mechUser = user;
                 window._mechIsAdmin = isAdmin;
 
-                // Режим редактирования: только
-                // администратор (RLS механизации
-                // разрешает запись только админам).
-                window._mechEditMode = false;
+                // Режим редактирования: администратор
+                // или явное право mechanization_edit.
+                window._mechEditMode = canEditMech;
                 setupMechEditMode();
                 return true;
             } catch (e) {

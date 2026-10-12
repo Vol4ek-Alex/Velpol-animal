@@ -1,10 +1,38 @@
 let selectedModule = null;
 let authMode = 'login';
 let currentUser = null;
+let accessCache = null;
+let profileCache = null;
+
+function getCachedAccess() {
+    try {
+        const raw = localStorage.getItem('velpol_access_cache');
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || !parsed.expiresAt || parsed.expiresAt < Date.now()) {
+            localStorage.removeItem('velpol_access_cache');
+            return null;
+        }
+        return parsed.data || null;
+    } catch (e) {
+        return null;
+    }
+}
+
+function setCachedAccess(data) {
+    try {
+        localStorage.setItem('velpol_access_cache', JSON.stringify({
+            data: data,
+            expiresAt: Date.now() + 5 * 60 * 1000
+        }));
+    } catch (e) {
+        console.warn('Не удалось сохранить кэш доступов', e);
+    }
+}
 
 async function checkAuth() {
     const { data } = await db.auth.getSession();
-    
+
     if (data.session) {
         currentUser = data.session.user;
         document.getElementById('login-section').style.display = 'none';
@@ -12,7 +40,7 @@ async function checkAuth() {
         document.getElementById('modules-footer').style.display = 'flex';
         document.getElementById('logout-container').style.display = 'block';
 
-        // Проверка прав администратора
+        // Проверка прав администратора — параллельно с профилем
         checkAdminAccess();
     } else {
         document.getElementById('login-section').style.display = 'block';
@@ -20,7 +48,61 @@ async function checkAuth() {
         document.getElementById('modules-footer').style.display = 'none';
         document.getElementById('logout-container').style.display = 'none';
         document.body.classList.remove('has-admin');
-    }}
+        accessCache = null;
+        localStorage.removeItem('velpol_access_cache');
+    }
+}
+
+async function loadAccessOnce() {
+    if (accessCache) return accessCache;
+    const cached = getCachedAccess();
+    if (cached) {
+        accessCache = cached;
+        return cached;
+    }
+    if (!currentUser) return {};
+
+    const { data, error } = await db
+        .from('module_access')
+        .select('module_name, has_access')
+        .eq('user_id', currentUser.id)
+        .eq('has_access', true);
+
+    if (error) throw error;
+
+    const result = {};
+    (data || []).forEach(row => {
+        result[row.module_name] = true;
+    });
+
+    accessCache = result;
+    setCachedAccess(result);
+    return result;
+}
+
+async function loadProfileOnce() {
+    if (profileCache) return profileCache;
+    const { data, error } = await db.rpc('get_my_profile');
+    if (!error && data && data.profile) {
+        profileCache = data.profile;
+    }
+    return profileCache;
+}
+
+async function checkAdminAccess() {
+    if (!currentUser) return;
+
+    try {
+        const access = await loadAccessOnce();
+        if (access.admin) {
+            document.body.classList.add('has-admin');
+        } else {
+            document.body.classList.remove('has-admin');
+        }
+    } catch (error) {
+        console.error('Admin access check error:', error);
+    }
+}
 
 async function checkAdminAccess() {
     if (!currentUser) return;
@@ -50,27 +132,16 @@ async function selectModule(module) {
         return; // Модуль в разработке
     }
     selectedModule = module;
-    
+
     if (module === 'admin') {
         window.location.href = 'admin/index.html';
         return;
     }
 
     try {
-        // Проверить доступ к модулю
-        const { data: accessData, error: accessError } = await db
-            .from('module_access')
-            .select('*')
-            .eq('user_id', currentUser.id)
-            .eq('module_name', module)
-            .eq('has_access', true)
-            .maybeSingle();
+        const access = await loadAccessOnce();
 
-        if (accessError && accessError.code !== 'PGRST116') {
-            throw accessError;
-        }
-
-        if (!accessData) {
+        if (!access[module]) {
             alert('У вас нет доступа к данному модулю. Обратитесь к администратору.');
             return;
         }
@@ -89,6 +160,26 @@ async function selectModule(module) {
     } catch (error) {
         console.error('Module access error:', error);
         alert('Произошла ошибка при проверке доступа.');
+    }
+}
+
+function prefetchModule(module) {
+    const urls = {
+        'livestock': 'js/livestock/index.html',
+        'mechanization': 'js/mechanization/index.html',
+        'admin': 'admin/index.html'
+    };
+    const url = urls[module];
+    if (!url) return;
+
+    try {
+        const link = document.createElement('link');
+        link.rel = 'prefetch';
+        link.href = url;
+        link.as = 'document';
+        document.head.appendChild(link);
+    } catch (e) {
+        // prefetch не критичен
     }
 }
 
@@ -188,15 +279,28 @@ async function handleRegister(email, password) {
 }
 
 async function handleLogin(email, password) {
-    const { data, error } = await db.auth.signInWithPassword({
-        email: email,
-        password: password
-    });
+    const authButton = document.getElementById('auth-button');
+    if (authButton) authButton.disabled = true;
 
-    if (error) throw error;
-    
-    // После успешного входа проверяем статус
-    checkAuth();
+    try {
+        const { data, error } = await db.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
+
+        if (error) throw error;
+
+        // Параллельно грузим доступы и профиль, пока рендерится форма
+        currentUser = data.session ? data.session.user : data.user;
+        await Promise.all([
+            loadAccessOnce().catch(e => console.warn('Access preload error:', e)),
+            loadProfileOnce().catch(e => console.warn('Profile preload error:', e))
+        ]);
+
+        await checkAuth();
+    } finally {
+        if (authButton) authButton.disabled = false;
+    }
 }
 
 function showError(message) {
@@ -219,14 +323,25 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js')
             .then(reg => console.log('SW registered:', reg))
             .catch(err => console.log('SW registration failed:', err));
+
+        // Если новый SW ожидает активации — сразу
+        // переключаемся на него, чтобы обновления
+        // применялись быстрее.
+        navigator.serviceWorker.addEventListener(
+            'controllerchange',
+            () => console.log('SW controller changed')
+        );
     });
-}// Запускаем проверку при загрузке
+}
+
+// Запускаем проверку при загрузке
 checkAuth();
 
 // Плавная смена фона при наведении на карточки отраслей
 document.querySelectorAll('.module-card[data-module]').forEach(function (card) {
+    const module = card.getAttribute('data-module');
+
     card.addEventListener('mouseenter', function () {
-        const module = card.getAttribute('data-module');
         if (module === 'livestock') {
             document.body.setAttribute('data-hover-bg', 'farm');
         } else if (module === 'mechanization') {
@@ -234,6 +349,8 @@ document.querySelectorAll('.module-card[data-module]').forEach(function (card) {
         } else if (module === 'agronomy') {
             document.body.setAttribute('data-hover-bg', 'agro');
         }
+
+        prefetchModule(module);
     });
 
     card.addEventListener('mouseleave', function () {

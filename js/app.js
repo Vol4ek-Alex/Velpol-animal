@@ -1128,9 +1128,11 @@
             );
 
             if (stored) {
+                /* Видимое имя важнее технического
+                   логина из хранилища. */
                 login =
-                    stored.login ||
                     stored.full_name ||
+                    stored.login ||
                     '';
             }
         } catch (error) {
@@ -1141,8 +1143,10 @@
             window.AuthModule &&
             window.AuthModule.profile;
 
-        if (profile && profile.full_name) {
-            login = profile.login || profile.full_name;
+        if (profile && (profile.full_name || profile.login)) {
+            /* В приветствии показываем видимое
+               имя, а не технический логин. */
+            login = profile.full_name || profile.login;
         } else {
             try {
                 if (
@@ -1159,8 +1163,8 @@
 
                     if (profileResponse.data) {
                         login =
-                            profileResponse.data.login ||
                             profileResponse.data.full_name ||
+                            profileResponse.data.login ||
                             login;
                     }
                 }

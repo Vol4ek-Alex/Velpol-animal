@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'velpol-agro-v10';
+﻿const CACHE_NAME = 'velpol-agro-v11';
 
 const APP_FILES = [
     './',

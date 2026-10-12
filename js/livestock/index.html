@@ -771,7 +771,13 @@
             }
         }
 
-        body:not(.app-booted) .glass-panel,
+        /*
+         * Анимация загрузки не должна трогать
+         * сайдбар: fill-mode "both" перебивает
+         * translateX(-105%) и выкатывает меню
+         * на мобильных при старте.
+         */
+        body:not(.app-booted) .glass-panel:not(#sidebar),
         body:not(.app-booted) .stat-card {
             animation: panel-in 320ms ease both;
         }

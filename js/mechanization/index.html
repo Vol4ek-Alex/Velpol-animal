@@ -1275,7 +1275,13 @@
             }
         }
 
-        body:not(.app-booted) .glass-panel,
+        /*
+         * Анимация загрузки не должна трогать
+         * сайдбар: fill-mode "both" перебивает
+         * translateX(-105%) и выкатывает меню
+         * на мобильных при старте.
+         */
+        body:not(.app-booted) .glass-panel:not(#sidebar),
         body:not(.app-booted) .stat-card {
             animation: panel-in 320ms ease both;
         }
@@ -1950,23 +1956,25 @@
         async function renderWelcome() {
             document.body.classList.add('welcome-active');
             let login = '';
+            let stored = null;
             try {
-                const stored = JSON.parse(localStorage.getItem('velpol_user') || 'null');
-                if (stored) login = stored.login || stored.full_name || '';
-            } catch (e) { /* ignore */ }
+                stored = JSON.parse(localStorage.getItem('velpol_user') || 'null');
+            } catch (e) { stored = null; }
+            if (stored) login = stored.full_name || stored.login || '';
 
             try {
                 const { data } = await window._supabase.auth.getUser();
                 if (data && data.user) {
                     const meta = data.user.user_metadata || {};
-                    login = meta.login || meta.full_name || login;
+                    login = meta.full_name || meta.login || login;
                     try {
                         const { data: prof } = await window._supabase
                             .from('user_profiles')
                             .select('login, full_name')
                             .eq('id', data.user.id)
                             .maybeSingle();
-                        if (prof) login = prof.login || prof.full_name || login;
+                        /* Видимое имя вместо технического логина. */
+                        if (prof) login = prof.full_name || prof.login || login;
                     } catch (e) { /* ignore */ }
                 }
             } catch (e) { /* ignore */ }

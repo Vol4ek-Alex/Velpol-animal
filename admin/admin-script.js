@@ -324,22 +324,33 @@ async function handleModuleLevel(userId, moduleName, level, select) {
     select.disabled = true;
 
     try {
-        await db.rpc('admin_set_module_access', {
+        // Порядок важен: сначала базовый доступ к отрасли,
+        // затем гранулярное право редактирования
+        // (module_edit). «Редактирование» = доступ + edit,
+        // «просмотр» = доступ без edit, «нет доступа» =
+        // снимаем оба.
+        const baseResult = await db.rpc('admin_set_module_access', {
             p_user_id: userId,
             p_module_name: moduleName,
             p_has_access: level !== 'none'
         });
 
-        await db.rpc('admin_set_module_access', {
+        if (baseResult.error) throw baseResult.error;
+
+        const editResult = await db.rpc('admin_set_module_access', {
             p_user_id: userId,
             p_module_name: moduleName + '_edit',
             p_has_access: level === 'edit'
         });
 
+        if (editResult.error) throw editResult.error;
+
         await refreshUserAccess(userId);
     } catch (err) {
         console.error('Module level error:', err);
         alert('Ошибка: ' + (err.message || 'не удалось изменить доступ'));
+        // Возвращаем селект к фактическому состоянию в БД.
+        await refreshUserAccess(userId);
     } finally {
         select.disabled = false;
     }

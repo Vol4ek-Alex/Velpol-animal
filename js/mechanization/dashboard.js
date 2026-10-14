@@ -1,144 +1,794 @@
+/*
+ * =====================================================
+ * МОДУЛЬ «МЕХАНИЗАЦИЯ» — Панель управления (Статистика)
+ *
+ * Полностью переработанный интерфейс: KPI-карточки
+ * с индикаторами состояния парка, панели задач,
+ * контроля ТО по гарантии и документов.
+ * Бизнес-логика и схема БД (vehicles, vehicle_tasks)
+ * сохранены без изменений.
+ * =====================================================
+ */
+
+const DASH_STYLES = `
+<style id="dash-styles">
+.dash-root {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* ---------- Шапка ---------- */
+.dash-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 24px 26px;
+}
+
+.dash-header-titles h1 {
+    margin: 0 0 6px;
+    color: #fff;
+    font-size: 1.55rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.dash-header-titles p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.88rem;
+    font-weight: 500;
+}
+
+.dash-header-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--subtle);
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.dash-live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px rgba(52, 211, 153, 0.7);
+    animation: dash-pulse 2s ease-in-out infinite;
+}
+
+@keyframes dash-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+}
+
+/* ---------- KPI ---------- */
+.dash-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.dash-kpi {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px 22px 18px;
+    overflow: hidden;
+    transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), border-color 220ms ease, box-shadow 220ms ease;
+}
+
+.dash-kpi:hover {
+    transform: translateY(-3px);
+    border-color: rgba(255, 255, 255, 0.22);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+}
+
+.dash-kpi-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.dash-kpi-label {
+    color: var(--muted);
+    font-size: 0.74rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+}
+
+.dash-kpi-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    font-size: 1.15rem;
+}
+
+.dash-kpi-value {
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2.15rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+
+.dash-kpi-value .dash-kpi-unit {
+    color: var(--subtle);
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    margin-left: 4px;
+}
+
+.dash-kpi-bar {
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.07);
+    overflow: hidden;
+}
+
+.dash-kpi-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--green-dark), var(--green));
+    box-shadow: 0 0 10px rgba(52, 211, 153, 0.45);
+    transition: width 600ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dash-kpi--green .dash-kpi-bar-fill { background: linear-gradient(90deg, #10b981, #34d399); box-shadow: 0 0 10px rgba(52, 211, 153, 0.45); }
+.dash-kpi--blue .dash-kpi-bar-fill { background: linear-gradient(90deg, #38bdf8, #7dd3fc); box-shadow: 0 0 10px rgba(125, 211, 252, 0.45); }
+.dash-kpi--amber .dash-kpi-bar-fill { background: linear-gradient(90deg, #d97706, #fbbf24); box-shadow: 0 0 10px rgba(251, 191, 36, 0.45); }
+.dash-kpi--red .dash-kpi-bar-fill { background: linear-gradient(90deg, #e11d48, #fb7185); box-shadow: 0 0 10px rgba(251, 113, 133, 0.45); }
+
+.dash-kpi--red .dash-kpi-icon { border-color: rgba(251, 113, 133, 0.4); background: rgba(251, 113, 133, 0.1); }
+.dash-kpi--amber .dash-kpi-icon { border-color: rgba(251, 191, 36, 0.4); background: rgba(251, 191, 36, 0.1); }
+.dash-kpi--blue .dash-kpi-icon { border-color: rgba(125, 211, 252, 0.4); background: rgba(125, 211, 252, 0.1); }
+.dash-kpi--green .dash-kpi-icon { border-color: rgba(52, 211, 153, 0.4); background: rgba(52, 211, 153, 0.1); }
+
+/* ---------- Панели ---------- */
+.dash-panels {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 16px;
+    align-items: start;
+}
+
+.dash-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 22px;
+}
+
+.dash-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+}
+
+.dash-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0;
+    color: #fff;
+    font-size: 0.94rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+
+.dash-panel-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 20px;
+    padding: 0 7px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 800;
+}
+
+.dash-panel-badge--warn {
+    border-color: rgba(251, 191, 36, 0.5);
+    background: rgba(251, 191, 36, 0.12);
+    color: var(--amber);
+}
+
+.dash-panel-badge--danger {
+    border-color: rgba(251, 113, 133, 0.5);
+    background: rgba(251, 113, 133, 0.12);
+    color: var(--red);
+}
+
+.dash-panel-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 120px;
+    max-height: 460px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.dash-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 28px 16px;
+    border: 1px dashed rgba(255, 255, 255, 0.14);
+    border-radius: 14px;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.dash-empty-ok {
+    border-color: rgba(52, 211, 153, 0.35);
+    background: rgba(52, 211, 153, 0.06);
+    color: var(--green);
+}
+
+/* ---------- Форма задачи ---------- */
+.dash-task-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.dash-task-form-row {
+    display: flex;
+    gap: 8px;
+}
+
+.dash-input,
+.dash-select {
+    width: 100%;
+    min-height: 42px;
+    padding: 9px 13px;
+    outline: none;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    background: var(--input-bg);
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.84rem;
+    font-weight: 500;
+    color-scheme: dark;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.dash-input:focus,
+.dash-select:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+}
+
+.dash-add-btn {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 46px;
+    min-height: 42px;
+    padding: 9px 13px;
+    border: 1px solid var(--green);
+    border-radius: 11px;
+    background: rgba(52, 211, 153, 0.15);
+    color: var(--green);
+    font-size: 0.95rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.dash-add-btn:hover { background: rgba(52, 211, 153, 0.24); }
+.dash-add-btn:active { transform: scale(0.95); }
+
+/* ---------- Карточки алертов ---------- */
+.dash-alert {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 13px 14px;
+    border-radius: 13px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.03);
+    animation: dash-card-in 300ms ease both;
+}
+
+@keyframes dash-card-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.dash-alert--task { border-color: rgba(251, 191, 36, 0.38); background: rgba(251, 191, 36, 0.07); }
+.dash-alert--info { border-color: rgba(125, 211, 252, 0.32); background: rgba(125, 211, 252, 0.06); }
+.dash-alert--warning { border-color: rgba(251, 191, 36, 0.42); background: rgba(251, 191, 36, 0.09); }
+.dash-alert--danger { border-color: rgba(251, 113, 133, 0.45); background: rgba(251, 113, 133, 0.09); }
+
+.dash-alert-main { flex: 1; min-width: 0; }
+
+.dash-alert-title-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+    margin-bottom: 5px;
+}
+
+.dash-alert-name {
+    font-size: 0.86rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.01em;
+}
+
+.dash-alert-plate {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--subtle);
+    padding: 1px 6px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.dash-alert-text {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.45;
+    word-break: break-word;
+}
+
+.dash-alert-text b { color: #fff; }
+
+.dash-alert-text .dash-critical { color: var(--red); font-weight: 800; }
+
+.dash-alert-action {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    padding: 6px 11px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--muted);
+    font-size: 0.74rem;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+}
+
+.dash-alert-action:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.12);
+    border-color: var(--line-bright);
+}
+
+.dash-alert-action--done {
+    border-color: rgba(52, 211, 153, 0.5);
+    background: rgba(52, 211, 153, 0.13);
+    color: var(--green);
+}
+
+.dash-alert-action--done:hover {
+    background: rgba(52, 211, 153, 0.22);
+    color: #6ee7b7;
+}
+
+/* ---------- Фильтр гарантии ---------- */
+.dash-filter-wrap { position: relative; }
+
+.dash-filter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 6px 12px;
+    border: 1px solid var(--line-bright);
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--muted);
+    font-size: 0.74rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+}
+
+.dash-filter-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
+
+.dash-filter-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    z-index: 60;
+    display: none;
+    width: 270px;
+    max-width: calc(100vw - 44px);
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 14px;
+    border: 1px solid var(--line-bright);
+    border-radius: 16px;
+    background: var(--glass-strong);
+    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+.dash-filter-menu.open { display: block; }
+
+.dash-filter-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+}
+
+.dash-filter-head p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.dash-filter-reset {
+    border: none;
+    background: none;
+    color: var(--green);
+    font-size: 0.74rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.dash-filter-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 8px;
+    border-radius: 9px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text);
+    transition: background-color 140ms ease;
+}
+
+.dash-filter-item:hover { background: rgba(255, 255, 255, 0.05); }
+
+.dash-filter-item input {
+    width: 15px;
+    height: 15px;
+    accent-color: #10b981;
+    cursor: pointer;
+}
+
+.dash-filter-item span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dash-filter-stats {
+    padding-top: 10px;
+    margin-top: 10px;
+    border-top: 1px solid var(--line);
+    color: var(--subtle);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+/* ---------- Модалка ---------- */
+.dash-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(3, 8, 16, 0.74);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.dash-modal.open { display: flex; }
+
+.dash-modal-box {
+    position: relative;
+    width: 100%;
+    max-width: 460px;
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    padding: 24px;
+    border: 1px solid var(--line-bright);
+    border-radius: 22px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 44%), rgba(15, 31, 52, 0.98);
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.58);
+}
+
+.dash-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--muted);
+    font-size: 1.05rem;
+    cursor: pointer;
+    transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+}
+
+.dash-modal-close:hover { color: #fff; background: rgba(255, 255, 255, 0.1); border-color: var(--line); }
+
+.dash-modal-head { margin-bottom: 18px; }
+
+.dash-modal-head h4 {
+    margin: 0 0 5px;
+    color: #fff;
+    font-size: 1.12rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+
+.dash-modal-head p {
+    margin: 0;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
+.dash-modal-section {
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+}
+
+.dash-modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.dash-modal-field { margin-bottom: 14px; }
+.dash-modal-grid .dash-modal-field { margin-bottom: 0; }
+
+.dash-modal-save {
+    width: 100%;
+    margin-top: 18px;
+    min-height: 44px;
+    border: 1px solid var(--green);
+    border-radius: 12px;
+    background: rgba(52, 211, 153, 0.18);
+    color: var(--green);
+    font-size: 0.86rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.dash-modal-save:hover { background: rgba(52, 211, 153, 0.27); }
+.dash-modal-save:active { transform: scale(0.98); }
+
+.dash-ro-notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 13px;
+    border: 1px dashed rgba(251, 191, 36, 0.45);
+    border-radius: 12px;
+    background: rgba(251, 191, 36, 0.07);
+    color: var(--amber);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+@media (max-width: 700px) {
+    .dash-header { padding: 18px; }
+    .dash-kpi-value { font-size: 1.8rem; }
+    .dash-modal-grid { grid-template-columns: 1fr; }
+}
+</style>
+`;
+
 export async function init() {
     const content = document.getElementById('main-content');
     if (!content) return;
 
-    content.innerHTML = `
-        <div style="max-width: 1400px; margin: 0 auto;">
-            <div style="display: flex; flex-direction: column; gap: 20px; margin-bottom: 24px;">
-                <h1 style="margin: 0; color: #fff; font-size: 1.6rem; font-weight: 800; line-height: 1.2;">
-                    📊 Панель управления
-                </h1>
-                <p style="margin: 0; color: var(--muted); font-size: 0.88rem; font-weight: 500;">
-                    Оперативная сводка по филиалу СХК «Великополье»
-                </p>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 24px;">
-                <div class="glass-panel" style="padding: 20px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                        <span style="color: var(--muted); font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;">Автопарк</span>
-                        <span style="font-size: 1.4rem;">🚜</span>
-                    </div>
-                    <div id="dashTotal" style="color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 700; line-height: 1;">0</div>
-                    <div style="color: var(--subtle); font-size: 0.7rem; font-weight: 600; margin-top: 6px;">ед. техники</div>
+    content.innerHTML = DASH_STYLES + `
+        <div class="dash-root">
+            <div class="glass-panel dash-header">
+                <div class="dash-header-titles">
+                    <h1>📊 Панель управления</h1>
+                    <p>Оперативная сводка по филиалу СХК «Великополье»</p>
                 </div>
-
-                <div class="glass-panel" style="padding: 20px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                        <span style="color: var(--muted); font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;">Готово</span>
-                        <span style="font-size: 1.4rem;">✅</span>
-                    </div>
-                    <div id="dashReady" style="color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 700; line-height: 1;">0</div>
-                    <div style="color: var(--subtle); font-size: 0.7rem; font-weight: 600; margin-top: 6px;">единиц</div>
-                </div>
-
-                <div class="glass-panel" style="padding: 20px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                        <span style="color: var(--muted); font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;">Хранение</span>
-                        <span style="font-size: 1.4rem;">🏠</span>
-                    </div>
-                    <div id="dashStorage" style="color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 700; line-height: 1;">0</div>
-                    <div style="color: var(--subtle); font-size: 0.7rem; font-weight: 600; margin-top: 6px;">единиц</div>
-                </div>
-
-                <div class="glass-panel" style="padding: 20px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                        <span style="color: var(--muted); font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;">Ремонт</span>
-                        <span style="font-size: 1.4rem;">🔧</span>
-                    </div>
-                    <div id="dashInRepair" style="color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 700; line-height: 1;">0</div>
-                    <div style="color: var(--subtle); font-size: 0.7rem; font-weight: 600; margin-top: 6px;">единиц</div>
+                <div class="dash-header-meta">
+                    <span class="dash-live-dot"></span>
+                    <span>обновляется автоматически</span>
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px;">
-                <div class="glass-panel" style="padding: 22px; display: flex; flex-direction: column;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--line);">
-                        <h3 style="margin: 0; color: #fff; font-size: 0.92rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">
-                            <span>📋</span> Задачи
-                        </h3>
-                        <span id="taskCounter" style="background: rgba(255,255,255,0.08); border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; color: var(--muted);">0</span>
+            <div class="dash-kpi-grid">
+                <div class="glass-panel dash-kpi">
+                    <div class="dash-kpi-top">
+                        <span class="dash-kpi-label">Автопарк</span>
+                        <span class="dash-kpi-icon">🚜</span>
                     </div>
-                    <div style="margin-bottom: 14px;">
-                        <select id="taskVehicleSelect" style="width: 100%; min-height: 38px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-size: 0.82rem; font-weight: 500; margin-bottom: 10px;">
-                            <option value="">-- Общая заметка --</option>
+                    <div class="dash-kpi-value" id="dashTotal">0<span class="dash-kpi-unit">ед.</span></div>
+                    <div class="dash-kpi-bar"><div class="dash-kpi-bar-fill" id="dashTotalBar" style="width:100%"></div></div>
+                </div>
+                <div class="glass-panel dash-kpi dash-kpi--green">
+                    <div class="dash-kpi-top">
+                        <span class="dash-kpi-label">Готово</span>
+                        <span class="dash-kpi-icon">✅</span>
+                    </div>
+                    <div class="dash-kpi-value" id="dashReady">0<span class="dash-kpi-unit">ед.</span></div>
+                    <div class="dash-kpi-bar"><div class="dash-kpi-bar-fill" id="dashReadyBar" style="width:0%"></div></div>
+                </div>
+                <div class="glass-panel dash-kpi dash-kpi--blue">
+                    <div class="dash-kpi-top">
+                        <span class="dash-kpi-label">Хранение</span>
+                        <span class="dash-kpi-icon">🏠</span>
+                    </div>
+                    <div class="dash-kpi-value" id="dashStorage">0<span class="dash-kpi-unit">ед.</span></div>
+                    <div class="dash-kpi-bar"><div class="dash-kpi-bar-fill" id="dashStorageBar" style="width:0%"></div></div>
+                </div>
+                <div class="glass-panel dash-kpi dash-kpi--red">
+                    <div class="dash-kpi-top">
+                        <span class="dash-kpi-label">Ремонт</span>
+                        <span class="dash-kpi-icon">🔧</span>
+                    </div>
+                    <div class="dash-kpi-value" id="dashInRepair">0<span class="dash-kpi-unit">ед.</span></div>
+                    <div class="dash-kpi-bar"><div class="dash-kpi-bar-fill" id="dashInRepairBar" style="width:0%"></div></div>
+                </div>
+            </div>
+
+            <div class="dash-panels">
+                <div class="glass-panel dash-panel">
+                    <div class="dash-panel-head">
+                        <h3 class="dash-panel-title"><span>📋</span> Задачи</h3>
+                        <span class="dash-panel-badge" id="taskCounter">0</span>
+                    </div>
+                    <div class="dash-task-form" id="dashTaskForm">
+                        <select id="taskVehicleSelect" class="dash-select">
+                            <option value="">— Общая заметка —</option>
                         </select>
-                        <div style="display: flex; gap: 8px;">
-                            <input type="text" id="taskTextInput" placeholder="Текст задачи..." style="flex: 1; min-height: 38px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-size: 0.82rem;">
-                            <button onclick="window.dashAddRepairTask()" class="glass-btn" style="background: rgba(52, 211, 153, 0.15); border-color: var(--green); color: var(--green);">＋</button>
+                        <div class="dash-task-form-row">
+                            <input type="text" id="taskTextInput" class="dash-input" placeholder="Текст задачи...">
+                            <button onclick="window.dashAddRepairTask()" class="dash-add-btn" title="Добавить задачу">＋</button>
                         </div>
                     </div>
-                    <div id="containerTasks" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
-                        <div style="text-align: center; color: var(--muted); font-size: 0.8rem; padding: 20px;">Загрузка...</div>
+                    <div class="dash-panel-body" id="containerTasks">
+                        <div class="dash-empty">Загрузка...</div>
                     </div>
                 </div>
 
-                <div class="glass-panel" style="padding: 22px; display: flex; flex-direction: column;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--line);">
-                        <h3 style="margin: 0; color: #fff; font-size: 0.92rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">
-                            <span>🛠️</span> Гарантия
-                        </h3>
-                        <button onclick="window.dashToggleFilterDropdown(event)" class="glass-btn" style="min-height: 32px; padding: 6px 11px; font-size: 0.74rem;">⚙️ Фильтр</button>
-                    </div>
-                    <div id="dashFilterDropdown" style="position: absolute; left: 22px; top: 72px; width: 260px; max-width: calc(100vw - 44px); background: var(--glass-strong); border: 1px solid var(--line-bright); border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); padding: 16px; z-index: 50; display: none; max-height: 300px; overflow-y: auto;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); padding-bottom: 10px; margin-bottom: 12px;">
-                            <p style="margin: 0; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em;">Отображать</p>
-                            <button onclick="window.dashResetFilter()" style="border: none; background: none; color: var(--green); font-size: 0.76rem; font-weight: 700; cursor: pointer;">Показать все</button>
+                <div class="glass-panel dash-panel">
+                    <div class="dash-panel-head">
+                        <h3 class="dash-panel-title"><span>🛠️</span> Гарантия · контроль ТО</h3>
+                        <div class="dash-filter-wrap">
+                            <button onclick="window.dashToggleFilterDropdown(event)" class="dash-filter-btn">⚙️ Фильтр</button>
+                            <div class="dash-filter-menu" id="dashFilterDropdown">
+                                <div class="dash-filter-head">
+                                    <p>Отображать</p>
+                                    <button onclick="window.dashResetFilter()" class="dash-filter-reset">Показать все</button>
+                                </div>
+                                <div id="dashFilterCheckboxes"></div>
+                                <div class="dash-filter-stats" id="dashFilterStats"></div>
+                            </div>
                         </div>
-                        <div id="dashFilterCheckboxes" style="display: flex; flex-direction: column; gap: 8px; font-size: 0.82rem;"></div>
-                        <div id="dashFilterStats" style="font-size: 0.7rem; color: var(--subtle); border-top: 1px solid var(--line); padding-top: 10px; margin-top: 10px; text-align: center;"></div>
                     </div>
-                    <div id="containerWarranty" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
-                        <div style="text-align: center; color: var(--muted); font-size: 0.8rem; padding: 20px;">Загрузка...</div>
+                    <div class="dash-panel-body" id="containerWarranty">
+                        <div class="dash-empty">Загрузка...</div>
                     </div>
                 </div>
 
-                <div class="glass-panel" style="padding: 22px; display: flex; flex-direction: column;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--line);">
-                        <h3 style="margin: 0; color: #fff; font-size: 0.92rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">
-                            <span>📄</span> Документы
-                        </h3>
+                <div class="glass-panel dash-panel">
+                    <div class="dash-panel-head">
+                        <h3 class="dash-panel-title"><span>📄</span> Документы</h3>
+                        <span class="dash-panel-badge" id="docsCounter">0</span>
                     </div>
-                    <div id="containerDocs" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
-                        <div style="text-align: center; color: var(--muted); font-size: 0.8rem; padding: 20px;">Загрузка...</div>
+                    <div class="dash-panel-body" id="containerDocs">
+                        <div class="dash-empty">Загрузка...</div>
                     </div>
                 </div>
             </div>
 
-            <div id="dashEditModal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 10000; display: none; align-items: center; justify-content: center; padding: 16px;">
-                <div class="glass-panel" style="width: 100%; max-width: 440px; padding: 24px; max-height: calc(100dvh - 32px); overflow-y: auto;">
-                    <button onclick="window.dashCloseModal()" style="position: absolute; top: 20px; right: 20px; border: none; background: none; color: var(--muted); font-size: 1.4rem; cursor: pointer;">✕</button>
-                    <div style="margin-bottom: 20px;">
-                        <h4 id="modalVehicleTitle" style="margin: 0 0 6px 0; color: #fff; font-size: 1.1rem; font-weight: 800;">Модель техники</h4>
-                        <p id="modalVehiclePlate" style="margin: 0; color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 0.84rem;">[0000 AA-7]</p>
+            <div class="dash-modal" id="dashEditModal">
+                <div class="dash-modal-box">
+                    <button onclick="window.dashCloseModal()" class="dash-modal-close" aria-label="Закрыть">✕</button>
+                    <div class="dash-modal-head">
+                        <h4 id="modalVehicleTitle">Модель техники</h4>
+                        <p id="modalVehiclePlate">[0000 AA-7]</p>
                     </div>
-                    <div id="modalWarrantySection" style="display: none; padding-top: 16px; border-top: 1px solid var(--line);">
-                        <div style="margin-bottom: 16px;">
-                            <label style="display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Текущая наработка</label>
-                            <input type="number" id="inputModalCurrentHours" style="width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-size: 0.88rem; font-weight: 600;">
+                    <div id="modalWarrantySection" class="dash-modal-section" style="display:none;">
+                        <div class="dash-modal-field">
+                            <label class="modal-label">Текущая наработка</label>
+                            <input type="number" id="inputModalCurrentHours" class="dash-input">
                         </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                            <div>
-                                <label style="display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Нулевая база</label>
-                                <input type="number" id="inputModalZeroHours" style="width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-size: 0.88rem; font-weight: 600;">
+                        <div class="dash-modal-grid">
+                            <div class="dash-modal-field">
+                                <label class="modal-label">Нулевая база</label>
+                                <input type="number" id="inputModalZeroHours" class="dash-input">
                             </div>
-                            <div>
-                                <label style="display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Периодичность</label>
-                                <input type="number" id="inputModalStepHours" style="width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-size: 0.88rem; font-weight: 600;">
+                            <div class="dash-modal-field">
+                                <label class="modal-label">Периодичность</label>
+                                <input type="number" id="inputModalStepHours" class="dash-input">
                             </div>
                         </div>
                     </div>
-                    <div id="modalDocsSection" style="display: none; padding-top: 16px; border-top: 1px solid var(--line);">
-                        <div style="margin-bottom: 16px;">
-                            <label style="display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Дата Гостехосмотра</label>
-                            <input type="date" id="inputModalInspectionDate" style="width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-size: 0.88rem; font-weight: 500;">
+                    <div id="modalDocsSection" class="dash-modal-section" style="display:none;">
+                        <div class="dash-modal-field">
+                            <label class="modal-label">Дата Гостехосмотра</label>
+                            <input type="date" id="inputModalInspectionDate" class="dash-input">
                         </div>
-                        <div style="margin-bottom: 16px;">
-                            <label style="display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Дата Страховки</label>
-                            <input type="date" id="inputModalInsuranceDate" style="width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); color: #fff; font-size: 0.88rem; font-weight: 500;">
+                        <div class="dash-modal-field">
+                            <label class="modal-label">Дата Страховки</label>
+                            <input type="date" id="inputModalInsuranceDate" class="dash-input">
                         </div>
                     </div>
-                    <button onclick="window.dashSaveModalData()" class="glass-btn" style="width: 100%; margin-top: 20px; background: rgba(52, 211, 153, 0.18); border-color: var(--green); color: var(--green); font-weight: 700;">Сохранить изменения</button>
+                    <div id="modalReadOnlyNotice" class="dash-ro-notice" style="display:none; margin-top:16px;">
+                        <span>🔒</span>
+                        <span>Редактирование доступно только пользователям с правом записи.</span>
+                    </div>
+                    <button onclick="window.dashSaveModalData()" class="dash-modal-save" id="modalSaveBtn">Сохранить изменения</button>
                 </div>
             </div>
         </div>
@@ -150,6 +800,12 @@ export async function init() {
 let refreshIntervalId = null;
 let activeModalVehicleId = null;
 
+/* Право записи: админ или mechanization_edit. */
+function dashCanEdit() {
+    return window._mechIsAdmin === true || window._mechCanEdit === true;
+}
+
+/* Единица измерения: км для колёсной техники, м/ч — остальной. */
 function getUnitByCategory(type) {
     if (!type) return 'м/ч';
     const lower = type.toLowerCase();
@@ -171,16 +827,33 @@ function setupDashboard() {
     window.dashCloseModal = dashCloseModal;
     window.dashSaveModalData = dashSaveModalData;
 
-    document.addEventListener('click', function(e) {
+    // Формы добавления задач — только при праве записи.
+    const taskForm = document.getElementById('dashTaskForm');
+    if (taskForm && !dashCanEdit()) taskForm.style.display = 'none';
+
+    // Закрытие фильтра по клику вне его.
+    document.addEventListener('click', function (e) {
+        const wrap = document.querySelector('.dash-filter-wrap');
         const drop = document.getElementById('dashFilterDropdown');
-        if (drop && !drop.contains(e.target) && !e.target.closest('button')) {
-            drop.style.display = 'none';
+        if (drop && wrap && !wrap.contains(e.target)) {
+            drop.classList.remove('open');
         }
     });
 
+    // Закрытие модалки по клику на фон.
+    const modal = document.getElementById('dashEditModal');
+    if (modal) {
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) dashCloseModal();
+        });
+    }
+
     loadDashboardData();
     if (refreshIntervalId) clearInterval(refreshIntervalId);
-    refreshIntervalId = setInterval(loadDashboardData, 10000);
+    refreshIntervalId = setInterval(function () {
+        if (document.visibilityState !== 'visible') return;
+        loadDashboardData();
+    }, 10000);
 }
 
 async function loadDashboardData() {
@@ -193,7 +866,7 @@ async function loadDashboardData() {
 
         if (vehiclesRes.error) throw vehiclesRes.error;
         if (tasksRes.error) throw tasksRes.error;
-        
+
         const vehiclesList = vehiclesRes.data || [];
         const activeTasks = tasksRes.data || [];
 
@@ -206,36 +879,50 @@ async function loadDashboardData() {
         renderSeparatedAlerts(vehiclesList, activeTasks);
         updateTaskCounter(activeTasks.length);
     } catch (err) {
-        console.error("Ошибка обновления Dashboard:", err.message);
+        console.error('Ошибка обновления Dashboard:', err.message);
     }
 }
 
 function updateTaskCounter(count) {
     const el = document.getElementById('taskCounter');
-    if (el) el.innerText = count;
+    if (el) {
+        el.textContent = count;
+        el.classList.toggle('dash-panel-badge--warn', count > 0);
+    }
 }
 
 function renderStats(list) {
-    const stats = {
-        'dashTotal': list.length,
-        'dashReady': list.filter(v => v.tags && v.tags.includes('Готов')).length,
-        'dashStorage': list.filter(v => v.tags && v.tags.includes('На хранении')).length,
-        'dashInRepair': list.filter(v => v.tags && v.tags.includes('В ремонте')).length
-    };
-    for (const [id, value] of Object.entries(stats)) {
+    const total = list.length;
+    const ready = list.filter(v => v.tags && v.tags.includes('Готов')).length;
+    const storage = list.filter(v => v.tags && v.tags.includes('На хранении')).length;
+    const repair = list.filter(v => v.tags && v.tags.includes('В ремонте')).length;
+
+    const set = (id, value) => {
         const el = document.getElementById(id);
-        if (el) el.innerText = value;
-    }
+        if (el) el.innerHTML = value + '<span class="dash-kpi-unit">ед.</span>';
+    };
+    const setBar = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.style.width = (total > 0 ? Math.round((value / total) * 100) : 0) + '%';
+    };
+
+    set('dashTotal', total);
+    set('dashReady', ready);
+    set('dashStorage', storage);
+    set('dashInRepair', repair);
+    setBar('dashReadyBar', ready);
+    setBar('dashStorageBar', storage);
+    setBar('dashInRepairBar', repair);
 }
 
 function populateVehicleDropdown(vehicles) {
     const select = document.getElementById('taskVehicleSelect');
     if (!select || select.options.length > 1) return;
-    const sorted = [...vehicles].sort((a,b) => a.model.localeCompare(b.model));
+    const sorted = [...vehicles].sort((a, b) => (a.model || '').localeCompare(b.model || ''));
     sorted.forEach(v => {
         const opt = document.createElement('option');
         opt.value = JSON.stringify({ id: v.id, name: v.model });
-        opt.innerText = `${v.model} ${v.plate ? '['+v.plate+']' : '[б/н]'}`;
+        opt.innerText = `${v.model} ${v.plate ? '[' + v.plate + ']' : '[б/н]'}`;
         select.appendChild(opt);
     });
 }
@@ -243,9 +930,7 @@ function populateVehicleDropdown(vehicles) {
 function dashToggleFilterDropdown(e) {
     e.stopPropagation();
     const drop = document.getElementById('dashFilterDropdown');
-    if (drop) {
-        drop.style.display = drop.style.display === 'none' ? 'block' : 'none';
-    }
+    if (drop) drop.classList.toggle('open');
 }
 
 function renderFilterCheckboxes(vehicles) {
@@ -258,17 +943,17 @@ function renderFilterCheckboxes(vehicles) {
     });
     const statsEl = document.getElementById('dashFilterStats');
     if (warrantyVehicles.length === 0) {
-        container.innerHTML = `<p style="text-align: center; color: var(--muted); font-size: 0.8rem; padding: 12px 0;">Нет гарантийной техники</p>`;
+        container.innerHTML = `<p style="text-align:center; color:var(--muted); font-size:0.78rem; padding:10px 0; margin:0;">Нет гарантийной техники</p>`;
         if (statsEl) statsEl.innerText = '';
         return;
     }
-    warrantyVehicles.sort((a,b) => a.model.localeCompare(b.model));
+    warrantyVehicles.sort((a, b) => (a.model || '').localeCompare(b.model || ''));
     container.innerHTML = warrantyVehicles.map(v => {
         const isChecked = !hiddenVehicles.includes(v.id) ? 'checked' : '';
         return `
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px 8px; border-radius: 8px; transition: background 150ms ease;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
-                <input type="checkbox" ${isChecked} onchange="window.dashToggleLocalVisibility(${v.id}, this.checked)" style="width: 16px; height: 16px; cursor: pointer;">
-                <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${v.model} ${v.plate ? '('+v.plate+')' : '(б/н)'}</span>
+            <label class="dash-filter-item">
+                <input type="checkbox" ${isChecked} onchange="window.dashToggleLocalVisibility(${v.id}, this.checked)">
+                <span>${(window.escapeHtml || (s => String(s ?? '')))(v.model)} ${v.plate ? '(' + (window.escapeHtml || (s => s))(v.plate) + ')' : '(б/н)'}</span>
             </label>
         `;
     }).join('');
@@ -305,7 +990,8 @@ function dashOpenWarrantyModal(id, model, plate, current, zero, step, inspectDat
     document.getElementById('inputModalInsuranceDate').value = insDate || '';
     document.getElementById('modalWarrantySection').style.display = 'block';
     document.getElementById('modalDocsSection').style.display = 'none';
-    document.getElementById('dashEditModal').style.display = 'flex';
+    applyModalEditMode();
+    document.getElementById('dashEditModal').classList.add('open');
 }
 
 function dashOpenDocsModal(id, model, plate, inspectDate, insDate, current, zero, step) {
@@ -319,16 +1005,39 @@ function dashOpenDocsModal(id, model, plate, inspectDate, insDate, current, zero
     document.getElementById('inputModalStepHours').value = step;
     document.getElementById('modalDocsSection').style.display = 'block';
     document.getElementById('modalWarrantySection').style.display = 'none';
-    document.getElementById('dashEditModal').style.display = 'flex';
+    applyModalEditMode();
+    document.getElementById('dashEditModal').classList.add('open');
+}
+
+/* Без права записи поля и кнопка сохранения блокируются. */
+function applyModalEditMode() {
+    const editable = dashCanEdit();
+    const ids = [
+        'inputModalCurrentHours', 'inputModalZeroHours', 'inputModalStepHours',
+        'inputModalInspectionDate', 'inputModalInsuranceDate'
+    ];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = !editable;
+    });
+    const btn = document.getElementById('modalSaveBtn');
+    if (btn) btn.style.display = editable ? '' : 'none';
+    const notice = document.getElementById('modalReadOnlyNotice');
+    if (notice) notice.style.display = editable ? 'none' : 'flex';
 }
 
 function dashCloseModal() {
-    document.getElementById('dashEditModal').style.display = 'none';
+    const modal = document.getElementById('dashEditModal');
+    if (modal) modal.classList.remove('open');
     activeModalVehicleId = null;
 }
 
 async function dashSaveModalData() {
     if (!activeModalVehicleId) return;
+    if (!dashCanEdit()) {
+        window.showSimpleMessage && window.showSimpleMessage('Только просмотр', 'У вас нет права редактирования.');
+        return;
+    }
     const curHrs = parseInt(document.getElementById('inputModalCurrentHours').value) || 0;
     const zeroHrs = parseInt(document.getElementById('inputModalZeroHours').value) || 0;
     const stepHrs = parseInt(document.getElementById('inputModalStepHours').value) || 125;
@@ -350,16 +1059,20 @@ async function dashSaveModalData() {
         dashCloseModal();
         await loadDashboardData();
     } catch (err) {
-        alert("Ошибка сохранения: " + err.message);
+        window.showSimpleMessage && window.showSimpleMessage('Ошибка', 'Не удалось сохранить: ' + err.message);
     }
 }
 
 async function dashAddRepairTask() {
+    if (!dashCanEdit()) {
+        window.showSimpleMessage && window.showSimpleMessage('Только просмотр', 'У вас нет права добавлять задачи.');
+        return;
+    }
     const select = document.getElementById('taskVehicleSelect');
     const input = document.getElementById('taskTextInput');
     if (!input || !input.value.trim()) return;
     let vehicleId = null;
-    let vehicleName = "Заметка / Пометка";
+    let vehicleName = 'Заметка / Пометка';
     if (select && select.value) {
         const parsed = JSON.parse(select.value);
         vehicleId = parsed.id;
@@ -379,46 +1092,55 @@ async function dashAddRepairTask() {
         if (select) select.value = '';
         await loadDashboardData();
     } catch (err) {
-        alert("Ошибка добавления: " + err.message);
+        window.showSimpleMessage && window.showSimpleMessage('Ошибка', 'Не удалось добавить задачу: ' + err.message);
     }
 }
 
 async function dashCompleteTask(taskId) {
+    if (!dashCanEdit()) {
+        window.showSimpleMessage && window.showSimpleMessage('Только просмотр', 'У вас нет права закрывать задачи.');
+        return;
+    }
     try {
         const { error } = await window._supabase.from('vehicle_tasks').update({ is_completed: true }).eq('id', taskId);
         if (error) throw error;
         await loadDashboardData();
     } catch (err) {
-        alert("Ошибка закрытия: " + err.message);
+        window.showSimpleMessage && window.showSimpleMessage('Ошибка', 'Не удалось закрыть задачу: ' + err.message);
     }
 }
 
+/* Безопасная подстановка строк в onclick-атрибуты. */
+function jsStr(s) {
+    return String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
 function renderSeparatedAlerts(list, activeTasks) {
+    const esc = window.escapeHtml || (s => String(s ?? ''));
     const today = new Date();
     const plateMap = {};
     list.forEach(v => { plateMap[v.id] = v.plate ? `[${v.plate}]` : '[б/н]'; });
     const hiddenVehicles = JSON.parse(localStorage.getItem('dash_hidden_warranty') || '[]');
+    const editable = dashCanEdit();
 
+    /* --- Задачи --- */
     const containerTasks = document.getElementById('containerTasks');
     if (containerTasks) {
         if (activeTasks.length > 0) {
-            containerTasks.innerHTML = activeTasks.map(task => {
-                const plateStr = plateMap[task.vehicle_id] || '';
-                return `
-                    <div style="background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.4); border-radius: 12px; padding: 12px; display: flex; align-items: start; justify-content: space-between; gap: 10px;">
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 4px;">
-                                <span style="font-size: 0.72rem; font-weight: 800; color: rgba(251, 191, 36, 1); text-transform: uppercase; letter-spacing: 0.05em;">${task.vehicle_id ? '🚜 ' + task.vehicle_name : '📝 Заметка'}</span>
-                                <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--subtle);">${plateStr}</span>
-                            </div>
-                            <p style="margin: 0; font-size: 0.84rem; font-weight: 600; color: #fff; word-break: break-word;">${task.text}</p>
+            containerTasks.innerHTML = activeTasks.map(task => `
+                <div class="dash-alert dash-alert--task">
+                    <div class="dash-alert-main">
+                        <div class="dash-alert-title-row">
+                            <span class="dash-alert-name">${task.vehicle_id ? '🚜 ' + esc(task.vehicle_name) : '📝 Заметка'}</span>
+                            <span class="dash-alert-plate">${esc(plateMap[task.vehicle_id] || '')}</span>
                         </div>
-                        <button onclick="window.dashCompleteTask('${task.id}')" class="glass-btn" style="flex-shrink: 0; min-height: 32px; padding: 6px 10px; font-size: 0.74rem; background: rgba(52, 211, 153, 0.15); border-color: var(--green); color: var(--green);">Готово</button>
+                        <p class="dash-alert-text">${esc(task.text)}</p>
                     </div>
-                `;
-            }).join('');
+                    ${editable ? `<button onclick="window.dashCompleteTask('${task.id}')" class="dash-alert-action dash-alert-action--done">Готово</button>` : ''}
+                </div>
+            `).join('');
         } else {
-            containerTasks.innerHTML = `<div style="background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: 12px; padding: 16px; text-align: center; font-size: 0.84rem; font-weight: 700; color: var(--green);">✅ Нет активных задач</div>`;
+            containerTasks.innerHTML = `<div class="dash-empty dash-empty-ok">✅ Нет активных задач</div>`;
         }
     }
 
@@ -435,18 +1157,11 @@ function renderSeparatedAlerts(list, activeTasks) {
             const diff = Math.ceil((new Date(v.inspection_date) - today) / (1000 * 60 * 60 * 24));
             if (diff <= 30) {
                 docAlerts.push({
-                    id: v.id,
-                    model: v.model,
-                    plate: cleanPlate,
-                    plateLabel: plateStr,
-                    daysLeft: diff,
-                    isCritical: diff <= 0,
-                    inspectDate: v.inspection_date,
-                    insDate: v.insurance_date,
-                    current: v.current_hours || 0,
-                    zero: v.zero_hours || 0,
-                    step: v.step_hours || 125,
-                    statusText: diff <= 0 ? `🛑 Просрочен Гостехосмотр!` : `⚠️ Техосмотр истекает через ${diff} дн.`
+                    id: v.id, model: v.model, plate: cleanPlate, plateLabel: plateStr,
+                    daysLeft: diff, isCritical: diff <= 0,
+                    inspectDate: v.inspection_date, insDate: v.insurance_date,
+                    current: v.current_hours || 0, zero: v.zero_hours || 0, step: v.step_hours || 125,
+                    statusText: diff <= 0 ? '🛑 Просрочен Гостехосмотр!' : `⚠️ Техосмотр истекает через ${diff} дн.`
                 });
             }
         }
@@ -454,18 +1169,11 @@ function renderSeparatedAlerts(list, activeTasks) {
             const diffIns = Math.ceil((new Date(v.insurance_date) - today) / (1000 * 60 * 60 * 24));
             if (diffIns <= 30) {
                 docAlerts.push({
-                    id: v.id,
-                    model: v.model,
-                    plate: cleanPlate,
-                    plateLabel: plateStr,
-                    daysLeft: diffIns,
-                    isCritical: diffIns <= 0,
-                    inspectDate: v.inspection_date,
-                    insDate: v.insurance_date,
-                    current: v.current_hours || 0,
-                    zero: v.zero_hours || 0,
-                    step: v.step_hours || 125,
-                    statusText: diffIns <= 0 ? `🛑 Закончилась страховка!` : `⚠️ Страховка истекает через ${diffIns} дн.`
+                    id: v.id, model: v.model, plate: cleanPlate, plateLabel: plateStr,
+                    daysLeft: diffIns, isCritical: diffIns <= 0,
+                    inspectDate: v.inspection_date, insDate: v.insurance_date,
+                    current: v.current_hours || 0, zero: v.zero_hours || 0, step: v.step_hours || 125,
+                    statusText: diffIns <= 0 ? '🛑 Закончилась страховка!' : `⚠️ Страховка истекает через ${diffIns} дн.`
                 });
             }
         }
@@ -483,27 +1191,18 @@ function renderSeparatedAlerts(list, activeTasks) {
             let statusText = `⚙️ ${label} ${hours} ${unit}. До ТО (${nextTO} ${unit}) ещё <b>${hoursLeft} ${unit}</b>.`;
             if (hoursLeft <= 50) {
                 status = 'danger';
-                statusText = `🚨 <span style="color: var(--red); font-weight: 800;">Срочно ТО (${nextTO} ${unit})!</span> Осталось <b>${hoursLeft} ${unit}</b>.`;
+                statusText = `🚨 <span class="dash-critical">Срочно ТО (${nextTO} ${unit})!</span> Осталось <b>${hoursLeft} ${unit}</b>.`;
             } else if (hoursLeft <= 100) {
                 status = 'warning';
                 statusText = `⚠️ Срок ТО (${nextTO} ${unit}). Осталось <b>${hoursLeft} ${unit}</b>.`;
             }
 
             warrantyAlerts.push({
-                id: v.id,
-                status: status,
-                hoursLeft: hoursLeft,
-                model: v.model,
-                plate: cleanPlate,
-                plateLabel: plateStr,
-                hours: hours,
-                zeroHours: zeroHours,
-                stepHours: stepHours,
-                inspectDate: v.inspection_date,
-                insDate: v.insurance_date,
-                text: statusText,
-                unit: unit,
-                label: label
+                id: v.id, status: status, hoursLeft: hoursLeft,
+                model: v.model, plate: cleanPlate, plateLabel: plateStr,
+                hours, zeroHours, stepHours,
+                inspectDate: v.inspection_date, insDate: v.insurance_date,
+                text: statusText, unit, label
             });
         }
     });
@@ -511,62 +1210,51 @@ function renderSeparatedAlerts(list, activeTasks) {
     warrantyAlerts.sort((a, b) => a.hoursLeft - b.hoursLeft);
     docAlerts.sort((a, b) => a.daysLeft - b.daysLeft);
 
+    /* --- Гарантия / ТО --- */
     const containerWarranty = document.getElementById('containerWarranty');
     if (containerWarranty) {
         if (warrantyAlerts.length === 0) {
-            containerWarranty.innerHTML = `<div style="background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: 12px; padding: 16px; text-align: center; font-size: 0.84rem; font-weight: 700; color: var(--green);">✅ Нет техники на контроле</div>`;
+            containerWarranty.innerHTML = `<div class="dash-empty dash-empty-ok">✅ Нет техники на контроле</div>`;
         } else {
-            containerWarranty.innerHTML = warrantyAlerts.map(a => {
-                let cardBg = 'rgba(125, 211, 252, 0.08)';
-                let cardBorder = 'rgba(125, 211, 252, 0.3)';
-                let textColor = 'var(--blue)';
-                if (a.status === 'danger') {
-                    cardBg = 'rgba(251, 113, 133, 0.1)';
-                    cardBorder = 'rgba(251, 113, 133, 0.4)';
-                    textColor = 'var(--red)';
-                } else if (a.status === 'warning') {
-                    cardBg = 'rgba(251, 191, 36, 0.1)';
-                    cardBorder = 'rgba(251, 191, 36, 0.4)';
-                    textColor = 'var(--amber)';
-                }
-                return `
-                    <div style="background: ${cardBg}; border: 1px solid ${cardBorder}; border-radius: 12px; padding: 12px; display: flex; align-items: start; justify-content: space-between; gap: 10px;">
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 4px;">
-                                <span style="font-size: 0.84rem; font-weight: 800; color: ${textColor};">${a.model}</span>
-                                <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--subtle);">${a.plateLabel}</span>
-                            </div>
-                            <p style="margin: 0; font-size: 0.82rem; font-weight: 500; color: var(--muted);">${a.text}</p>
+            containerWarranty.innerHTML = warrantyAlerts.map(a => `
+                <div class="dash-alert dash-alert--${a.status}">
+                    <div class="dash-alert-main">
+                        <div class="dash-alert-title-row">
+                            <span class="dash-alert-name">${esc(a.model)}</span>
+                            <span class="dash-alert-plate">${esc(a.plateLabel)}</span>
                         </div>
-                        <button onclick="window.dashOpenWarrantyModal(${a.id}, '${a.model.replace(/'/g, "\\'")}', '${a.plate}', ${a.hours}, ${a.zeroHours}, ${a.stepHours}, '${a.inspectDate || ''}', '${a.insDate || ''}')" style="flex-shrink: 0; border: none; background: rgba(255,255,255,0.08); border-radius: 8px; padding: 6px; color: var(--muted); cursor: pointer; font-size: 1rem; transition: all 150ms ease;" onmouseover="this.style.background='rgba(255,255,255,0.15)'; this.style.color='#fff'" onmouseout="this.style.background='rgba(255,255,255,0.08)'; this.style.color='var(--muted)'" title="Изменить параметры">✏️</button>
+                        <p class="dash-alert-text">${a.text}</p>
                     </div>
-                `;
-            }).join('');
+                    <button onclick="window.dashOpenWarrantyModal(${a.id}, '${jsStr(a.model)}', '${jsStr(a.plate)}', ${a.hours}, ${a.zeroHours}, ${a.stepHours}, '${a.inspectDate || ''}', '${a.insDate || ''}')" class="dash-alert-action" title="Изменить параметры">✏️</button>
+                </div>
+            `).join('');
         }
     }
 
+    /* --- Документы --- */
     const containerDocs = document.getElementById('containerDocs');
     if (containerDocs) {
+        const docsCounter = document.getElementById('docsCounter');
+        if (docsCounter) {
+            docsCounter.textContent = docAlerts.length;
+            docsCounter.classList.toggle('dash-panel-badge--danger', docAlerts.some(d => d.isCritical));
+            docsCounter.classList.toggle('dash-panel-badge--warn', docAlerts.length > 0 && !docAlerts.some(d => d.isCritical));
+        }
         if (docAlerts.length === 0) {
-            containerDocs.innerHTML = `<div style="background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: 12px; padding: 16px; text-align: center; font-size: 0.84rem; font-weight: 700; color: var(--green);">✅ Все документы в порядке!</div>`;
+            containerDocs.innerHTML = `<div class="dash-empty dash-empty-ok">✅ Все документы в порядке!</div>`;
         } else {
-            containerDocs.innerHTML = docAlerts.map(d => {
-                const cardBg = d.isCritical ? 'rgba(251, 113, 133, 0.1)' : 'rgba(251, 191, 36, 0.1)';
-                const cardBorder = d.isCritical ? 'rgba(251, 113, 133, 0.4)' : 'rgba(251, 191, 36, 0.4)';
-                const textColor = d.isCritical ? 'var(--red)' : 'var(--amber)';
-                return `
-                    <div style="background: ${cardBg}; border: 1px solid ${cardBorder}; border-radius: 12px; padding: 12px; display: flex; align-items: start; justify-content: space-between; gap: 10px;">
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 4px;">
-                                <span style="font-size: 0.84rem; font-weight: 800; color: ${textColor};">${d.model}</span>
-                                <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--subtle);">${d.plateLabel}</span>
-                            </div>
-                            <p style="margin: 0; font-size: 0.82rem; font-weight: 500; color: var(--muted);">${d.statusText}</p>
+            containerDocs.innerHTML = docAlerts.map(d => `
+                <div class="dash-alert ${d.isCritical ? 'dash-alert--danger' : 'dash-alert--warning'}">
+                    <div class="dash-alert-main">
+                        <div class="dash-alert-title-row">
+                            <span class="dash-alert-name">${esc(d.model)}</span>
+                            <span class="dash-alert-plate">${esc(d.plateLabel)}</span>
                         </div>
-                        <button onclick="window.dashOpenDocsModal(${d.id}, '${d.model.replace(/'/g, "\\'")}', '${d.plate}', '${d.inspectDate || ''}', '${d.insDate || ''}', ${d.current}, ${d.zero}, ${d.step})" style="flex-shrink: 0; border: none; background: rgba(255,255,255,0.08); border-radius: 8px; padding: 6px; color: var(--muted); cursor: pointer; font-size: 1rem; transition: all 150ms ease;" onmouseover="this.style.background='rgba(255,255,255,0.15)'; this.style.color='#fff'" onmouseout="this.style.background='rgba(255,255,255,0.08)'; this.style.color='var(--muted)'" title="Изменить даты">✏️</button>
+                        <p class="dash-alert-text">${esc(d.statusText)}</p>
                     </div>
-                `;
-            }).join('');
+                    <button onclick="window.dashOpenDocsModal(${d.id}, '${jsStr(d.model)}', '${jsStr(d.plate)}', '${d.inspectDate || ''}', '${d.insDate || ''}', ${d.current}, ${d.zero}, ${d.step})" class="dash-alert-action" title="Изменить даты">✏️</button>
+                </div>
+            `).join('');
         }
     }
 }

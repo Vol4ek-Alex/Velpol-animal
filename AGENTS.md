@@ -25,7 +25,7 @@
 
 - **Frontend**: чистый Vanilla JS (ES5-стиль, IIFE + глобальные объекты `window.*Module`), HTML5, CSS3 (тёмная glass-тема, CSS-переменные `--glass`, `--green` и т.д.). Фреймворков и бандлера **нет**.
 - **Backend-as-a-Service**: Supabase (PostgreSQL + Auth + RLS + RPC). Клиент `@supabase/supabase-js@2` подключается **с CDN** (`cdn.jsdelivr.net`) — не из npm.
-- **PWA**: `manifest.json` + Service Worker `sw.js` (network-first кэш, офлайн-фолбэк). Версия кэша `velpol-agro-v15`, версия приложения `1.1.3`.
+- **PWA**: `manifest.json` + Service Worker `sw.js` (network-first кэш, офлайн-фолбэк). Версия кэша `velpol-agro-v17`, версия приложения `1.1.4`.
 - **Шрифты**: Google Fonts (Exo 2, JetBrains Mono).
 - **Деплой**: Vercel (статика, `vercel.json`) + GitHub Actions (`.github/workflows/deploy.yml`), секреты `VERCEL_TOKEN/ORG_ID/PROJECT_ID`.
 - **Dev-сервер**: только `http-server` (devDependency).
@@ -42,6 +42,8 @@ npm run deploy     # vercel --prod
 Тестов и линтеров в проекте **нет**. Проверка изменений — вручную в браузере.
 
 **Критично при любом изменении JS/HTML/CSS**: поднять версию кэша в `sw.js` (`CACHE_NAME = 'velpol-agro-v10'` → v11, v12…) и при необходимости добавить новые файлы в `APP_FILES`, иначе клиенты получат старую версию.
+
+**Версия приложения**: после любого улучшения/обновления повышать версию в футере экрана выбора отрасли (`index.html`, `#app-version`) на 0.0.1 (например, `v1.1.3` → `v1.1.4`) и синхронизировать её с `APP_VERSION` в `sw.js`.
 
 ## 4. Структура директорий
 
@@ -101,8 +103,8 @@ npm run deploy     # vercel --prod
 ### Механизация (самодостаточная, отличается!)
 - Свои константы Supabase прямо в `index.html`, клиент — `window._supabase` (не `db`).
 - ES-модули: `dashboard.js`/`fleet.js` экспортируют `init()`; роутер — inline `<script type="module">`.
-- Права: админ (`module_access.admin`) может писать; остальные с `mechanization` — только чтение (RLS `_select_auth` / `_admin_all`).
-- fleet.js: CRUD техники (vehicles), модалки водителей/тегов/категорий/задач/часов; dashboard.js: гарантия, ТО, документы.
+- Права: запись разрешена админу и пользователям с правом `mechanization_edit` (выдаётся в админке селектом «Механизация · редактирование»); остальные с `mechanization` — только чтение (RLS `_select_auth` / `_edit_all` через `can_edit_mechanization()`). Плавающая кнопка ✏️ включает режим записи; зритель её включить не может (`window._mechCanEdit`).
+- fleet.js: CRUD техники (vehicles), модалки водителей/тегов/категорий/задач/часов; dashboard.js: гарантия, ТО, документы. Оба файла переписаны в 2026-10 (кэш v17) с сохранением бизнес-логики.
 
 ### Админ-панель
 Три вкладки: **Верификация** (pending-заявки → `admin_verify_account` / `admin_reject_account`), **Доступы** (`admin_get_users_with_access`, чекбоксы → `admin_set_module_access`, снятие верификации → `admin_revoke_verification`), **Предложения** (suggestions, mark done/delete).
@@ -120,7 +122,7 @@ npm run deploy     # vercel --prod
 - `user_permissions (user_id, can_view_dashboard/herd/diets/reports/history, can_edit_herd/diets, can_manage_*, ...)` — тонкие права животноводства.
 - `pending_access_requests`, `user_presence`, `admin_messages`.
 - Животноводство: `farms_and_groups` (фермы/группы, head_count, last_change_*), `herd_categories`, `group_category_heads`, `herd_movements`, `diets` (feeding_time, norm_per_head, feed_id), `feeds` (unit, price_per_unit), `diet_feeds`.
-- Механизация: `vehicles`, `vehicle_tasks`, `fleet_drivers`, `fleet_categories`, `fleet_tags` (RLS: select authenticated, all — только `is_current_admin()`).
+- Механизация: `vehicles`, `vehicle_tasks`, `fleet_drivers`, `fleet_categories`, `fleet_tags` (RLS: select authenticated, запись — только `can_edit_mechanization()`: admin или `mechanization_edit`).
 - Предложения: `suggestions (user_id, user_name, page, text, is_done)`; RLS: authenticated insert self, **anon insert true**.
 - Агрономия: `agro_crops`, `agro_fields`, `agro_planting` (пустые, на будущее).
 
@@ -143,7 +145,7 @@ npm run deploy     # vercel --prod
 - **Без фреймворков и сборки**: модуль = глобальный объект с `render()`; «роутинг» — манипуляция DOM + `window.state.activeModule`.
 - **Модули механизации на ES-модулях** (export/import) — единственное место с `type="module"`.
 - **CSS**: у каждой отрасли свои инлайн-стили в её index.html (единая тёмная glass-палитра через CSS-переменные); `styles/main.css` — только главная и админка. Не пытаться «централизовать» без необходимости.
-- **Безопасность**: вся она на стороне Supabase (RLS + security definer RPC + `is_current_admin()`); клиентские проверки — только UX.
+- **Безопасность**: вся она на стороне Supabase (RLS + security definer RPC + `is_current_admin()`); клиентские проверки — только UX. Права записи в отрасли: `can_edit_livestock()` / `can_edit_mechanization()` (admin или `<module>_edit`) — RLS-политики `_edit_all` и RPC животноводства проверяют их на сервере.
 - ** alert() переопределён** в app.js на стилизованное окно `showSimpleMessage` (в мех. — своя реализация).
 - **Аутентификация на клиенте дублируется**: localStorage `velpol_user`/`velpol_module` — fallback, источник истины — `db.auth.getSession()`.
 - **PWA**: network-first + кэш-фолбэк; навигации фолбэчатся на `./index.html`.
@@ -160,7 +162,7 @@ npm run deploy     # vercel --prod
 
 ## 10. Известные ограничения и нюансы
 
-- **Не поднимать кэш в sw.js → пользователи не увидят обновлений.** Сейчас `velpol-agro-v15`.
+- **Не поднимать кэш в sw.js → пользователи не увидят обновлений.** Сейчас `velpol-agro-v17`.
 - **README.md частично устарел**: упоминает `database-schema.sql` (нет в репо), модуль агрономии с модулями, старую схему прав. Ориентир — этот файл и `docs/*.sql`.
 - Регистрация не даёт доступа ни к чему: без одобрения админом пользователь «висит» в верификации; email-подтверждение в Supabase должно быть отключено либо настроен SMTP.
 - Удалить пользователя целиком нельзя из SQL/клиента — только из Supabase Dashboard (auth.users).

@@ -1,15 +1,676 @@
+/*
+ * =====================================================
+ * МОДУЛЬ «МЕХАНИЗАЦИЯ» — Автопарк
+ *
+ * Полностью переработанный интерфейс системы учёта
+ * сельхозпарка: панель управления с поиском/сортировкой/
+ * фильтром по категориям, сгруппированные premium-карточки
+ * техники, модальные окна в едином дизайн-стиле.
+ * Бизнес-логика и схема БД (vehicles, vehicle_tasks,
+ * fleet_drivers, fleet_categories, fleet_tags) сохранены.
+ * =====================================================
+ */
+
+const FLEET_STYLES = `
+<style id="fleet-styles">
+.fleet-root {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* ---------- Панель управления ---------- */
+.fleet-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 22px 24px;
+}
+
+.fleet-toolbar-head h2 {
+    margin: 0 0 6px;
+    color: #fff;
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.fleet-toolbar-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(52, 211, 153, 0.35);
+    border-radius: 13px;
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.16), rgba(4, 120, 87, 0.12));
+    font-size: 1.25rem;
+}
+
+.fleet-toolbar-head p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.84rem;
+    font-weight: 500;
+}
+
+.fleet-toolbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* ---------- Поисковая панель ---------- */
+.fleet-search-panel {
+    padding: 18px 20px;
+}
+
+.fleet-search-fields {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.fleet-search-input {
+    flex: 1 1 260px;
+    min-width: 0;
+}
+
+.fleet-sort-select {
+    flex: 0 1 250px;
+    min-width: 0;
+}
+
+.fleet-categories-bar {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.fleet-categories-bar::-webkit-scrollbar { display: none; }
+
+.fleet-cat-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    min-height: 34px;
+    padding: 6px 14px;
+    border: 1px solid var(--line-bright);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.fleet-cat-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.fleet-cat-btn:active { transform: scale(0.96); }
+
+.fleet-cat-btn--active {
+    color: var(--green);
+    background: rgba(52, 211, 153, 0.14);
+    border-color: rgba(52, 211, 153, 0.55);
+    box-shadow: 0 0 18px rgba(52, 211, 153, 0.12);
+}
+
+.fleet-cat-btn__icon { font-size: 0.9rem; }
+
+.fleet-cat-btn__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: var(--muted);
+}
+
+.fleet-cat-btn--active .fleet-cat-btn__count {
+    background: rgba(52, 211, 153, 0.2);
+    color: var(--green);
+}
+
+/* ---------- Группы и карточки ---------- */
+.fleet-grid-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.fleet-group-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin: 0 0 12px 2px;
+}
+
+.fleet-group-title {
+    margin: 0;
+    font-size: 0.82rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted);
+}
+
+.fleet-group-count {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--subtle);
+    letter-spacing: 0.04em;
+}
+
+.fleet-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 14px;
+}
+
+.fleet-card-v2 {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 18px 20px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top-color: rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    background:
+        linear-gradient(150deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.03) 40%, transparent 70%),
+        rgba(12, 26, 46, 0.92);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.28),
+        0 2px 8px rgba(0, 0, 0, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    overflow: hidden;
+    transition: border-color 220ms ease, transform 220ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 220ms ease;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.fleet-card-v2::before {
+    position: absolute;
+    top: 16%;
+    bottom: 16%;
+    left: 0;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    content: "";
+    opacity: 0;
+    transition: opacity 220ms ease;
+}
+
+.fleet-card-v2.is-broken {
+    border-color: rgba(251, 113, 133, 0.35);
+    background:
+        linear-gradient(150deg, rgba(251, 113, 133, 0.07) 0%, rgba(255, 255, 255, 0.02) 40%, transparent 70%),
+        rgba(12, 26, 46, 0.92);
+}
+
+.fleet-card-v2.is-broken::before {
+    background: var(--red);
+    box-shadow: 0 0 14px var(--red);
+    opacity: 1;
+}
+
+.fleet-card-v2.is-warranty {
+    border-color: rgba(125, 211, 252, 0.35);
+    background:
+        linear-gradient(150deg, rgba(125, 211, 252, 0.07) 0%, rgba(255, 255, 255, 0.02) 40%, transparent 70%),
+        rgba(12, 26, 46, 0.92);
+}
+
+.fleet-card-v2.is-warranty::before {
+    background: var(--blue);
+    box-shadow: 0 0 14px var(--blue);
+    opacity: 1;
+}
+
+.fleet-card-v2:hover {
+    border-color: rgba(255, 255, 255, 0.22);
+    transform: translateY(-4px);
+    box-shadow:
+        0 20px 56px rgba(0, 0, 0, 0.38),
+        0 4px 16px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.fleet-card-v2.is-broken:hover { border-color: rgba(251, 113, 133, 0.55); }
+.fleet-card-v2.is-warranty:hover { border-color: rgba(125, 211, 252, 0.55); }
+
+.fv2-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.fv2-header-left {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.fv2-header-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.fv2-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.fv2-dot-green { background: var(--green); box-shadow: 0 0 8px rgba(52, 211, 153, 0.7); }
+.fv2-dot-red { background: var(--red); box-shadow: 0 0 8px rgba(251, 113, 133, 0.7); }
+.fv2-dot-blue { background: var(--blue); box-shadow: 0 0 8px rgba(125, 211, 252, 0.7); }
+
+.fv2-status-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--subtle);
+}
+
+.fv2-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--subtle);
+    cursor: pointer;
+    font-size: 0.85rem;
+    line-height: 1;
+    transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+}
+
+.fv2-edit-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--line-bright);
+}
+
+.fv2-model {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+.fv2-ids {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.fleet-plate {
+    font-size: 0.84rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--line-bright);
+    padding: 6px 12px;
+    border-radius: 10px;
+    letter-spacing: 0.05em;
+}
+
+.fleet-inv {
+    font-size: 0.7rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--subtle);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+}
+
+.fv2-vin {
+    font-size: 0.68rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    color: var(--subtle);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fleet-tag {
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #0b1728;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.fv2-driver {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.fv2-driver-role {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--subtle);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.fv2-driver-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fv2-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1) 20%, rgba(255, 255, 255, 0.1) 80%, transparent);
+    margin: 2px 0;
+}
+
+.fv2-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+}
+
+.fv2-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.fv2-metric-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--subtle);
+}
+
+.fv2-metric-value {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+}
+
+.fv2-metric-unit {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+.fv2-doc-val {
+    font-size: 0.74rem;
+    font-weight: 700;
+    line-height: 1.3;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.fv2-doc-val.is-ok { color: var(--muted); }
+.fv2-doc-val.is-muted { color: var(--subtle); }
+.fv2-doc-val.is-soon { color: var(--amber); }
+.fv2-doc-val.is-overdue { color: var(--red); }
+
+.fv2-doc-sub {
+    font-size: 0.62rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.85;
+}
+
+.fv2-tasks-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    width: 100%;
+    min-height: 36px;
+    padding: 8px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--subtle);
+    cursor: pointer;
+    font-size: 0.76rem;
+    font-weight: 700;
+    transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+
+.fv2-tasks-btn:hover {
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+.fv2-tasks-btn--has {
+    color: var(--green);
+    background: rgba(52, 211, 153, 0.08);
+    border-color: rgba(52, 211, 153, 0.3);
+}
+
+.fv2-tasks-btn--has:hover {
+    background: rgba(52, 211, 153, 0.14);
+    border-color: rgba(52, 211, 153, 0.5);
+}
+
+.fv2-tasks-icon { font-size: 0.9rem; }
+
+.fv2-tasks-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: rgba(52, 211, 153, 0.2);
+    color: var(--green);
+    font-size: 0.65rem;
+    font-weight: 800;
+}
+
+.fleet-empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.84rem;
+    font-weight: 700;
+    border: 1px dashed rgba(255, 255, 255, 0.14);
+    border-radius: 16px;
+}
+
+/* ---------- Списки в модалках ---------- */
+.fleet-list-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.fleet-list-name { color: #fff; }
+
+.fleet-list-tag {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fleet-list-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    display: inline-block;
+}
+
+.fleet-list-delete {
+    border: none;
+    background: none;
+    color: var(--red);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.8rem;
+    padding: 2px 4px;
+    border-radius: 6px;
+    transition: background-color 150ms ease;
+}
+
+.fleet-list-delete:hover {
+    text-decoration: underline;
+    background: rgba(251, 113, 133, 0.08);
+}
+
+.fleet-tasks-empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 12px 0;
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.fleet-task-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: rgba(251, 191, 36, 0.12);
+    border: 1px solid rgba(251, 191, 36, 0.4);
+    padding: 9px 11px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--amber);
+}
+
+.fleet-task-row span { word-break: break-word; }
+
+.fleet-task-done {
+    border: none;
+    background: none;
+    color: var(--green);
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+    font-size: 0.78rem;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: background-color 150ms ease;
+}
+
+.fleet-task-done:hover { background: rgba(52, 211, 153, 0.12); }
+
+/* Режим только чтения в модалках */
+.fleet-ro-notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 13px;
+    border: 1px dashed rgba(251, 191, 36, 0.45);
+    border-radius: 12px;
+    background: rgba(251, 191, 36, 0.07);
+    color: var(--amber);
+    font-size: 0.78rem;
+    font-weight: 700;
+    margin-top: 12px;
+}
+
+@media (max-width: 700px) {
+    .fleet-grid { grid-template-columns: 1fr; }
+
+    .fv2-metrics { grid-template-columns: 1fr 1fr; }
+
+    .fv2-metrics .fv2-metric:first-child { grid-column: 1 / -1; }
+
+    .fleet-search-fields { flex-direction: column; }
+
+    .fleet-toolbar { padding: 18px; }
+}
+
+@media (max-width: 480px) {
+    .fleet-card-v2 { padding: 14px 16px 12px; }
+}
+</style>
+`;
+
 export async function init() {
     const content = document.getElementById('main-content');
     if (!content) return;
 
-    content.innerHTML = `
-        <div style="max-width: 1400px; margin: 0 auto;">
+    content.innerHTML = FLEET_STYLES + `
+        <div class="fleet-root">
             <div class="glass-panel fleet-toolbar">
                 <div class="fleet-toolbar-head">
                     <h2><span class="fleet-toolbar-icon">🚜</span> Управление автопарком</h2>
-                    <p>Учет техники, закрепление водителей и механизаторов, контроль документов и ремонтов</p>
+                    <p>Учёт техники, закрепление водителей и механизаторов, контроль документов и ремонтов</p>
                 </div>
-                <div class="fleet-toolbar-actions">
+                <div class="fleet-toolbar-actions" id="fleetToolbarActions">
                     <button onclick="window.openDriversModal()" class="glass-btn">👤 Вод/Мех</button>
                     <button onclick="window.openTagsModal()" class="glass-btn">🏷️ Теги</button>
                     <button onclick="window.openCategoriesModal()" class="glass-btn">📂 Категории</button>
@@ -20,8 +681,8 @@ export async function init() {
 
             <div class="glass-panel fleet-search-panel">
                 <div class="fleet-search-fields">
-                    <input type="text" id="vehicleSearchInput" class="modal-field" placeholder="🔍 Поиск по модели, номеру, VIN, водителю или тегу...">
-                    <select id="sortSelect" onchange="window.handleSortChange(this.value)" class="modal-field">
+                    <input type="text" id="vehicleSearchInput" class="modal-field fleet-search-input" placeholder="🔍 Поиск по модели, номеру, VIN, водителю или тегу...">
+                    <select id="sortSelect" onchange="window.handleSortChange(this.value)" class="modal-field fleet-sort-select">
                         <option value="name_asc">По названию (А–Я)</option>
                         <option value="name_desc">По названию (Я–А)</option>
                         <option value="hours_desc">По наработке (сначала max)</option>
@@ -45,9 +706,9 @@ export async function init() {
 }
 
 /*
- * Редизайн модалок в дизайн-системе Животноводства:
- * та же структура .modal-box (h3 + border-bottom, поля .modal-field,
- * кнопки .glass-btn, отступы 22px) — inline-стили сведены к раскладке.
+ * Модальные окна в дизайн-системе приложения:
+ * .modal-box-fleet + .fleet-modal-title, поля .modal-field,
+ * кнопки .glass-btn — стили уже определены в index.html.
  */
 function buildModalsHtml() {
     return `
@@ -105,8 +766,12 @@ function buildModalsHtml() {
                     <label class="modal-label">Теги статусов</label>
                     <div id="tagsCheckboxContainer" class="fleet-tags-picker"></div>
                 </div>
+                <div id="vFormRoNotice" class="fleet-ro-notice" style="display: none;">
+                    <span>🔒</span>
+                    <span>Редактирование доступно только пользователям с правом записи.</span>
+                </div>
                 <div class="fleet-modal-footer">
-                    <button type="submit" class="glass-btn modal-btn-primary" style="flex: 1;">Сохранить</button>
+                    <button type="submit" id="vFormSubmitBtn" class="glass-btn modal-btn-primary" style="flex: 1;">Сохранить</button>
                 </div>
                 <button type="button" id="vDeleteBtn" class="glass-btn modal-btn-danger hidden" style="width: 100%;">Удалить из базы</button>
             </form>
@@ -304,7 +969,7 @@ function debounceFn(fn, wait) {
 /*
  * Режим редактирования: по умолчанию «Просмотр» —
  * кнопки записи скрыты; включается плавающей
- * кнопкой (только для админа).
+ * кнопкой (админ или mechanization_edit).
  */
 if (typeof window._mechEditMode === 'undefined') {
     window._mechEditMode = false;
@@ -315,29 +980,34 @@ window._mechOnEditModeChange = function () {
 };
 
 function canEditFleet() {
-    return window._mechIsAdmin === true &&
-        window._mechEditMode === true;
+    // Запись разрешена админу или пользователю
+    // с правом mechanization_edit (выдаётся в админке),
+    // и только в активном режиме редактирования.
+    return (
+        window._mechIsAdmin === true ||
+        window._mechCanEdit === true
+    ) && window._mechEditMode === true;
+}
+
+/* Право записи без учёта режима (для видимости элементов). */
+function hasFleetEditRight() {
+    return window._mechIsAdmin === true || window._mechCanEdit === true;
 }
 
 function setEditControlsVisibility() {
     const editable = canEditFleet();
 
-    const toolbarActions = document.querySelector(
-        '.fleet-toolbar-actions'
-    );
-
+    const toolbarActions = document.getElementById('fleetToolbarActions');
     if (toolbarActions) {
-        toolbarActions.style.display = editable
-            ? ''
-            : 'none';
+        toolbarActions.style.display = editable ? '' : 'none';
     }
 
-    document.querySelectorAll('.fleet-card-edit').forEach(node => {
+    document.querySelectorAll('.fv2-edit-btn').forEach(node => {
         node.style.display = editable ? '' : 'none';
     });
 
-    document.querySelectorAll('.fleet-tasks-btn').forEach(node => {
-        node.style.display = editable ? '' : 'none';
+    document.querySelectorAll('.fv2-tasks-btn').forEach(node => {
+        node.style.display = hasFleetEditRight() ? '' : 'none';
     });
 }
 
@@ -371,8 +1041,12 @@ async function setupFleet() {
         if (!canEditFleet()) {
             if (typeof window.showSimpleMessage === 'function') {
                 window.showSimpleMessage(
-                    'Просмотр',
-                    'Включите режим редактирования (кнопка ✏️ внизу справа), чтобы изменять данные.'
+                    hasFleetEditRight()
+                        ? 'Режим просмотра'
+                        : 'Только просмотр',
+                    hasFleetEditRight()
+                        ? 'Включите режим редактирования (кнопка ✏️ внизу справа), чтобы изменять данные.'
+                        : 'Администратор выдал вам доступ «только просмотр». Редактирование недоступно.'
                 );
             }
             return;
@@ -380,9 +1054,9 @@ async function setupFleet() {
         openVehicleModal(v);
     };
     window.closeVModal = () => closeModalOverlay('vFormModal');
-    window.openCategoriesModal = () => renderCategoriesModalList();
-    window.openTagsModal = () => renderTagsModalList();
-    window.openDriversModal = () => renderDriversModalList();
+    window.openCategoriesModal = () => openCategoriesModalForm();
+    window.openTagsModal = () => openTagsModalForm();
+    window.openDriversModal = () => openDriversModalForm();
     window.closeDriversModal = () => closeModalOverlay('driversManagementModal');
     window.closeTagsModal = () => closeModalOverlay('tagsManagementModal');
     window.closeCategoriesModal = () => closeModalOverlay('categoriesModal');
@@ -395,13 +1069,17 @@ async function setupFleet() {
         if (!canEditFleet()) {
             if (typeof window.showSimpleMessage === 'function') {
                 window.showSimpleMessage(
-                    'Просмотр',
-                    'Включите режим редактирования (кнопка ✏️ внизу справа), чтобы добавлять наработку.'
+                    hasFleetEditRight()
+                        ? 'Режим просмотра'
+                        : 'Только просмотр',
+                    hasFleetEditRight()
+                        ? 'Включите режим редактирования (кнопка ✏️ внизу справа), чтобы добавлять наработку.'
+                        : 'Администратор выдал вам доступ «только просмотр». Редактирование недоступно.'
                 );
             }
             return;
         }
-        openHoursModal();
+        openHoursModalForm();
     };
     window.closeHoursModal = closeHoursModal;
     window.submitHours = submitHours;
@@ -501,6 +1179,7 @@ function renderCategoriesBar() {
 
     const isAllActive = selectedCategory === 'all';
     const allCats = categories.filter(c => c !== 'Без категории');
+    const esc = window.escapeHtml || (s => String(s ?? ''));
 
     // Кнопка «Все» + по одной кнопке на каждую категорию
     let html = `
@@ -513,8 +1192,8 @@ function renderCategoriesBar() {
             const isActive = selectedCategory === c;
             const count = vehicles.filter(v => (v.type || 'Без категории') === c).length;
             return `
-                <button onclick="window.filterCategory('${c.replace(/'/g, "\\'")}')" class="fleet-cat-btn ${isActive ? 'fleet-cat-btn--active' : ''}">
-                    <span>${c}</span>
+                <button data-cat="${esc(c)}" class="fleet-cat-btn ${isActive ? 'fleet-cat-btn--active' : ''}">
+                    <span>${esc(c)}</span>
                     <span class="fleet-cat-btn__count">${count}</span>
                 </button>
             `;
@@ -524,7 +1203,7 @@ function renderCategoriesBar() {
             if (noCatCount === 0) return '';
             const isActive = selectedCategory.toLowerCase() === 'без категории';
             return `
-                <button onclick="window.filterCategory('Без категории')" class="fleet-cat-btn ${isActive ? 'fleet-cat-btn--active' : ''}">
+                <button data-cat="Без категории" class="fleet-cat-btn ${isActive ? 'fleet-cat-btn--active' : ''}">
                     <span>Без категории</span>
                     <span class="fleet-cat-btn__count">${noCatCount}</span>
                 </button>
@@ -534,6 +1213,19 @@ function renderCategoriesBar() {
 
     bar.innerHTML = html;
 
+    // Делегирование: имя категории может содержать
+    // кавычки, поэтому читаем его из data-атрибута.
+    bar.onclick = (e) => {
+        const btn = e.target.closest('.fleet-cat-btn[data-cat]');
+        if (btn) {
+            window.filterCategory(btn.getAttribute('data-cat'));
+            return;
+        }
+        if (e.target.closest('.fleet-cat-btn') && e.target.textContent.includes('Все')) {
+            window.filterCategory('all');
+        }
+    };
+
     window.filterCategory = (cat) => {
         if (!cat) return;
         selectedCategory = cat;
@@ -541,8 +1233,6 @@ function renderCategoriesBar() {
         renderFleet();
     };
 }
-
-// (дропдаун категорий удалён — заменён горизонтальным скроллом кнопок)
 
 // ===== Рендеринг карточек =====
 function renderFleet() {
@@ -580,6 +1270,7 @@ function renderFleet() {
     const uniqueTypesInFiltered = [...new Set(filtered.map(v => v.type || "Без категории"))];
 
     const esc = window.escapeHtml || (s => String(s ?? ''));
+    const jsStr = (s) => String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
     uniqueTypesInFiltered.forEach(cat => {
         const catList = filtered.filter(v => (v.type || "Без категории").toLowerCase() === cat.toLowerCase());
@@ -596,14 +1287,14 @@ function renderFleet() {
                         const now = new Date();
 
                         const formatDocStatus = (dateStr) => {
-                            if (!dateStr) return { text: '—', cls: 'is-muted', urgent: false };
+                            if (!dateStr) return { text: '—', cls: 'is-muted', sub: null, urgent: false };
                             const diffDays = Math.ceil((new Date(dateStr) - now) / (1000 * 60 * 60 * 24));
                             const formattedDate = new Date(dateStr).toLocaleDateString('ru-RU');
                             if (diffDays <= 0) {
-                                return { text: `${formattedDate}`, sub: 'Просрочено', cls: 'is-overdue', urgent: true };
+                                return { text: formattedDate, sub: 'Просрочено', cls: 'is-overdue', urgent: true };
                             }
                             if (diffDays <= 30) {
-                                return { text: `${formattedDate}`, sub: `${diffDays} дн.`, cls: 'is-soon', urgent: true };
+                                return { text: formattedDate, sub: `${diffDays} дн.`, cls: 'is-soon', urgent: true };
                             }
                             return { text: formattedDate, sub: null, cls: 'is-ok', urgent: false };
                         };
@@ -612,7 +1303,6 @@ function renderFleet() {
                         const insInfo = formatDocStatus(v.insurance_date);
                         const vehicleTagsArray = v.tags ? v.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
                         const vTasks = tasks.filter(t => t.vehicle_id === v.id);
-                        const safeVehicleJson = JSON.stringify(v).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
                         const unit = getUnitByCategory(v.type);
                         const label = unit === 'км' ? 'Пробег' : 'Наработка';
                         const role = getDriverRole(v.type);
@@ -624,8 +1314,6 @@ function renderFleet() {
                         if (isBroken) cardStatusClass = 'is-broken';
                         else if (isWarranty) cardStatusClass = 'is-warranty';
 
-                        // Иконка статуса
-                        const statusIcon = isBroken ? '🔴' : isWarranty ? '🔵' : '🟢';
                         const statusLabel = isBroken ? 'Неисправен' : isWarranty ? 'Гарантия' : 'В работе';
 
                         // Наработка — форматирование с разрядами
@@ -635,10 +1323,11 @@ function renderFleet() {
                         const statusTagNames = ['неисправен', 'гарантия'];
                         const extraTags = vehicleTagsArray.filter(t => !statusTagNames.includes(t.toLowerCase()));
 
-                        return `
-                            <div onclick="window.openVehicleModalForm(${safeVehicleJson})" class="fleet-card-v2 ${cardStatusClass}">
+                        // Данные карточки для модалки — через data-атрибут
+                        const cardData = jsStr(JSON.stringify(v));
 
-                                <!-- Шапка карточки -->
+                        return `
+                            <div class="fleet-card-v2 ${cardStatusClass}" data-vehicle="${cardData}">
                                 <div class="fv2-header">
                                     <div class="fv2-header-left">
                                         <div class="fv2-status-dot ${isBroken ? 'fv2-dot-red' : isWarranty ? 'fv2-dot-blue' : 'fv2-dot-green'}"></div>
@@ -648,16 +1337,14 @@ function renderFleet() {
                                         ${extraTags.map(t => {
                                             const knownTag = baseTags.find(bt => bt.name.toLowerCase() === t.toLowerCase());
                                             const badgeBg = knownTag ? knownTag.color : '#e2e8f0';
-                                            return `<span class="fleet-tag" style="background-color:${badgeBg};">${esc(t)}</span>`;
+                                            return `<span class="fleet-tag" style="background-color:${esc(badgeBg)};">${esc(t)}</span>`;
                                         }).join('')}
-                                        <button onclick="event.stopPropagation(); window.openVehicleModalForm(${safeVehicleJson})" class="fv2-edit-btn fleet-card-edit" title="Редактировать">✏️</button>
+                                        <button class="fv2-edit-btn" data-vehicle-edit="${cardData}" title="Редактировать">✏️</button>
                                     </div>
                                 </div>
 
-                                <!-- Название техники -->
                                 <div class="fv2-model">${esc(v.model)}</div>
 
-                                <!-- Госномер + инв. номер -->
                                 <div class="fv2-ids">
                                     <div class="fleet-plate">${esc(v.plate || 'БЕЗ НОМЕРА')}</div>
                                     ${v.inv_number ? `<span class="fleet-inv">№ ${esc(v.inv_number)}</span>` : ''}
@@ -665,16 +1352,13 @@ function renderFleet() {
 
                                 ${v.vin_number ? `<div class="fv2-vin">VIN: ${esc(v.vin_number)}</div>` : ''}
 
-                                <!-- Водитель/механизатор -->
                                 <div class="fv2-driver">
                                     <span class="fv2-driver-role">👤 ${role}</span>
                                     <span class="fv2-driver-name">${esc(v.notes || '— не закреплён —')}</span>
                                 </div>
 
-                                <!-- Разделитель -->
                                 <div class="fv2-divider"></div>
 
-                                <!-- Метрики -->
                                 <div class="fv2-metrics">
                                     <div class="fv2-metric">
                                         <span class="fv2-metric-label">${label}</span>
@@ -696,8 +1380,7 @@ function renderFleet() {
                                     </div>
                                 </div>
 
-                                <!-- Кнопка задач -->
-                                <button onclick="event.stopPropagation(); window.openTasksModalForm(${v.id}, '${v.model.replace(/'/g, "\\'")}')" class="fv2-tasks-btn fleet-tasks-btn ${vTasks.length > 0 ? 'fv2-tasks-btn--has' : ''}">
+                                <button class="fv2-tasks-btn ${vTasks.length > 0 ? 'fv2-tasks-btn--has' : ''}" data-vehicle-tasks="${v.id}" data-vehicle-tasks-name="${jsStr(v.model)}">
                                     <span class="fv2-tasks-icon">📋</span>
                                     <span>Задачи</span>
                                     ${vTasks.length > 0 ? `<span class="fv2-tasks-badge">${vTasks.length}</span>` : ''}
@@ -711,6 +1394,40 @@ function renderFleet() {
     });
 
     container.innerHTML = html || `<div class="fleet-empty">Техника не найдена</div>`;
+
+    // Делегирование кликов по карточкам: клик по карточке
+    // открывает редактирование (при праве), кнопки задач —
+    // свою модалку. Имена/номера содержат кавычки —
+    // поэтому данные читаются из data-атрибутов.
+    container.onclick = (e) => {
+        const tasksBtn = e.target.closest('[data-vehicle-tasks]');
+        if (tasksBtn) {
+            e.stopPropagation();
+            if (!hasFleetEditRight()) return;
+            openTasksModalForm(
+                parseInt(tasksBtn.getAttribute('data-vehicle-tasks'), 10),
+                tasksBtn.getAttribute('data-vehicle-tasks-name')
+            );
+            return;
+        }
+
+        const editBtn = e.target.closest('[data-vehicle-edit]');
+        if (editBtn) {
+            e.stopPropagation();
+            try {
+                window.openVehicleModalForm(JSON.parse(editBtn.getAttribute('data-vehicle-edit')));
+            } catch (err) { /* ignore */ }
+            return;
+        }
+
+        const card = e.target.closest('.fleet-card-v2[data-vehicle]');
+        if (card) {
+            try {
+                window.openVehicleModalForm(JSON.parse(card.getAttribute('data-vehicle')));
+            } catch (err) { /* ignore */ }
+        }
+    };
+
     setEditControlsVisibility();
     window.scrollTo(window.scrollX, scrollTop);
 }
@@ -724,21 +1441,21 @@ function openVehicleModal(vehicle = null) {
 
     const catSelect = document.getElementById('vCategory');
     if (catSelect) {
-        catSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+        catSelect.innerHTML = categories.map(c => `<option value="${window.escapeHtml ? window.escapeHtml(c) : c}">${window.escapeHtml ? window.escapeHtml(c) : c}</option>`).join('');
     }
 
     const driverSelect = document.getElementById('vDriver');
     if (driverSelect) {
         driverSelect.innerHTML = `<option value="">— Не закреплен —</option>` +
-            drivers.map(d => `<option value="${d}">${d}</option>`).join('');
+            drivers.map(d => `<option value="${window.escapeHtml ? window.escapeHtml(d) : d}">${window.escapeHtml ? window.escapeHtml(d) : d}</option>`).join('');
     }
 
     const tagsBox = document.getElementById('tagsCheckboxContainer');
     if (tagsBox) {
         tagsBox.innerHTML = baseTags.map(t => `
             <label style="display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 8px; border: 1.5px solid rgba(255,255,255,0.3); font-size: 0.72rem; font-weight: 800; color: #0b1728; background-color: ${t.color}; cursor: pointer; user-select: none;">
-                <input type="checkbox" name="vTags" value="${t.name}" style="width: 14px; height: 14px; accent-color: #10b981; cursor: pointer;">
-                ${t.name}
+                <input type="checkbox" name="vTags" value="${window.escapeHtml ? window.escapeHtml(t.name) : t.name}" style="width: 14px; height: 14px; accent-color: #10b981; cursor: pointer;">
+                ${window.escapeHtml ? window.escapeHtml(t.name) : t.name}
             </label>
         `).join('');
     }
@@ -762,7 +1479,7 @@ function openVehicleModal(vehicle = null) {
         if (vehicle.tags) {
             const arr = vehicle.tags.split(',').map(t => t.trim());
             arr.forEach(t => {
-                const cb = document.querySelector(`input[name="vTags"][value="${t}"]`);
+                const cb = document.querySelector(`input[name="vTags"][value="${CSS.escape ? CSS.escape(t) : t}"]`);
                 if (cb) cb.checked = true;
             });
         }
@@ -777,7 +1494,7 @@ function openVehicleModal(vehicle = null) {
 }
 
 async function handleFormSubmit() {
-    if (!window._supabase) return;
+    if (!canEditFleet() || !window._supabase) return;
     const id = document.getElementById('vId').value;
     const selectedTags = [];
     document.querySelectorAll('input[name="vTags"]:checked').forEach(cb => selectedTags.push(cb.value));
@@ -810,10 +1527,13 @@ async function handleFormSubmit() {
         } else {
             await loadAllData(true);
         }
-    } catch (e) { alert(e.message); }
+    } catch (e) {
+        window.showSimpleMessage && window.showSimpleMessage('Ошибка', e.message);
+    }
 }
 
 async function handleDeleteVehicle() {
+    if (!canEditFleet()) return;
     const id = document.getElementById('vId').value;
     if (!id || !window._supabase) return;
     if (confirm("Вы точно хотите удалить технику?")) {
@@ -827,12 +1547,23 @@ async function handleDeleteVehicle() {
             } else {
                 await loadAllData(true);
             }
-        } catch (e) { alert(e.message); }
+        } catch (e) {
+            window.showSimpleMessage && window.showSimpleMessage('Ошибка', e.message);
+        }
     }
 }
 
 // ===== Управление водителями =====
-function renderDriversModalList() {
+function openDriversModalForm() {
+    // Справочники (водители/теги/категории) доступны
+    // только пользователям с правом записи.
+    if (!hasFleetEditRight()) {
+        window.showSimpleMessage && window.showSimpleMessage(
+            'Только просмотр',
+            'Администратор выдал вам доступ «только просмотр». Редактирование недоступно.'
+        );
+        return;
+    }
     openModalOverlay('driversManagementModal');
     updateDriversDOMList();
 }
@@ -844,32 +1575,50 @@ function updateDriversDOMList() {
     list.innerHTML = drivers.map(d => `
         <div class="fleet-list-row">
             <span class="fleet-list-name">👤 ${esc(d)}</span>
-            <button onclick="window.deleteCustomDriver('${d.replace(/'/g, "\\'")}')" class="fleet-list-delete">Удалить</button>
+            <button data-driver-del="${esc(d)}" class="fleet-list-delete">Удалить</button>
         </div>
     `).join('');
+
+    list.onclick = (e) => {
+        const btn = e.target.closest('[data-driver-del]');
+        if (btn) deleteCustomDriver(btn.getAttribute('data-driver-del'));
+    };
 }
 
 async function addCustomDriver() {
+    if (!hasFleetEditRight()) return;
     const input = document.getElementById('newDriverNameInput');
     if (!input || !input.value.trim()) return;
     try {
         await fleetInsert('fleet_drivers', [{ name: input.value.trim() }]);
         input.value = "";
         await loadAllData(false);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+        window.showSimpleMessage && window.showSimpleMessage('Ошибка', e.message);
+    }
 }
 
 async function deleteCustomDriver(driverName) {
+    if (!hasFleetEditRight()) return;
     if (confirm(`Удалить вод/мех-а "${driverName}" из базы данных?`)) {
         try {
             await fleetDelete('fleet_drivers', { name: driverName });
             await loadAllData(false);
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            window.showSimpleMessage && window.showSimpleMessage('Ошибка', e.message);
+        }
     }
 }
 
 // ===== Управление тегами =====
-function renderTagsModalList() {
+function openTagsModalForm() {
+    if (!hasFleetEditRight()) {
+        window.showSimpleMessage && window.showSimpleMessage(
+            'Только просмотр',
+            'Администратор выдал вам доступ «только просмотр». Редактирование недоступно.'
+        );
+        return;
+    }
     openModalOverlay('tagsManagementModal');
     updateTagsDOMList();
 }
@@ -884,12 +1633,18 @@ function updateTagsDOMList() {
                 <span class="fleet-list-dot" style="background-color: ${t.color};"></span>
                 <span class="fleet-list-name">${esc(t.name)}</span>
             </div>
-            <button onclick="window.deleteCustomTag(${t.id})" class="fleet-list-delete">Удалить</button>
+            <button data-tag-del="${t.id}" class="fleet-list-delete">Удалить</button>
         </div>
     `).join('');
+
+    list.onclick = (e) => {
+        const btn = e.target.closest('[data-tag-del]');
+        if (btn) deleteCustomTag(parseInt(btn.getAttribute('data-tag-del'), 10));
+    };
 }
 
 async function addCustomTag() {
+    if (!hasFleetEditRight()) return;
     const nameInput = document.getElementById('newTagNameInput');
     const colorInput = document.getElementById('newTagColorInput');
     if (!nameInput || !nameInput.value.trim()) return;
@@ -900,21 +1655,33 @@ async function addCustomTag() {
         }]);
         nameInput.value = "";
         await loadAllData(false);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+        window.showSimpleMessage && window.showSimpleMessage('Ошибка', e.message);
+    }
 }
 
 async function deleteCustomTag(tagId) {
+    if (!hasFleetEditRight()) return;
     const target = baseTags.find(t => t.id === tagId);
     if (target && confirm(`Удалить тег "${target.name}" из базы данных?`)) {
         try {
             await fleetDelete('fleet_tags', { id: tagId });
             await loadAllData(false);
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            window.showSimpleMessage && window.showSimpleMessage('Ошибка', e.message);
+        }
     }
 }
 
 // ===== Управление категориями =====
-function renderCategoriesModalList() {
+function openCategoriesModalForm() {
+    if (!hasFleetEditRight()) {
+        window.showSimpleMessage && window.showSimpleMessage(
+            'Только просмотр',
+            'Администратор выдал вам доступ «только просмотр». Редактирование недоступно.'
+        );
+        return;
+    }
     openModalOverlay('categoriesModal');
     updateCategoriesDOMList();
 }
@@ -926,28 +1693,39 @@ function updateCategoriesDOMList() {
     list.innerHTML = categories.map(c => `
         <div class="fleet-list-row">
             <span class="fleet-list-name">${esc(c)}</span>
-            ${c !== 'Без категории' ? `<button onclick="window.deleteCustomCategory('${c.replace(/'/g, "\\'")}')" class="fleet-list-delete">Удалить</button>` : ''}
+            ${c !== 'Без категории' ? `<button data-cat-del="${esc(c)}" class="fleet-list-delete">Удалить</button>` : ''}
         </div>
     `).join('');
+
+    list.onclick = (e) => {
+        const btn = e.target.closest('[data-cat-del]');
+        if (btn) deleteCustomCategory(btn.getAttribute('data-cat-del'));
+    };
 }
 
 async function addCustomCategory() {
+    if (!hasFleetEditRight()) return;
     const input = document.getElementById('newCatInput');
     if (!input || !input.value.trim()) return;
     try {
         await fleetInsert('fleet_categories', [{ name: input.value.trim() }]);
         input.value = "";
         await loadAllData(false);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+        window.showSimpleMessage && window.showSimpleMessage('Ошибка', e.message);
+    }
 }
 
 async function deleteCustomCategory(catName) {
+    if (!hasFleetEditRight()) return;
     if (confirm(`Удалить категорию "${catName}"? Все машины из неё будут переведены в "Без категории".`)) {
         try {
             await fleetUpdate('vehicles', { type: 'Без категории' }, { type: catName });
             await fleetDelete('fleet_categories', { name: catName });
             await loadAllData(false);
-        } catch(err) { console.error("Ошибка удаления категории:", err); }
+        } catch (err) {
+            window.showSimpleMessage && window.showSimpleMessage('Ошибка', err.message);
+        }
     }
 }
 
@@ -972,15 +1750,22 @@ function renderTasksListInsideModal() {
         list.innerHTML = `<div class="fleet-tasks-empty">Нет активных задач</div>`;
         return;
     }
+    const esc = window.escapeHtml || (s => String(s ?? ''));
     list.innerHTML = vTasks.map(t => `
         <div class="fleet-task-row">
-            <span>${window.escapeHtml ? window.escapeHtml(t.text) : t.text}</span>
-            <button onclick="window.completeTask(${t.id})" class="fleet-task-done">Готово</button>
+            <span>${esc(t.text)}</span>
+            ${hasFleetEditRight() ? `<button data-task-done="${t.id}" class="fleet-task-done">Готово</button>` : ''}
         </div>
     `).join('');
+
+    list.onclick = (e) => {
+        const btn = e.target.closest('[data-task-done]');
+        if (btn) completeTask(parseInt(btn.getAttribute('data-task-done'), 10));
+    };
 }
 
 async function addVehicleTask() {
+    if (!hasFleetEditRight()) return;
     const vId = document.getElementById('taskVehicleId').value;
     const vName = document.getElementById('taskVehicleName').value;
     const textInput = document.getElementById('newTaskText');
@@ -990,20 +1775,25 @@ async function addVehicleTask() {
         textInput.value = "";
         await loadAllData(true);
         renderTasksListInsideModal();
-    } catch (e) { console.error(e); }
+    } catch (e) {
+        window.showSimpleMessage && window.showSimpleMessage('Ошибка', e.message);
+    }
 }
 
 async function completeTask(taskId) {
+    if (!hasFleetEditRight()) return;
     try {
         await fleetUpdate('vehicle_tasks', { is_completed: true }, { id: taskId });
         await loadAllData(true);
         const modal = document.getElementById('tasksModal');
         if (modal && modal.style.display === 'flex') renderTasksListInsideModal();
-    } catch (e) { console.error(e); }
+    } catch (e) {
+        window.showSimpleMessage && window.showSimpleMessage('Ошибка', e.message);
+    }
 }
 
 // ===== Добавление часов через модалку =====
-async function openHoursModal() {
+async function openHoursModalForm() {
     const modal = document.getElementById('hoursModal');
     if (!modal) return;
     openModalOverlay('hoursModal');
@@ -1014,7 +1804,7 @@ async function openHoursModal() {
     const sorted = [...vehicles].sort((a, b) => (a.model || '').localeCompare(b.model || ''));
     select.innerHTML = sorted.map(v => {
         const unit = getUnitByCategory(v.type);
-        return `<option value="${v.id}">${v.model} ${v.plate ? '['+v.plate+']' : '[б/н]'} (${v.current_hours || 0} ${unit})</option>`;
+        return `<option value="${v.id}">${window.escapeHtml ? window.escapeHtml(v.model) : v.model} ${v.plate ? '[' + v.plate + ']' : '[б/н]'} (${v.current_hours || 0} ${unit})</option>`;
     }).join('');
     document.getElementById('hoursInput').value = '';
 }
@@ -1024,12 +1814,19 @@ function closeHoursModal() {
 }
 
 async function submitHours() {
+    if (!canEditFleet()) return;
     const select = document.getElementById('hoursVehicleSelect');
     const input = document.getElementById('hoursInput');
     const vehicleId = select.value;
     const hours = parseFloat(input.value);
-    if (!vehicleId) { alert('Выберите технику'); return; }
-    if (isNaN(hours) || hours <= 0) { alert('Введите положительное число часов'); return; }
+    if (!vehicleId) {
+        window.showSimpleMessage && window.showSimpleMessage('Внимание', 'Выберите технику');
+        return;
+    }
+    if (isNaN(hours) || hours <= 0) {
+        window.showSimpleMessage && window.showSimpleMessage('Внимание', 'Введите положительное число часов');
+        return;
+    }
     try {
         if (offlineSave({ type: 'hours', table: 'vehicles', match: { id: vehicleId }, hours: hours })) {
             /* Офлайн: прибавляем часы к локальной копии,
@@ -1060,6 +1857,6 @@ async function submitHours() {
         closeHoursModal();
         await loadAllData(false);
     } catch (err) {
-        alert('Ошибка: ' + err.message);
+        window.showSimpleMessage && window.showSimpleMessage('Ошибка', 'Не удалось сохранить наработку: ' + err.message);
     }
 }

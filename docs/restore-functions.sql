@@ -106,7 +106,7 @@ alter table public.user_presence enable row level security;
 alter table public.admin_messages enable row level security;
 
 -- ----------------------------------------------------------------------------
--- 3. ВСПОМОГНТЕЛЬННЯ ФУНКЦИЯ ПРОВЕРКИ НДМИНН
+-- 3. ??????????????? ??????? ???????? ????
 -- ----------------------------------------------------------------------------
 
 create or replace function public.is_current_admin()
@@ -125,9 +125,126 @@ as $$
     );
 $$;
 
+-- ????? ?????? ? ??????????????: admin ??? livestock_edit.
+create or replace function public.can_edit_livestock()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+    select exists (
+        select 1
+        from public.module_access
+        where user_id = auth.uid()
+          and module_name = 'admin'
+          and has_access = true
+    ) or exists (
+        select 1
+        from public.module_access
+        where user_id = auth.uid()
+          and module_name = 'livestock_edit'
+          and has_access = true
+    );
+$$;
+
+-- ????? ?????? ? ???????????: admin ??? mechanization_edit.
+create or replace function public.can_edit_mechanization()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+    select exists (
+        select 1
+        from public.module_access
+        where user_id = auth.uid()
+          and module_name = 'admin'
+          and has_access = true
+    ) or exists (
+        select 1
+        from public.module_access
+        where user_id = auth.uid()
+          and module_name = 'mechanization_edit'
+          and has_access = true
+    );
+$$;
+
+grant execute on function public.can_edit_livestock() to authenticated;
+grant execute on function public.can_edit_mechanization() to authenticated;
+
 -- ----------------------------------------------------------------------------
--- 4. RLS-ПОЛИТИКИ
+-- 4. RLS-????????
 -- ----------------------------------------------------------------------------
+-- ??????????????: ?????? � ???? ??????????????,
+-- ?????? � ?????? admin / livestock_edit
+-- (?????? ?????? ??????????? ???? ??????????????).
+-- ----------------------------------------------------------------------------
+
+drop policy if exists "Auth users access farms" on public.farms_and_groups;
+drop policy if exists "Auth users read farms" on public.farms_and_groups;
+create policy "Auth users read farms" on public.farms_and_groups
+    for select to authenticated using (true);
+create policy "Livestock editors write farms" on public.farms_and_groups
+    for all to authenticated
+    using (can_edit_livestock()) with check (can_edit_livestock());
+
+drop policy if exists "Auth users access categories" on public.herd_categories;
+drop policy if exists "Auth users read categories" on public.herd_categories;
+create policy "Auth users read categories" on public.herd_categories
+    for select to authenticated using (true);
+create policy "Livestock editors write categories" on public.herd_categories
+    for all to authenticated
+    using (can_edit_livestock()) with check (can_edit_livestock());
+
+drop policy if exists "Auth users access group_cats" on public.group_category_heads;
+drop policy if exists "Auth users read group_cats" on public.group_category_heads;
+create policy "Auth users read group_cats" on public.group_category_heads
+    for select to authenticated using (true);
+create policy "Livestock editors write group_cats" on public.group_category_heads
+    for all to authenticated
+    using (can_edit_livestock()) with check (can_edit_livestock());
+
+drop policy if exists "Auth users access movements" on public.herd_movements;
+drop policy if exists "Auth users read movements" on public.herd_movements;
+create policy "Auth users read movements" on public.herd_movements
+    for select to authenticated using (true);
+create policy "Livestock editors write movements" on public.herd_movements
+    for all to authenticated
+    using (can_edit_livestock()) with check (can_edit_livestock());
+
+drop policy if exists "Auth users access diets" on public.diets;
+drop policy if exists "Auth users read diets" on public.diets;
+create policy "Auth users read diets" on public.diets
+    for select to authenticated using (true);
+create policy "Livestock editors write diets" on public.diets
+    for all to authenticated
+    using (can_edit_livestock()) with check (can_edit_livestock());
+
+drop policy if exists "Auth users access feeds" on public.feeds;
+drop policy if exists "Auth users read feeds" on public.feeds;
+create policy "Auth users read feeds" on public.feeds
+    for select to authenticated using (true);
+create policy "Livestock editors write feeds" on public.feeds
+    for all to authenticated
+    using (can_edit_livestock()) with check (can_edit_livestock());
+
+drop policy if exists "Auth users access diet_feeds" on public.diet_feeds;
+drop policy if exists "Auth users read diet_feeds" on public.diet_feeds;
+create policy "Auth users read diet_feeds" on public.diet_feeds
+    for select to authenticated using (true);
+create policy "Livestock editors write diet_feeds" on public.diet_feeds
+    for all to authenticated
+    using (can_edit_livestock()) with check (can_edit_livestock());
+
+drop policy if exists "daily_feed_usage_admin_all" on public.daily_feed_usage;
+drop policy if exists "daily_feed_usage_edit_all" on public.daily_feed_usage;
+create policy "daily_feed_usage_edit_all" on public.daily_feed_usage
+    for all to authenticated
+    using (can_edit_livestock()) with check (can_edit_livestock());
+-- select-???????? daily_feed_usage_select_auth ?????????
+-- ????????? ?????? ???? ?? ?????.
 
 drop policy if exists "users read own profile" on public.user_profiles;
 create policy "users read own profile" on public.user_profiles
@@ -432,6 +549,10 @@ declare
     v_item jsonb;
     v_total integer := 0;
 begin
+    if not can_edit_livestock() then
+        raise exception '??? ???? ?? ?????????????? ??????????????.';
+    end if;
+
     delete from public.group_category_heads where group_id = p_group_id;
 
     for v_item in select * from jsonb_array_elements(p_distribution)
@@ -471,6 +592,10 @@ as $$
 declare
     v_old_count integer;
 begin
+    if not can_edit_livestock() then
+        raise exception '??? ???? ?? ?????????????? ??????????????.';
+    end if;
+
     select head_count into v_old_count
     from public.farms_and_groups
     where id = p_group_id
@@ -515,6 +640,10 @@ declare
     v_id uuid;
     v_type text;
 begin
+    if not can_edit_livestock() then
+        raise exception '??? ???? ?? ?????????????? ??????????????.';
+    end if;
+
     if p_movement_type not in ('arrival', 'departure', 'slaughter', 'death',
                                'realization', 'mortality', 'transfer') then
         raise exception 'Недопуѝтимый тип операции: %', p_movement_type;
@@ -646,6 +775,10 @@ as $$
 declare
     v_movement record;
 begin
+    if not can_edit_livestock() then
+        raise exception '??? ???? ?? ?????????????? ??????????????.';
+    end if;
+
     if p_pin is null or length(trim(p_pin)) < 4 then
         raise exception 'Введите PIN (минимум 4 ѝимвола).';
     end if;

@@ -59,7 +59,10 @@ create table if not exists public.fleet_tags (
 
 -- =====================================================
 -- RLS: чтение — всем авторизованным,
--- запись/изменение/удаление — только админам
+-- запись/изменение/удаление — админам и пользователям
+-- с правом mechanization_edit (функция
+-- can_edit_mechanization() определена в
+-- docs/restore-functions.sql и учитывает оба права)
 -- =====================================================
 
 alter table public.vehicles enable row level security;
@@ -91,11 +94,11 @@ begin
             select 1 from pg_policies
             where schemaname = 'public'
               and tablename = t
-              and policyname = t || '_admin_all'
+              and policyname = t || '_edit_all'
         ) then
             execute format(
-                'create policy %I on public.%I for all to authenticated using (is_current_admin()) with check (is_current_admin());',
-                t || '_admin_all', t
+                'create policy %I on public.%I for all to authenticated using (public.can_edit_mechanization()) with check (public.can_edit_mechanization());',
+                t || '_edit_all', t
             );
         end if;
     end loop;

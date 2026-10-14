@@ -2584,7 +2584,7 @@
 
             const show =
                 moduleId === 'fleet' &&
-                window._mechEditMode === true;
+                window._mechCanEdit === true;
 
             button.classList.toggle('editor-hidden', !show);
         }
@@ -2596,6 +2596,16 @@
             if (!button) return;
 
             button.addEventListener('click', () => {
+                // Зритель (без mechanization_edit)
+                // не может включить режим записи.
+                if (window._mechCanEdit !== true) {
+                    window.showSimpleMessage(
+                        'Только просмотр',
+                        'Администратор выдал вам доступ «только просмотр». Редактирование недоступно.'
+                    );
+                    return;
+                }
+
                 window._mechEditMode =
                     !window._mechEditMode;
 
@@ -2830,7 +2840,10 @@
                 const list = access || [];
                 const isAdmin = list.some(a => a.module_name === 'admin');
                 const hasMech = isAdmin || list.some(a => a.module_name === 'mechanization');
-                const canEditMech = isAdmin || list.some(a => a.module_name === 'mechanization_edit');
+                // Право mechanization_edit выдаётся админом
+                // отдельно от базового доступа к отрасли:
+                // без него пользователь — только зритель.
+                const canEditMech = isAdmin || list.some(a => a.module_name === 'mechanization_edit' && a.has_access === true);
 
                 if (!hasMech) {
                     alert('У вас нет доступа к модулю «Механизация». Обратитесь к администратору.');
@@ -2841,10 +2854,12 @@
 
                 window._mechUser = user;
                 window._mechIsAdmin = isAdmin;
+                window._mechCanEdit = canEditMech;
 
                 // Режим редактирования: администратор
-                // или явное право mechanization_edit.
-                window._mechEditMode = canEditMech;
+                // или право mechanization_edit из админки.
+                // Зритель не может включить режим записи.
+                window._mechEditMode = false;
                 setupMechEditMode();
                 return true;
             } catch (e) {

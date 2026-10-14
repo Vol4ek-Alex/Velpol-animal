@@ -99,80 +99,6 @@ const FLEET_STYLES = `
     gap: 9px;
 }
 
-/* Живые показатели парка */
-.fx-stats {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 10px;
-    margin-top: 22px;
-}
-
-.fx-stat {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    padding: 13px 15px;
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    border-radius: 15px;
-    background: rgba(255, 255, 255, 0.035);
-    transition: border-color 200ms ease, background-color 200ms ease;
-}
-
-.fx-stat:hover {
-    border-color: rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.06);
-}
-
-.fx-stat-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    width: 36px;
-    height: 36px;
-    border-radius: 11px;
-    font-size: 1rem;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.fx-stat-num {
-    color: #fff;
-    font-size: 1.15rem;
-    font-weight: 800;
-    line-height: 1.1;
-}
-
-.fx-stat-label {
-    color: var(--subtle);
-    font-size: 0.64rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    line-height: 1.2;
-    margin-top: 2px;
-}
-
-.fx-stat--green .fx-stat-icon {
-    background: rgba(52, 211, 153, 0.12);
-    border-color: rgba(52, 211, 153, 0.35);
-}
-
-.fx-stat--red .fx-stat-icon {
-    background: rgba(251, 113, 133, 0.12);
-    border-color: rgba(251, 113, 133, 0.35);
-}
-
-.fx-stat--blue .fx-stat-icon {
-    background: rgba(125, 211, 252, 0.12);
-    border-color: rgba(125, 211, 252, 0.35);
-}
-
-.fx-stat--amber .fx-stat-icon {
-    background: rgba(251, 191, 36, 0.12);
-    border-color: rgba(251, 191, 36, 0.35);
-}
-
 /* ---------- 2. Панель управления ---------- */
 .fx-controls {
     padding: 16px 18px;
@@ -761,6 +687,132 @@ const FLEET_STYLES = `
 }
 
 /* ---------- Элементы модальных окон ---------- */
+/* Шапка диалога: иконка + заголовок, вместо голого emoji в строке. */
+.fx-dialog-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+}
+
+.fx-dialog-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(52, 211, 153, 0.38);
+    border-radius: 13px;
+    background: linear-gradient(140deg, rgba(52, 211, 153, 0.18), rgba(4, 120, 87, 0.08));
+    font-size: 1.15rem;
+}
+
+.fx-dialog-titles {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.fx-dialog-title {
+    margin: 0;
+    color: #fff;
+    font-size: 1.02rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+}
+
+.fx-dialog-sub {
+    margin: 3px 0 0;
+    color: var(--subtle);
+    font-size: 0.74rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+/* Инлайн-добавление: поле и кнопка в одной строке */
+.fx-inline-add {
+    display: flex;
+    gap: 8px;
+}
+
+.fx-inline-add .modal-field {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.fx-inline-add .glass-btn {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 9px 18px;
+}
+
+/* Быстрые пресеты часов в модалке наработки */
+.fx-quick-hours {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.fx-quick-hour {
+    min-height: 34px;
+    padding: 5px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.76rem;
+    font-weight: 800;
+    transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+
+.fx-quick-hour:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.32);
+}
+
+.fx-quick-hour:active { transform: scale(0.95); }
+
+/* Подтверждение-сводка в модалке наработки */
+.fx-hours-preview {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 11px 14px;
+    border: 1px solid rgba(125, 211, 252, 0.3);
+    border-radius: 12px;
+    background: rgba(125, 211, 252, 0.07);
+    color: var(--blue);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.fx-hours-preview b {
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 800;
+}
+
+/* Превью цвета нового тега */
+.fx-color-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.fx-color-preview {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 10px;
+}
+
 .fx-modal-section {
     display: flex;
     flex-direction: column;
@@ -1033,18 +1085,12 @@ const FLEET_STYLES = `
 .fx-ro.visible { display: flex; }
 
 /* ---------- Адаптив ---------- */
-@media (max-width: 900px) {
-    .fx-stats { grid-template-columns: repeat(3, 1fr); }
-}
-
 @media (max-width: 700px) {
     .fx-hero { padding: 20px 18px; }
     .fx-controls { padding: 14px; }
     .fx-controls-row { flex-direction: column; }
     .fx-sort { flex: 1 1 auto; }
     .fx-grid { grid-template-columns: 1fr; }
-    .fx-stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-    .fx-stat { padding: 10px 12px; }
     .fx-meta { grid-template-columns: 1fr 1fr; }
     .fx-meta-cell:first-child { grid-column: 1 / -1; }
     .fx-form-grid { grid-template-columns: 1fr; }
@@ -1231,7 +1277,7 @@ export async function init() {
                         <div class="fx-hero-icon">🚜</div>
                         <div>
                             <h2 class="fx-hero-title">Автопарк</h2>
-                            <p class="fx-hero-sub">Учёт техники, водители и механизаторы, наработка, документы и задачи</p>
+                            <p class="fx-hero-sub" id="fxHeroSub">Учёт техники, водители и механизаторы, наработка, документы и задачи</p>
                         </div>
                     </div>
                     <div class="fx-hero-actions" id="fxHeroActions">
@@ -1240,7 +1286,6 @@ export async function init() {
                         <button onclick="window.openVehicleModalForm()" data-strict-edit class="glass-btn modal-btn-primary">➕ Добавить технику</button>
                     </div>
                 </div>
-                <div class="fx-stats" id="fxStats"></div>
             </div>
 
             <div class="glass-panel fx-controls">
@@ -1285,7 +1330,13 @@ function buildModalsHtml() {
     <div id="vFormModal" class="modal-overlay-fleet" style="display: none;">
         <div class="modal-box-fleet" style="max-width: 560px;">
             <button onclick="window.closeVModal()" class="modal-close-x" aria-label="Закрыть">✕</button>
-            <h3 id="vModalTitle" class="fleet-modal-title">Карточка техники</h3>
+            <div class="fx-dialog-head">
+                <div class="fx-dialog-icon">🚜</div>
+                <div class="fx-dialog-titles">
+                    <h3 id="vModalTitle" class="fx-dialog-title">Карточка техники</h3>
+                    <p class="fx-dialog-sub">Заполните параметры — они сразу отразятся в автопарке</p>
+                </div>
+            </div>
             <form id="vForm" style="display: flex; flex-direction: column; gap: 14px; font-size: 0.88rem;">
                 <input type="hidden" id="vId">
 
@@ -1363,7 +1414,13 @@ function buildModalsHtml() {
     <div id="directoryModal" class="modal-overlay-fleet" style="display: none;">
         <div class="modal-box-fleet" style="max-width: 520px;">
             <button onclick="window.closeDirectoryModal()" class="modal-close-x" aria-label="Закрыть">✕</button>
-            <h3 class="fleet-modal-title">🗂️ Справочники автопарка</h3>
+            <div class="fx-dialog-head">
+                <div class="fx-dialog-icon">🗂️</div>
+                <div class="fx-dialog-titles">
+                    <h3 class="fx-dialog-title">Справочники автопарка</h3>
+                    <p class="fx-dialog-sub">Водители, категории техники и теги статусов</p>
+                </div>
+            </div>
 
             <div class="fx-tabs" id="fxDirectoryTabs">
                 <button type="button" class="fx-tab active" data-tab="drivers">👤 Вод/Мех</button>
@@ -1374,16 +1431,20 @@ function buildModalsHtml() {
             <div class="fx-tabpane active" data-pane="drivers">
                 <div class="fx-rows" id="modalDriversList"></div>
                 <div class="fx-add-row">
-                    <input type="text" id="newDriverNameInput" class="modal-field" placeholder="ФИО водителя или механизатора...">
-                    <button onclick="window.addCustomDriver()" class="glass-btn modal-btn-primary" style="width: 100%;">Добавить</button>
+                    <div class="fx-inline-add">
+                        <input type="text" id="newDriverNameInput" class="modal-field" placeholder="ФИО водителя или механизатора...">
+                        <button onclick="window.addCustomDriver()" class="glass-btn modal-btn-primary">➕</button>
+                    </div>
                 </div>
             </div>
 
             <div class="fx-tabpane" data-pane="categories">
                 <div class="fx-rows" id="modalCategoriesList"></div>
                 <div class="fx-add-row">
-                    <input type="text" id="newCatInput" class="modal-field" placeholder="Название категории...">
-                    <button onclick="window.addCustomCategory()" class="glass-btn modal-btn-primary" style="width: 100%;">Добавить</button>
+                    <div class="fx-inline-add">
+                        <input type="text" id="newCatInput" class="modal-field" placeholder="Название категории...">
+                        <button onclick="window.addCustomCategory()" class="glass-btn modal-btn-primary">➕</button>
+                    </div>
                     <div class="fx-hint">При удалении категории техника переходит в «Без категории».</div>
                 </div>
             </div>
@@ -1391,12 +1452,15 @@ function buildModalsHtml() {
             <div class="fx-tabpane" data-pane="tags">
                 <div class="fx-rows" id="modalTagsList"></div>
                 <div class="fx-add-row">
-                    <input type="text" id="newTagNameInput" class="modal-field" placeholder="Название статуса...">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <label class="modal-label" style="margin: 0;">Цвет:</label>
-                        <input type="color" id="newTagColorInput" value="#e2e8f0" class="fleet-color-input">
+                    <div class="fx-inline-add">
+                        <input type="text" id="newTagNameInput" class="modal-field" placeholder="Название статуса...">
+                        <button onclick="window.addCustomTag()" class="glass-btn modal-btn-primary">➕</button>
                     </div>
-                    <button onclick="window.addCustomTag()" class="glass-btn modal-btn-primary" style="width: 100%;">Создать тег</button>
+                    <div class="fx-color-row">
+                        <div id="newTagColorPreview" class="fx-color-preview" style="background-color: #e2e8f0;"></div>
+                        <input type="color" id="newTagColorInput" value="#e2e8f0" class="fleet-color-input">
+                        <span class="fx-hint">Цвет тега в карточках техники</span>
+                    </div>
                 </div>
             </div>
 
@@ -1407,8 +1471,13 @@ function buildModalsHtml() {
     <div id="tasksModal" class="modal-overlay-fleet" style="display: none;">
         <div class="modal-box-fleet">
             <button onclick="window.closeTasksModal()" class="modal-close-x" aria-label="Закрыть">✕</button>
-            <h3 id="tasksModalTitle" class="fleet-modal-title" style="margin-bottom: 4px;">Задачи по технике</h3>
-            <p id="tasksModalSubtitle" style="margin: 0 0 14px 0; color: var(--muted); font-size: 0.8rem;"></p>
+            <div class="fx-dialog-head">
+                <div class="fx-dialog-icon">📋</div>
+                <div class="fx-dialog-titles">
+                    <h3 id="tasksModalTitle" class="fx-dialog-title">Задачи по технике</h3>
+                    <p id="tasksModalSubtitle" class="fx-dialog-sub"></p>
+                </div>
+            </div>
             <input type="hidden" id="taskVehicleId">
             <input type="hidden" id="taskVehicleName">
             <div class="fx-rows" id="vehicleTasksList" style="max-height: 200px;"></div>
@@ -1423,7 +1492,13 @@ function buildModalsHtml() {
     <div id="hoursModal" class="modal-overlay-fleet" style="display: none;">
         <div class="modal-box-fleet">
             <button onclick="window.closeHoursModal()" class="modal-close-x" aria-label="Закрыть">✕</button>
-            <h3 class="fleet-modal-title">⏱️ Добавить наработку</h3>
+            <div class="fx-dialog-head">
+                <div class="fx-dialog-icon">⏱️</div>
+                <div class="fx-dialog-titles">
+                    <h3 class="fx-dialog-title">Добавить наработку</h3>
+                    <p class="fx-dialog-sub">Прибавляется к текущему значению выбранной техники</p>
+                </div>
+            </div>
             <div style="display: flex; flex-direction:column; gap: 14px;">
                 <div>
                     <label class="modal-label">Техника</label>
@@ -1434,7 +1509,14 @@ function buildModalsHtml() {
                 <div>
                     <label class="modal-label">Количество часов</label>
                     <input type="number" id="hoursInput" min="0" step="0.5" class="modal-field" placeholder="Например, 8.5">
+                    <div class="fx-quick-hours" style="margin-top: 9px;">
+                        <button type="button" class="fx-quick-hour" onclick="window.setQuickHours(4)">4 ч</button>
+                        <button type="button" class="fx-quick-hour" onclick="window.setQuickHours(8)">8 ч</button>
+                        <button type="button" class="fx-quick-hour" onclick="window.setQuickHours(10)">10 ч</button>
+                        <button type="button" class="fx-quick-hour" onclick="window.setQuickHours(12)">12 ч</button>
+                    </div>
                 </div>
+                <div id="hoursPreview" class="fx-hours-preview" style="display: none;"></div>
             </div>
             <div style="display: flex; gap: 10px; margin-top: 16px; border-top: 1px solid var(--line); padding-top: 14px;">
                 <button onclick="window.closeHoursModal()" class="glass-btn" style="flex: 1;">Отмена</button>
@@ -1452,7 +1534,6 @@ function wireModalEvents() {
         tabs.onclick = (e) => {
             const tab = e.target.closest('.fx-tab');
             if (!tab) return;
-            const name = tab.getAttribute('data-tab');
             tabs.querySelectorAll('.fx-tab').forEach(t => t.classList.toggle('active', t === tab));
             tabs.querySelectorAll('.fx-tab').forEach(t => {
                 const pane = document.querySelector(`.fx-tabpane[data-pane="${t.getAttribute('data-tab')}"]`);
@@ -1460,6 +1541,47 @@ function wireModalEvents() {
             });
         };
     }
+
+    // Живое превью цвета нового тега.
+    const colorInput = document.getElementById('newTagColorInput');
+    const colorPreview = document.getElementById('newTagColorPreview');
+    if (colorInput && colorPreview) {
+        colorInput.addEventListener('input', () => {
+            colorPreview.style.backgroundColor = colorInput.value;
+        });
+    }
+
+    // Сводка «станет →» в модалке наработки.
+    const hoursInput = document.getElementById('hoursInput');
+    if (hoursInput) {
+        hoursInput.addEventListener('input', updateHoursPreview);
+    }
+    const hoursSelect = document.getElementById('hoursVehicleSelect');
+    if (hoursSelect) {
+        hoursSelect.addEventListener('change', updateHoursPreview);
+    }
+}
+
+function updateHoursPreview() {
+    const preview = document.getElementById('hoursPreview');
+    const select = document.getElementById('hoursVehicleSelect');
+    const input = document.getElementById('hoursInput');
+    if (!preview || !select || !input) return;
+
+    const hours = parseFloat(input.value);
+    const v = vehicles.find(x => String(x.id) === String(select.value));
+    if (!v || isNaN(hours) || hours <= 0) {
+        preview.style.display = 'none';
+        return;
+    }
+
+    const unit = getUnitByCategory(v.type);
+    const current = v.current_hours || 0;
+    preview.style.display = 'flex';
+    preview.innerHTML = `
+        <span>${esc(v.model)} · сейчас ${current.toLocaleString('ru-RU')} ${unit}</span>
+        <span>станет <b>${(current + hours).toLocaleString('ru-RU')} ${unit}</b></span>
+    `;
 }
 
 /* ===== Оверлеи ===== */
@@ -1564,6 +1686,13 @@ function registerWindowApi() {
     };
     window.closeHoursModal = closeHoursModal;
     window.submitHours = submitHours;
+    window.setQuickHours = (h) => {
+        const input = document.getElementById('hoursInput');
+        if (input) {
+            input.value = h;
+            updateHoursPreview();
+        }
+    };
     window.addCustomDriver = addCustomDriver;
     window.deleteCustomDriver = deleteCustomDriver;
     window.addCustomTag = addCustomTag;
@@ -1630,50 +1759,31 @@ async function loadAllData(isFirstLoad = false) {
             }
         }
 
-        renderStats();
+        renderHeroSub();
         renderFleet();
     } catch (e) {
         console.error("Ошибка синхронизации данных автопарка:", e);
     }
 }
 
-/* ===== Живые показатели парка ===== */
-function renderStats() {
-    const box = document.getElementById('fxStats');
-    if (!box) return;
+/* ===== Строка статусов парка под заголовком ===== */
+function renderHeroSub() {
+    const el = document.getElementById('fxHeroSub');
+    if (!el) return;
 
     const broken = vehicles.filter(v => getVehicleStatus(v) === 'broken').length;
     const warranty = vehicles.filter(v => getVehicleStatus(v) === 'warranty').length;
     const working = vehicles.length - broken;
-    const urgentDocs = vehicles.filter(v => {
-        const to = formatDocStatus(v.inspection_date);
-        const ins = formatDocStatus(v.insurance_date);
-        return to.cls === 'fx-meta-val--overdue' || to.cls === 'fx-meta-val--soon' ||
-               ins.cls === 'fx-meta-val--overdue' || ins.cls === 'fx-meta-val--soon';
-    }).length;
 
-    box.innerHTML = `
-        <div class="fx-stat">
-            <div class="fx-stat-icon">🚜</div>
-            <div><div class="fx-stat-num">${vehicles.length}</div><div class="fx-stat-label">Всего единиц</div></div>
-        </div>
-        <div class="fx-stat fx-stat--green">
-            <div class="fx-stat-icon">✅</div>
-            <div><div class="fx-stat-num">${working}</div><div class="fx-stat-label">В работе</div></div>
-        </div>
-        <div class="fx-stat fx-stat--red">
-            <div class="fx-stat-icon">🔧</div>
-            <div><div class="fx-stat-num">${broken}</div><div class="fx-stat-label">Неисправно</div></div>
-        </div>
-        <div class="fx-stat fx-stat--blue">
-            <div class="fx-stat-icon">🛡️</div>
-            <div><div class="fx-stat-num">${warranty}</div><div class="fx-stat-label">Гарантия</div></div>
-        </div>
-        <div class="fx-stat fx-stat--amber">
-            <div class="fx-stat-icon">📋</div>
-            <div><div class="fx-stat-num">${tasks.length}</div><div class="fx-stat-label">Задач активно</div></div>
-        </div>
-    `;
+    const parts = [
+        `${vehicles.length} ед. техники`,
+        `в работе ${working}`,
+    ];
+    if (broken > 0) parts.push(`неисправно ${broken}`);
+    if (warranty > 0) parts.push(`гарантия ${warranty}`);
+    if (tasks.length > 0) parts.push(`задач ${tasks.length}`);
+
+    el.textContent = parts.join(' · ');
 }
 
 /* ===== Фильтры-чипы ===== */
@@ -1968,6 +2078,8 @@ function openVehicleModal(vehicle = null) {
 
     if (vehicle) {
         title.innerText = "Редактирование техники";
+        const sub = document.querySelector('#vFormModal .fx-dialog-sub');
+        if (sub) sub.innerText = vehicle.model || '';
         document.getElementById('vId').value = vehicle.id;
         document.getElementById('vCategory').value = vehicle.type || 'Без категории';
         document.getElementById('vName').value = vehicle.model || '';
@@ -2305,6 +2417,9 @@ async function openHoursModalForm() {
         return `<option value="${v.id}">${esc(v.model)} ${v.plate ? '[' + v.plate + ']' : '[б/н]'} (${v.current_hours || 0} ${unit})</option>`;
     }).join('');
     document.getElementById('hoursInput').value = '';
+    const preview = document.getElementById('hoursPreview');
+    if (preview) preview.style.display = 'none';
+    updateHoursPreview();
 }
 
 function closeHoursModal() {
@@ -2332,7 +2447,6 @@ async function submitHours() {
             const v = vehicles.find(x => String(x.id) === String(vehicleId));
             if (v) v.current_hours = (v.current_hours || 0) + hours;
             closeHoursModal();
-            renderStats();
             renderFleet();
             if (window.OfflineSync) {
                 window.OfflineSync.showToast('Нет сети — наработка сохранена локально');

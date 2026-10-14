@@ -77,7 +77,21 @@
             </div>
         </div>
         <footer class="modules-footer" id="modules-footer" style="display: none;">
-            <span class="version-badge" id="app-version" title="Версия приложения">v1.1.6</span>
+            <span class="version-badge" id="app-version" title="Версия приложения">v1.1.7</span>
+            <button type="button" class="whats-new-toggle" id="whats-new-toggle" onclick="toggleWhatsNew(this)">
+                Что нового
+                <span class="whats-new-toggle-arrow">▼</span>
+            </button>
+            <div class="whats-new" id="whats-new">
+                <div class="whats-new-title">
+                    Что нового в обновлении
+                    <button type="button" class="whats-new-close" onclick="toggleWhatsNew(document.getElementById('whats-new-toggle'))" aria-label="Закрыть">✕</button>
+                </div>
+                <ul class="whats-new-list">
+                    <li>Обновлён дизайн автопарка</li>
+                    <li>Улучшено редактирование техники</li>
+                </ul>
+            </div>
             <div class="modules-footer-hint">
                 <span>Разработано: Волчек Александр Александрович</span>
                 <span>Все права защищены</span>
@@ -91,6 +105,14 @@
     <script src="js/config.js"></script>
     <script src="js/offline-sync.js"></script>
     <script src="js/splash.js"></script>
-    <script src="js/main-selector.js"></script>
+        <script src="js/main-selector.js"></script>
+        <script>
+            function toggleWhatsNew(btn) {
+                const box = document.getElementById('whats-new');
+                if (!box || !btn) return;
+                const open = box.classList.toggle('open');
+                btn.classList.toggle('open', open);
+            }
+        </script>
 </body>
 </html>

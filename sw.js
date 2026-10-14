@@ -1,5 +1,5 @@
-﻿const CACHE_NAME = 'velpol-agro-v17';
-const APP_VERSION = '1.1.4';
+﻿const CACHE_NAME = 'velpol-agro-v18';
+const APP_VERSION = '1.1.5';
 
 const APP_FILES = [
     './',
